@@ -27,8 +27,8 @@ with app.app_context():
     db.create_all()
 
 # Onshape API Client Setup
-access_key = 'your-access-key'
-secret_key = 'your-secret-key'
+access_key = 'iVTJDrE6RTFeWKRTj8cF4VCa'
+secret_key = 'hjhZYvSX1ylafeku5a7e4wDsBXUNQ6oKynl6HnocHTTddy0Q'
 base_url = 'https://cad.onshape.com'
 client = Client(configuration={"base_url": base_url, "access_key": access_key, "secret_key": secret_key})
 

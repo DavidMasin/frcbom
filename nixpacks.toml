@@ -1,6 +1,0 @@
-[phases]
-build = "cd backend && pip install -r requirements.txt && cd ../frontend && npm install && npm run build"
-start = "cd backend && python app.py"
-
-[packages]
-apt = ["python3", "nodejs"]

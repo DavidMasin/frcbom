@@ -143,7 +143,8 @@ def fetch_bom():
         response = client.api_client.request('GET', url=base_url + fixed_url, headers=headers)
         print("Onshape API Connected.")
 
-        bom_dict = json.loads(response.data)
+        bom_dict = response.json()
+        print(bom_dict)
 
         # Extract BOM data
         process1ID = findIDs(bom_dict, "Process 1")
@@ -151,14 +152,14 @@ def fetch_bom():
         DescriptionID = findIDs(bom_dict, "Description")
 
         parts = getPartsDict(bom_dict)
-
+        print(parts)
         # Prepare the response data
         bom_data = []
         for part_name, (quantity, material) in parts.items():
             bom_data.append({
                 "Part Name": part_name,
                 "Quantity": quantity,
-                "Material": material
+                "Material": material,
             })
 
         return jsonify({"bom_data": bom_data}), 200

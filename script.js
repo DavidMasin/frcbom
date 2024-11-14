@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://your-backend-service.up.railway.app';
+const API_BASE_URL = 'https://frcbom-production.up.railway.app';
 
 document.addEventListener('DOMContentLoaded', () => {
     displayGreeting();

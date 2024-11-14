@@ -5,8 +5,8 @@
       "startCommand": "cd frontend && npm run serve"
     },
     "backend": {
-      "buildCommand": "cd backend && pip install -r requirements.txt",
-      "startCommand": "cd backend && python app.py"
+      "buildCommand": "pip install -r requirements.txt",
+      "startCommand": "python app.py"
     }
   }
 }

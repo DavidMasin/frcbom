@@ -9,7 +9,7 @@ from onshape_client.onshape_url import OnshapeElement
 app = Flask(__name__)
 app.config["JWT_SECRET_KEY"] = "your-secret-key"
 jwt = JWTManager(app)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": ["https://frcbom.com", "http://localhost:3000"]}})
 
 # Mock Database (Replace with a real database like PostgreSQL or MongoDB)
 teams = {}  # {team_number: {"password": str, "parts": list}}

@@ -38,8 +38,7 @@ document.getElementById('registerForm').addEventListener('submit', async functio
     }
 });
 
-// Login Function
-document.getElementById('loginForm').addEventListener('submit', async function(e) {
+document.getElementById('loginForm').addEventListener('submit', async function (e) {
     e.preventDefault();
 
     const teamNumber = document.getElementById('loginTeamNumber').value;
@@ -60,7 +59,9 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
         const data = await response.json();
         if (response.ok) {
             localStorage.setItem('jwt_token', data.access_token);
+            localStorage.setItem('team_number', data.team_number);
             displayMessage('Login successful!');
+            displayGreeting(); // Call the function to display the greeting
         } else {
             displayMessage(`Error: ${data.error}`);
         }
@@ -69,7 +70,19 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
         displayMessage('An error occurred during login.');
     }
 });
+function displayGreeting() {
+    const teamNumber = localStorage.getItem('team_number');
+    const greetingDiv = document.getElementById('greetingMessage');
 
+    if (teamNumber) {
+        greetingDiv.textContent = `Hello, Team ${teamNumber}`;
+    } else {
+        greetingDiv.textContent = '';
+    }
+}
+document.addEventListener('DOMContentLoaded', () => {
+    displayGreeting();
+});
 // Fetch BOM Data
 document.getElementById('bomForm').addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -148,4 +161,5 @@ document.getElementById('fetchDashboard').addEventListener('click', async functi
         console.error('Error:', error);
         displayMessage('An error occurred while fetching dashboard data.');
     }
+
 });

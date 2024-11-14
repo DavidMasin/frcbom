@@ -3,6 +3,8 @@ from flask import Flask, request, jsonify
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from flask_cors import CORS
 import json
+
+from flask_sqlalchemy import SQLAlchemy
 # import pandas as pd
 from onshape_client.client import Client
 from onshape_client.onshape_url import OnshapeElement
@@ -10,9 +12,15 @@ from onshape_client.onshape_url import OnshapeElement
 app = Flask(__name__)
 app.config["JWT_SECRET_KEY"] = "Ysm201996"
 jwt = JWTManager(app)
-
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///teams.db'
+db = SQLAlchemy(app)
+class Team(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    team_number = db.Column(db.String(100), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+    is_owner = db.Column(db.Boolean, default=False)
 CORS(app, resources={r"/*": {"origins": ["https://frcbom.com"]}})
-
+db.create_all()
 # Mock Database (Replace with a real database like PostgreSQL or MongoDB)
 teams = {}  # {team_number: {"password": str, "parts": list}}
 
@@ -56,22 +64,22 @@ def register():
 
 
 # User Login
+class Team:
+    pass
+
+
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json
     team_number = data['team_number']
     password = data['password']
 
-    if team_number not in teams:
-        return jsonify({"error": "Invalid credentials"}), 401
+    team = Team.query.filter_by(team_number=team_number).first()
+    if team and bcrypt.checkpw(password.encode('utf-8'), team.password):
+        access_token = create_access_token(identity=team.team_number)
+        return jsonify(access_token=access_token, team_number=team.team_number), 200
 
-    # Verify the hashed password
-    stored_password = teams[team_number]['password']
-    if bcrypt.checkpw(password.encode('utf-8'), stored_password):
-        access_token = create_access_token(identity=team_number)
-        return jsonify(access_token=access_token), 200
-    else:
-        return jsonify({"error": "Invalid credentials"}), 401
+    return jsonify({"error": "Invalid credentials"}), 401
 
 
 # Fetch BOM Data

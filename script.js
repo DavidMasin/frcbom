@@ -12,6 +12,7 @@ document.getElementById('registerForm').addEventListener('submit', async functio
 
     const teamNumber = document.getElementById('registerTeamNumber').value;
     const password = document.getElementById('registerPassword').value;
+    console.log('API_BASE_URL:', API_BASE_URL);
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/register`, {

@@ -8,51 +8,71 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>FRC BOM System</h1>
+<h1>FRC BOM System</h1>
 
-    <!-- Registration Form -->
-    <section>
-        <h2>Register</h2>
-        <form id="registerForm">
-            <input type="text" id="registerTeamNumber" placeholder="Team Number" required>
-            <input type="password" id="registerPassword" placeholder="Password" required>
-            <button type="submit">Register</button>
-        </form>
-    </section>
+<!-- Registration Form -->
+<section>
+    <h2>Register</h2>
+    <form id="registerForm">
+        <input type="text" id="registerTeamNumber" placeholder="Team Number" required>
+        <input type="password" id="registerPassword" placeholder="Password" required>
+        <button type="submit">Register</button>
+    </form>
+</section>
 
-    <!-- Login Form -->
-    <section>
-        <h2>Login</h2>
-        <form id="loginForm">
-            <input type="text" id="loginTeamNumber" placeholder="Team Number" required>
-            <input type="password" id="loginPassword" placeholder="Password" required>
-            <button type="submit">Login</button>
-        </form>
-    </section>
+<!-- Login Form -->
+<section>
+    <h2>Login</h2>
+    <form id="loginForm">
+        <input type="text" id="loginTeamNumber" placeholder="Team Number" required>
+        <input type="password" id="loginPassword" placeholder="Password" required>
+        <button type="submit">Login</button>
+    </form>
+</section>
 
-    <!-- BOM Fetch Form -->
-    <section>
-        <h2>Fetch BOM Data</h2>
-        <form id="bomForm">
-            <input type="text" id="documentUrl" placeholder="Onshape Document URL" required>
-            <button type="submit">Fetch BOM</button>
-        </form>
-    </section>
+<!-- BOM Fetch Form -->
+<section>
+    <h2>Fetch BOM Data</h2>
+    <form id="bomForm">
+        <input type="text" id="documentUrl" placeholder="Onshape Document URL" required>
+        <button type="submit">Fetch BOM</button>
+    </form>
+</section>
 
-    <!-- Display Area for BOM Data -->
-    <section>
-        <h2>BOM Data</h2>
-        <pre id="bomData"></pre>
-    </section>
+<!-- Display Area for BOM Data -->
+<section>
+    <h2>BOM Data</h2>
+    <pre id="bomData"></pre>
+</section>
 
-    <!-- Dashboard -->
-    <section>
-        <h2>Team Dashboard</h2>
-        <button id="fetchDashboard">Get Dashboard Data</button>
-        <div id="dashboard"></div>
-    </section>
+<!-- Dashboard -->
+<section>
+    <h2>Team Dashboard</h2>
+    <button id="fetchDashboard">Get Dashboard Data</button>
+    <div id="dashboard"></div>
+</section>
 
-    <!-- Include your external JavaScript file -->
-    <script src="script.js"></script>
+<!-- Include your external JavaScript file -->
+<script src="script.js"></script>
+<script>
+    const API_BASE_URL = 'https://frcbom-production.up.railway.app/';
+
+    async function fetchBom(documentUrl) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/bom`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ document_url: documentUrl })
+            });
+
+            const data = await response.json();
+            console.log(data);
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+</script>
 </body>
 </html>

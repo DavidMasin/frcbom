@@ -67,9 +67,7 @@ def register():
     return jsonify({"message": "Team registered successfully"}), 200
 
 
-# User Login
-class Team:
-    pass
+
 
 
 @app.route('/api/login', methods=['POST'])

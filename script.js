@@ -1,5 +1,5 @@
 // Replace with your actual backend URL from Railway
-const API_BASE_URL = 'https://frcbom-production.up.railway.app:5000';
+const API_BASE_URL = 'https://frcbom-production.up.railway.app';
 
 // Helper function to display messages
 function displayMessage(message) {

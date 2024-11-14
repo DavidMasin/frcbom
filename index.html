@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FRC BOM System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Link to your external CSS file if you have one -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>FRC BOM System</h1>
+
+    <!-- Registration Form -->
+    <section>
+        <h2>Register</h2>
+        <form id="registerForm">
+            <input type="text" id="registerTeamNumber" placeholder="Team Number" required>
+            <input type="password" id="registerPassword" placeholder="Password" required>
+            <button type="submit">Register</button>
+        </form>
+    </section>
+
+    <!-- Login Form -->
+    <section>
+        <h2>Login</h2>
+        <form id="loginForm">
+            <input type="text" id="loginTeamNumber" placeholder="Team Number" required>
+            <input type="password" id="loginPassword" placeholder="Password" required>
+            <button type="submit">Login</button>
+        </form>
+    </section>
+
+    <!-- BOM Fetch Form -->
+    <section>
+        <h2>Fetch BOM Data</h2>
+        <form id="bomForm">
+            <input type="text" id="documentUrl" placeholder="Onshape Document URL" required>
+            <button type="submit">Fetch BOM</button>
+        </form>
+    </section>
+
+    <!-- Display Area for BOM Data -->
+    <section>
+        <h2>BOM Data</h2>
+        <pre id="bomData"></pre>
+    </section>
+
+    <!-- Dashboard -->
+    <section>
+        <h2>Team Dashboard</h2>
+        <button id="fetchDashboard">Get Dashboard Data</button>
+        <div id="dashboard"></div>
+    </section>
+
+    <!-- Include your external JavaScript file -->
+    <script src="script.js"></script>
+</body>
+</html>

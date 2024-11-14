@@ -7,7 +7,7 @@ from onshape_client.client import Client
 from onshape_client.onshape_url import OnshapeElement
 
 app = Flask(__name__)
-app.config["JWT_SECRET_KEY"] = "your-secret-key"
+app.config["JWT_SECRET_KEY"] = "Ysm201996"
 jwt = JWTManager(app)
 CORS(app, resources={r"/*": {"origins": ["https://frcbom.com", "http://localhost:3000"]}})
 

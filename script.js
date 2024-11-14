@@ -93,7 +93,12 @@ document.getElementById('bomForm').addEventListener('submit', async function (e)
         });
 
         const data = await response.json();
-        document.getElementById('bomData').textContent = JSON.stringify(data, null, 2);
+        if (response.ok) {
+            const bomData = data.bom_data;
+            document.getElementById('bomData').textContent = JSON.stringify(bomData, null, 2);
+        } else {
+            alert(`Error: ${data.error}`);
+        }
     } catch (error) {
         console.error('Error:', error);
         alert('An error occurred while fetching BOM data.');

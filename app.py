@@ -98,6 +98,72 @@ def health_check():
 @app.route('/api/dashboard', methods=['GET'])
 def get_dashboard():
     return jsonify({"message": "This is a protected endpoint"}), 200
+# Helper functions
+def findIDs(bom_dict, IDName):
+    for head in bom_dict["headers"]:
+        if head['name'] == IDName:
+            return head['id']
+    return None
 
+def getPartsDict(bom_dict):
+    partDict = {}
+    rows = bom_dict.get("rows", [])
+    for row in rows:
+        part_name = row.get("headerIdToValue", {}).get("57f3fb8efa3416c06701d60d", "Unknown")
+        quantity = row.get("headerIdToValue", {}).get("5ace84d3c046ad611c65a0dd", "N/A")
+        part_material = row.get("headerIdToValue", {}).get("57f3fb8efa3416c06701d615", "Unknown")
+        if part_material != "N/A" and part_material is not None:
+            partDict[part_name] = (int(quantity), part_material["displayName"])
+        else:
+            partDict[part_name] = (int(quantity), "No material")
+    return partDict
+
+@app.route('/api/bom', methods=['POST'])
+def fetch_bom():
+    data = request.json
+    document_url = data.get("document_url")
+
+    if not document_url:
+        return jsonify({"error": "Document URL is required"}), 400
+
+    try:
+        element = OnshapeElement(document_url)
+        did = element.did
+        wid = element.wvmid
+        eid = element.eid
+        fixed_url = f'/api/v9/assemblies/d/{did}/w/{wid}/e/{eid}/bom'
+
+        headers = {
+            'Accept': 'application/vnd.onshape.v1+json; charset=UTF-8;qs=0.1',
+            'Content-Type': 'application/json'
+        }
+
+        print("Connecting to Onshape's API...")
+        response = client.api_client.request('GET', url=base + fixed_url, headers=headers)
+        print("Onshape API Connected.")
+
+        bom_dict = json.loads(response.data)
+
+        # Extract BOM data
+        process1ID = findIDs(bom_dict, "Process 1")
+        process2ID = findIDs(bom_dict, "Process 2")
+        DescriptionID = findIDs(bom_dict, "Description")
+
+        parts = getPartsDict(bom_dict)
+
+        # Prepare the response data
+        bom_data = []
+        for part_name, (quantity, material) in parts.items():
+            bom_data.append({
+                "Part Name": part_name,
+                "Quantity": quantity,
+                "Material": material
+            })
+
+        return jsonify({"bom_data": bom_data}), 200
+
+    except Exception as e:
+        print("Error fetching BOM:", str(e))
+        return jsonify({"error": str(e)}), 500
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

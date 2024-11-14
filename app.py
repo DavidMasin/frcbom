@@ -10,7 +10,7 @@ app = Flask(__name__)
 app.config["JWT_SECRET_KEY"] = "Ysm201996"
 jwt = JWTManager(app)
 
-CORS(app, resources={r"/*": {"origins": ["https://frcbom-production.up.railway.app"]}})
+CORS(app, resources={r"/*": {"origins": ["https://frcbom.com"]}})
 
 # Mock Database (Replace with a real database like PostgreSQL or MongoDB)
 teams = {}  # {team_number: {"password": str, "parts": list}}

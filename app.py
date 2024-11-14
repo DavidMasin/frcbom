@@ -15,7 +15,7 @@ app.config['JWT_SECRET_KEY'] = 'your_secret_key'  # Update this with a secure ke
 
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": ["https://frcbom.com"]}})
 
 class Team(db.Model):
     id = db.Column(db.Integer, primary_key=True)

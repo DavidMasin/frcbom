@@ -20,7 +20,8 @@ class Team(db.Model):
     password = db.Column(db.String(200), nullable=False)
     is_owner = db.Column(db.Boolean, default=False)
 
-db.create_all()
+with app.app_context():
+    db.create_all()
 jwt = JWTManager(app)
 owner_password = bcrypt.hashpw("yourOwnerPassword".encode('utf-8'), bcrypt.gensalt())
 owner_team = Team(team_number="Owner", password=owner_password, is_owner=True)

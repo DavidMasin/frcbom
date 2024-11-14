@@ -10,18 +10,22 @@ from onshape_client.client import Client
 from onshape_client.onshape_url import OnshapeElement
 
 app = Flask(__name__)
-app.config["JWT_SECRET_KEY"] = "Ysm201996"
-jwt = JWTManager(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///teams.db'
+app.config['JWT_SECRET_KEY'] = 'your_secret_key'  # Update this with a secure key
+
 db = SQLAlchemy(app)
+jwt = JWTManager(app)
+CORS(app)
+
 class Team(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     team_number = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
-    is_owner = db.Column(db.Boolean, default=False)
-CORS(app, resources={r"/*": {"origins": ["https://frcbom.com"]}})
-db.create_all()
-# Mock Database (Replace with a real database like PostgreSQL or MongoDB)
+
+# Create tables within the application context
+with app.app_context():
+    db.create_all()
+
 teams = {}  # {team_number: {"password": str, "parts": list}}
 
 # Onshape API Client Setup

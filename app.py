@@ -11,12 +11,13 @@ from onshape_client.onshape_url import OnshapeElement
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///teams.db'
-app.config['JWT_SECRET_KEY'] = 'your_secret_key'  # Update this with a secure key
+app.config['JWT_SECRET_KEY'] = 'ysm201996'  # Update this with a secure key
 
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
-CORS(app, resources={r"/*": {"origins": ["https://frcbom.com"]}})
-
+CORS(app, resources={r"/*": {"origins": ["https://frcbom.com"]}},
+     methods=["GET", "POST", "PUT", "DELETE"],
+     allow_headers=["Content-Type", "Authorization"])
 class Team(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     team_number = db.Column(db.String(100), unique=True, nullable=False)

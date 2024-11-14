@@ -4,3 +4,5 @@ Flask-CORS
 pandas
 requests
 onshape-client
+bcrypt
+flask_sqlalchemy

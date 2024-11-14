@@ -128,6 +128,7 @@ def fetch_bom():
 
     try:
         element = OnshapeElement(document_url)
+
         did = element.did
         wid = element.wvmid
         eid = element.eid
@@ -139,7 +140,7 @@ def fetch_bom():
         }
 
         print("Connecting to Onshape's API...")
-        response = client.api_client.request('GET', url=base + fixed_url, headers=headers)
+        response = client.api_client.request('GET', url=base_url + fixed_url, headers=headers)
         print("Onshape API Connected.")
 
         bom_dict = json.loads(response.data)

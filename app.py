@@ -16,8 +16,9 @@ app.config['JWT_SECRET_KEY'] = 'ysm201996'  # Update this with a secure key
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
 CORS(app, resources={r"/*": {"origins": ["https://frcbom.com"]}},
-     methods=["GET", "POST", "PUT", "DELETE"],
-     allow_headers=["Content-Type", "Authorization"])
+     supports_credentials=True,
+     methods=["GET", "POST", "OPTIONS"],
+     allow_headers=["Content-Type", "Authorization", "X-Requested-With"])
 class Team(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     team_number = db.Column(db.String(100), unique=True, nullable=False)

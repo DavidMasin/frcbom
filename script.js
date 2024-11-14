@@ -61,7 +61,7 @@ document.getElementById('loginForm').addEventListener('submit', async function (
             localStorage.setItem('jwt_token', data.access_token);
             localStorage.setItem('team_number', data.team_number);
             displayMessage('Login successful!');
-            displayGreeting(); // Call the function to display the greeting
+            displayGreeting();
         } else {
             displayMessage(`Error: ${data.error}`);
         }
@@ -70,6 +70,7 @@ document.getElementById('loginForm').addEventListener('submit', async function (
         displayMessage('An error occurred during login.');
     }
 });
+
 function displayGreeting() {
     const teamNumber = localStorage.getItem('team_number');
     const greetingDiv = document.getElementById('greetingMessage');

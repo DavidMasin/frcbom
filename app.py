@@ -26,8 +26,6 @@ class Team(db.Model):
 with app.app_context():
     db.create_all()
 
-teams = {}  # {team_number: {"password": str, "parts": list}}
-
 # Onshape API Client Setup
 access_key = 'your-access-key'
 secret_key = 'your-secret-key'
@@ -52,109 +50,52 @@ def fetch_bom_data(document_url):
     return json.loads(response.data)
 
 
-# User Registration
+# In-memory dictionary to store team data
+teams = {}
+
+# Register endpoint
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.json
     team_number = data['team_number']
     password = data['password']
 
-    # Hash the password
-    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+    # Check if the team is already registered
+    if team_number in teams:
+        return jsonify({"error": "Team already exists"}), 400
 
-    # Store the hashed password (not plain text)
-    teams[team_number] = {"password": hashed_password, "parts": []}
+    # Store the team number and password (plain text)
+    teams[team_number] = {"password": password, "parts": {}}
     return jsonify({"message": "Team registered successfully"}), 200
 
-
-
-
-
+# Login endpoint
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json
     team_number = data['team_number']
     password = data['password']
 
-    team = Team.query.filter_by(team_number=team_number).first()
-    if team and bcrypt.checkpw(password.encode('utf-8'), team.password):
-        access_token = create_access_token(identity=team.team_number)
-        return jsonify(access_token=access_token, team_number=team.team_number), 200
+    # Check if the team is registered
+    if team_number not in teams:
+        return jsonify({"error": "Invalid credentials"}), 401
 
-    return jsonify({"error": "Invalid credentials"}), 401
+    # Verify the password
+    if teams[team_number]['password'] != password:
+        return jsonify({"error": "Invalid credentials"}), 401
 
+    # Generate a JWT token
+    access_token = create_access_token(identity=team_number)
+    return jsonify(access_token=access_token, team_number=team_number), 200
 
-# Fetch BOM Data
-@app.route('/api/bom', methods=['POST'])
-@jwt_required()
-def get_bom():
-    data = request.json
-    document_url = data['document_url']
-
-    try:
-        bom_data = fetch_bom_data(document_url)
-        return jsonify(bom_data), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-# Update Part Status
-@app.route('/api/update-part', methods=['POST'])
-@jwt_required()
-def update_part_status():
-    team_number = get_jwt_identity()
-    data = request.json
-    part_name = data['part_name']
-    new_status = data['status']
-
-    # Find the part and update its status
-    parts = teams[team_number]['parts']
-    for part in parts:
-        if part['name'] == part_name:
-            part['status'] = new_status
-            return jsonify({"message": "Part status updated"}), 200
-
-    return jsonify({"error": "Part not found"}), 404
-
-
-# Get Dashboard Data
-@app.route('/api/dashboard', methods=['GET'])
-@jwt_required()
-def get_dashboard():
-    team_number = get_jwt_identity()
-    parts = teams[team_number]['parts']
-
-    # Filter parts based on their process status
-    cnc_parts = [part for part in parts if part['status'] == 'CNC' and part.get('pre_process_done', False)]
-    lathe_parts = [part for part in parts if part['status'] == 'Lathe']
-    mill_parts = [part for part in parts if part['status'] == 'Mill']
-
-    dashboard_data = {
-        "CNC": cnc_parts,
-        "Lathe": lathe_parts,
-        "Mill": mill_parts
-    }
-
-    return jsonify(dashboard_data), 200
-
-
-# Health Check
+# Health check endpoint
 @app.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({"status": "API is running"}), 200
 
+# Protected endpoint (example)
+@app.route('/api/dashboard', methods=['GET'])
+def get_dashboard():
+    return jsonify({"message": "This is a protected endpoint"}), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
-# from flask import Flask, jsonify
-# from flask_cors import CORS
-#
-# app = Flask(__name__)
-# CORS(app)
-#
-# @app.route('/api/health', methods=['GET'])
-# def health_check():
-#     return jsonify({"status": "API is running"}), 200
-#
-# if __name__ == '__main__':
-#     app.run(host='0.0.0.0', port=5000)

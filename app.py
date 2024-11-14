@@ -1,3 +1,4 @@
+import bcrypt
 from flask import Flask, request, jsonify
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from flask_cors import CORS
@@ -5,10 +6,26 @@ import json
 # import pandas as pd
 from onshape_client.client import Client
 from onshape_client.onshape_url import OnshapeElement
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 app.config["JWT_SECRET_KEY"] = "Ysm201996"
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///teams.db'
+db = SQLAlchemy(app)
+
+class Team(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    team_number = db.Column(db.String(100), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+    is_owner = db.Column(db.Boolean, default=False)
+
+db.create_all()
 jwt = JWTManager(app)
+owner_password = bcrypt.hashpw("yourOwnerPassword".encode('utf-8'), bcrypt.gensalt())
+owner_team = Team(team_number="Owner", password=owner_password, is_owner=True)
+db.session.add(owner_team)
+db.session.commit()
 
 CORS(app, resources={r"/*": {"origins": ["https://frcbom.com"]}})
 
@@ -45,13 +62,13 @@ def register():
     data = request.json
     team_number = data['team_number']
     password = data['password']
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
-    if team_number in teams:
-        return jsonify({"error": "Team already exists"}), 400
+    new_team = Team(team_number=team_number, password=hashed_password)
+    db.session.add(new_team)
+    db.session.commit()
 
-    teams[team_number] = {"password": password, "parts": []}
     return jsonify({"message": "Team registered successfully"}), 200
-
 
 # User Login
 @app.route('/api/login', methods=['POST'])
@@ -60,11 +77,12 @@ def login():
     team_number = data['team_number']
     password = data['password']
 
-    if team_number not in teams or teams[team_number]['password'] != password:
-        return jsonify({"error": "Invalid credentials"}), 401
+    team = Team.query.filter_by(team_number=team_number).first()
+    if team and bcrypt.checkpw(password.encode('utf-8'), team.password):
+        access_token = create_access_token(identity=team.team_number)
+        return jsonify(access_token=access_token, is_owner=team.is_owner), 200
 
-    access_token = create_access_token(identity=team_number)
-    return jsonify(access_token=access_token), 200
+    return jsonify({"error": "Invalid credentials"}), 401
 
 
 # Fetch BOM Data
@@ -126,6 +144,19 @@ def get_dashboard():
 def health_check():
     return jsonify({"status": "API is running"}), 200
 
+
+@app.route('/api/teams', methods=['GET'])
+@jwt_required()
+def list_teams():
+    current_user = get_jwt_identity()
+    owner = Team.query.filter_by(team_number=current_user).first()
+
+    if not owner or not owner.is_owner:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    teams = Team.query.all()
+    teams_data = [{"team_number": team.team_number, "is_owner": team.is_owner} for team in teams]
+    return jsonify(teams_data), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

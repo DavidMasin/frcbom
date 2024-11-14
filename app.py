@@ -1,3 +1,4 @@
+import bcrypt
 from flask import Flask, request, jsonify
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from flask_cors import CORS
@@ -46,10 +47,11 @@ def register():
     team_number = data['team_number']
     password = data['password']
 
-    if team_number in teams:
-        return jsonify({"error": "Team already exists"}), 400
+    # Hash the password
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
-    teams[team_number] = {"password": password, "parts": []}
+    # Store the hashed password (not plain text)
+    teams[team_number] = {"password": hashed_password, "parts": []}
     return jsonify({"message": "Team registered successfully"}), 200
 
 
@@ -60,11 +62,16 @@ def login():
     team_number = data['team_number']
     password = data['password']
 
-    if team_number not in teams or teams[team_number]['password'] != password:
+    if team_number not in teams:
         return jsonify({"error": "Invalid credentials"}), 401
 
-    access_token = create_access_token(identity=team_number)
-    return jsonify(access_token=access_token), 200
+    # Verify the hashed password
+    stored_password = teams[team_number]['password']
+    if bcrypt.checkpw(password.encode('utf-8'), stored_password):
+        access_token = create_access_token(identity=team_number)
+        return jsonify(access_token=access_token), 200
+    else:
+        return jsonify({"error": "Invalid credentials"}), 401
 
 
 # Fetch BOM Data

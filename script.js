@@ -55,7 +55,7 @@ document.getElementById('fetchBOMButton')?.addEventListener('click', async () =>
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ document_url: documentUrl })
+            body: JSON.stringify({ document_url: documentUrl ,team_number:teamNumber})
         });
 
         const data = await response.json();

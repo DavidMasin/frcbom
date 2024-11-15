@@ -128,6 +128,9 @@ async function fetchBOMData(documentUrl = null) {
 
 // Display BOM data in the table
 function displayBOM(bomData) {
+    // Store the BOM data in localStorage
+    localStorage.setItem('bom_data', JSON.stringify(bomData));
+
     const tableBody = document.querySelector('#bomTable tbody');
     tableBody.innerHTML = '';
 
@@ -144,7 +147,19 @@ function displayBOM(bomData) {
         tableBody.innerHTML += row;
     });
 }
-
+document.addEventListener('DOMContentLoaded', () => {
+    const savedBOMData = localStorage.getItem('bom_data');
+    if (savedBOMData) {
+        const bomData = JSON.parse(savedBOMData);
+        displayBOM(bomData);
+    } else {
+        console.log('No BOM data found in localStorage.');
+    }
+});
+document.getElementById('logoutButton')?.addEventListener('click', () => {
+    localStorage.clear();
+    window.location.href = 'index.html';
+});
 // Logout Function
 document.getElementById('logoutButton')?.addEventListener('click', () => {
     localStorage.clear();

@@ -1,155 +1,86 @@
 const API_BASE_URL = 'https://frcbom-production.up.railway.app';
-let socket; // Declare socket variable globally
 let teamNumber = localStorage.getItem('team_number');
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Initialize WebSocket connection
-    try {
-        socket = io('https://frcbom-production.up.railway.app');
+// Fetch BOM Data when the page loads
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('Fetching BOM data for team:', teamNumber);
 
-        socket.on('connect', () => {
-            console.log('WebSocket connection established.');
-        });
-
-        socket.on('connect_error', (error) => {
-            console.error('WebSocket connection error:', error);
-        });
-
-        // Listen for real-time updates from the server
-        socket.on('update_bom', (data) => {
-            const { team_number, bom_data } = data;
-            if (team_number === teamNumber) {
-                console.log('Real-time BOM update received');
-                displayBOM(bom_data);
-            }
-        });
-    } catch (error) {
-        console.error('Socket.IO Initialization Error:', error);
-    }
-
-    // Update team number text
-    const teamNumberElement = document.getElementById('teamNumber');
-
-    if (teamNumberElement && teamNumber) {
-        teamNumberElement.textContent = teamNumber;
-    } else {
-        console.warn('Element #teamNumber not found or team number is missing.');
-    }
-});
-
-// Redirect to registration page
-document.getElementById('registerButton')?.addEventListener('click', () => {
-    window.location.href = 'register.html';
-});
-
-// Handle Login
-document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const teamNumber = document.getElementById('loginTeamNumber').value;
-    const password = document.getElementById('loginPassword').value;
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ team_number: teamNumber, password })
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-            localStorage.setItem('jwt_token', data.access_token);
-            localStorage.setItem('team_number', teamNumber);
-            window.location.href = 'dashboard.html';
-        } else {
-            document.getElementById('loginMessage').textContent = data.error;
-        }
-    } catch (error) {
-        console.error('Login Error:', error);
-    }
-});
-
-// Fetch BOM Data from Onshape Document URL
-document.getElementById('fetchBOMButton')?.addEventListener('click', async () => {
-    const documentUrl = document.getElementById('onshapeDocumentUrl').value;
-    const token = localStorage.getItem('jwt_token');
-
-    if (!documentUrl) {
-        alert('Please enter an Onshape Document URL.');
+    if (!teamNumber) {
+        console.error('Team number is missing. Please log in.');
         return;
     }
 
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/bom`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ document_url: documentUrl, team_number: teamNumber })
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-            displayBOM(data.bom_data);
-        } else {
-            alert(`Error: ${data.error}`);
-        }
-    } catch (error) {
-        console.error('Fetch BOM Error:', error);
-        alert('An error occurred while fetching BOM data.');
-    }
-});
-
-// Function to fetch BOM data and update the table
-async function fetchBOMData(documentUrl = null) {
-    const token = localStorage.getItem('jwt_token');
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/bom`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ document_url: documentUrl, team_number: teamNumber })
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-            displayBOM(data.bom_data);
-            await saveBOMData(data.bom_data);
-        } else {
-            alert(`Error: ${data.error}`);
-        }
-    } catch (error) {
-        console.error('Fetch BOM Error:', error);
-    }
-}
-document.addEventListener('DOMContentLoaded', async () => {
-    const savedBOMData = await getBOMData();
-    if (savedBOMData) {
-        displayBOM(savedBOMData);
+    const bomData = await getBOMData();
+    if (bomData.length > 0) {
+        console.log('BOM data loaded successfully:', bomData);
+        displayBOM(bomData);
     } else {
-        console.log('No saved BOM data found for this team.');
+        console.log('No BOM data found for this team.');
     }
 });
 
-// Function to retrieve BOM data from the server per team
+// Function to fetch BOM data from the server
 async function getBOMData() {
     try {
         const response = await fetch(`${API_BASE_URL}/api/get_bom?team_number=${teamNumber}`);
         const data = await response.json();
         if (response.ok) {
             return data.bom_data;
+        } else {
+            console.error('Failed to retrieve BOM data:', data.error);
+            return [];
         }
-        return [];
     } catch (error) {
         console.error('Get BOM Data Error:', error);
         return [];
     }
 }
-// Function to save BOM data to the server per team
+
+// Function to display BOM data in the table
+function displayBOM(bomData) {
+    const tableBody = document.querySelector('#bomTable tbody');
+    tableBody.innerHTML = ''; // Clear existing rows
+
+    bomData.forEach(item => {
+        const row = `<tr>
+            <td>${item["Part Name"]}</td>
+            <td>${item.Description || 'N/A'}</td>
+            <td>${item.Material || 'N/A'}</td>
+            <td>${item.Quantity || 'N/A'}</td>
+            <td>${item.preProcess || 'N/A'}</td>
+            <td>${item.Process1 || 'N/A'}</td>
+            <td>${item.Process2 || 'N/A'}</td>
+        </tr>`;
+        tableBody.innerHTML += row;
+    });
+}
+
+// Button to manually fetch BOM data from Onshape and save it
+document.getElementById('fetchBOMButton')?.addEventListener('click', async () => {
+    const documentUrl = document.getElementById('onshapeDocumentUrl').value;
+    if (!documentUrl) {
+        alert('Please enter an Onshape Document URL.');
+        return;
+    }
+
+    const bomData = await fetchBOMFromOnshape(documentUrl);
+    if (bomData) {
+        await saveBOMData(bomData);
+        displayBOM(bomData);
+    }
+});
+
+// Function to fetch BOM data from Onshape (dummy function for testing)
+async function fetchBOMFromOnshape(documentUrl) {
+    console.log('Fetching BOM data from Onshape for URL:', documentUrl);
+    // Replace this with your actual Onshape API integration
+    return [
+        { "Part Name": "Part1", "Description": "Test Part", "Material": "Aluminum", "Quantity": 10 },
+        { "Part Name": "Part2", "Description": "Test Part 2", "Material": "Steel", "Quantity": 5 }
+    ];
+}
+
+// Function to save BOM data to the server
 async function saveBOMData(bomData) {
     try {
         const response = await fetch(`${API_BASE_URL}/api/save_bom`, {
@@ -158,7 +89,9 @@ async function saveBOMData(bomData) {
             body: JSON.stringify({ team_number: teamNumber, bom_data: bomData })
         });
 
-        if (!response.ok) {
+        if (response.ok) {
+            console.log('BOM data saved successfully.');
+        } else {
             console.error('Failed to save BOM data.');
         }
     } catch (error) {
@@ -166,76 +99,8 @@ async function saveBOMData(bomData) {
     }
 }
 
-// Display BOM data in the table
-function displayBOM(bomData) {
-    // Store the BOM data in localStorage
-    localStorage.setItem('bom_data', JSON.stringify(bomData));
-
-    const tableBody = document.querySelector('#bomTable tbody');
-    tableBody.innerHTML = '';
-
-    bomData.forEach(item => {
-        const row = `<tr>
-            <td>${item["Part Name"]}</td>
-            <td>${item.Description || 'N/A'}</td>
-            <td>${item.Material}</td>
-            <td>${item.Quantity}</td>
-            <td>${item.preProcess || 'N/A'}</td>
-            <td>${item.Process1 || 'N/A'}</td>
-            <td>${item.Process2 || 'N/A'}</td>
-        </tr>`;
-        tableBody.innerHTML += row;
-    });
-}
-document.addEventListener('DOMContentLoaded', () => {
-    const savedBOMData = localStorage.getItem('bom_data');
-    if (savedBOMData) {
-        const bomData = JSON.parse(savedBOMData);
-        displayBOM(bomData);
-    } else {
-        console.log('No BOM data found in localStorage.');
-    }
-});
-document.getElementById('logoutButton')?.addEventListener('click', () => {
-    localStorage.clear();
-    window.location.href = 'index.html';
-});
 // Logout Function
 document.getElementById('logoutButton')?.addEventListener('click', () => {
     localStorage.clear();
-    window.location.href = 'index.html';
-});
-
-// Handle Registration
-document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const teamNumber = document.getElementById('registerTeamNumber').value;
-    const password = document.getElementById('registerPassword').value;
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ team_number: teamNumber, password })
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-            document.getElementById('registerMessage').textContent = 'Registration successful! You can now sign in.';
-            document.getElementById('registerMessage').style.color = 'green';
-        } else {
-            document.getElementById('registerMessage').textContent = `Error: ${data.error}`;
-            document.getElementById('registerMessage').style.color = 'red';
-        }
-    } catch (error) {
-        console.error('Registration Error:', error);
-        document.getElementById('registerMessage').textContent = 'An error occurred during registration.';
-        document.getElementById('registerMessage').style.color = 'red';
-    }
-});
-
-// Redirect to Sign In page
-document.getElementById('backToLogin')?.addEventListener('click', () => {
     window.location.href = 'index.html';
 });

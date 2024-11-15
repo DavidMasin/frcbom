@@ -76,15 +76,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Display team number in header
     document.getElementById('teamNumber').textContent = teamNumber;
 
-    // Load saved BOM data from localStorage
-    const savedBOMData = getSavedBOMData();
-    if (savedBOMData) {
-        console.log('Loaded saved BOM data:', savedBOMData);
-        displayBOM(savedBOMData);
-    }
+    // Fetch BOM data from the server on page load
+    fetchBOMDataFromServer();
 });
 
-// Function to handle fetching BOM data
+// Function to handle fetching BOM data from Onshape
 async function handleFetchBOM() {
     const documentUrl = document.getElementById('onshapeDocumentUrl').value;
     if (!documentUrl) {
@@ -112,7 +108,7 @@ async function handleFetchBOM() {
         const data = await response.json();
         if (response.ok) {
             console.log('Fetched BOM data:', data.bom_data);
-            saveBOMData(data.bom_data);
+            await saveBOMDataToServer(data.bom_data);
             displayBOM(data.bom_data);
         } else {
             console.error('Failed to fetch BOM data:', data.error);
@@ -124,18 +120,40 @@ async function handleFetchBOM() {
     }
 }
 
-// Function to save BOM data to localStorage
-function saveBOMData(bomData) {
-    const bomDict = JSON.parse(localStorage.getItem('bom_data')) || {};
-    bomDict[teamNumber] = bomData;
-    localStorage.setItem('bom_data', JSON.stringify(bomDict));
-    console.log('BOM data saved to localStorage for team:', teamNumber);
+// Function to save BOM data to the server
+async function saveBOMDataToServer(bomData) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/save_bom`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ team_number: teamNumber, bom_data: bomData })
+        });
+
+        if (response.ok) {
+            console.log('BOM data saved to the server successfully.');
+        } else {
+            console.error('Failed to save BOM data to the server.');
+        }
+    } catch (error) {
+        console.error('Save BOM Data Error:', error);
+    }
 }
 
-// Function to get saved BOM data from localStorage
-function getSavedBOMData() {
-    const bomDict = JSON.parse(localStorage.getItem('bom_data')) || {};
-    return bomDict[teamNumber] || null;
+// Function to fetch BOM data from the server
+async function fetchBOMDataFromServer() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/get_bom?team_number=${teamNumber}`);
+        const data = await response.json();
+        if (response.ok) {
+            console.log('Loaded BOM data from the server:', data.bom_data);
+            displayBOM(data.bom_data);
+        } else {
+            console.error('Failed to retrieve BOM data from the server:', data.error);
+            alert(`Error: ${data.error}`);
+        }
+    } catch (error) {
+        console.error('Fetch BOM Data Error:', error);
+    }
 }
 
 // Function to display BOM data in the table

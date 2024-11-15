@@ -94,3 +94,36 @@ document.getElementById('logoutButton')?.addEventListener('click', () => {
     localStorage.clear();
     window.location.href = 'index.html';
 });
+// Handle Registration
+document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const teamNumber = document.getElementById('registerTeamNumber').value;
+    const password = document.getElementById('registerPassword').value;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ team_number: teamNumber, password })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            document.getElementById('registerMessage').textContent = 'Registration successful! You can now sign in.';
+            document.getElementById('registerMessage').style.color = 'green';
+        } else {
+            document.getElementById('registerMessage').textContent = `Error: ${data.error}`;
+            document.getElementById('registerMessage').style.color = 'red';
+        }
+    } catch (error) {
+        console.error('Registration Error:', error);
+        document.getElementById('registerMessage').textContent = 'An error occurred during registration.';
+        document.getElementById('registerMessage').style.color = 'red';
+    }
+});
+
+// Redirect to Sign In page
+document.getElementById('backToLogin')?.addEventListener('click', () => {
+    window.location.href = 'index.html';
+});

@@ -136,7 +136,17 @@ def getPartsDict(bom_dict, partNameID, DescriptionID, quantityID, materialID, ma
                                    int(quantity), "No material set", part_material_bom, part_preProcess, part_process1,
                                    part_process2)
     return partDict
+@app.route('/api/register', methods=['POST'])
+def register():
+    data = request.json
+    team_number = data['team_number']
+    password = data['password']
 
+    if team_number in teams:
+        return jsonify({"error": "Team already exists"}), 400
+
+    teams[team_number] = {"password": password, "parts": []}
+    return jsonify({"message": "Team registered successfully"}), 200
 
 @app.route('/api/bom', methods=['POST'])
 def fetch_bom():

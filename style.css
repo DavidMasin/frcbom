@@ -11,81 +11,10 @@ body {
     background-color: #f0f0f0;
     color: #333;
     padding: 20px;
-    overflow-y: auto; /* Allow vertical scrolling */
+    overflow-y: auto;
     display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    min-height: 100vh;
-}
-
-/* Container Styling */
-.container {
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    width: 300px;
-    max-width: 100%;
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-/* Headings */
-h1, h2 {
-    color: #333;
-    margin-bottom: 20px;
-}
-
-h1 {
-    font-size: 1.8em;
-}
-
-h2 {
-    font-size: 1.5em;
-}
-
-/* Form Styling */
-.form input {
-    width: 100%;
-    padding: 12px;
-    margin: 10px 0;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-button {
-    width: 100%;
-    padding: 12px;
-    background-color: #007BFF;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-    margin-top: 10px;
-}
-
-button:hover {
-    background-color: #0056b3;
-}
-
-/* Link Button Styling */
-.link-button {
-    background-color: transparent;
-    color: #007BFF;
-    border: none;
-    cursor: pointer;
-    margin-top: 20px;
-}
-
-.link-button:hover {
-    color: #0056b3;
-}
-
-/* Message Styling */
-#loginMessage, #registerMessage {
-    color: red;
-    margin-top: 10px;
+    flex-direction: column;
+    align-items: center;
 }
 
 /* Header Styling */
@@ -97,9 +26,7 @@ header {
     padding: 15px;
     border-radius: 8px;
     margin-bottom: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    text-align: center;
 }
 
 header h1 {
@@ -113,21 +40,16 @@ header button {
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-weight: bold;
 }
 
 header button:hover {
     background-color: #e03e3e;
 }
 
-/* Dashboard Container Styling */
+/* Dashboard Input and Button Styling */
 .dashboard-container {
     width: 100%;
     max-width: 800px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
     margin-bottom: 20px;
 }
 
@@ -136,6 +58,7 @@ header button:hover {
     padding: 12px;
     border: 1px solid #ccc;
     border-radius: 4px;
+    margin-bottom: 10px;
 }
 
 #fetchBOMButton {
@@ -146,7 +69,6 @@ header button:hover {
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-weight: bold;
 }
 
 #fetchBOMButton:hover {
@@ -161,14 +83,12 @@ header button:hover {
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    margin-bottom: 20px;
-    overflow-x: auto; /* Allow horizontal scrolling */
+    margin-top: 20px;
 }
 
 .bom-table-container h2 {
-    margin-bottom: 10px;
-    color: #333;
     text-align: center;
+    margin-bottom: 10px;
 }
 
 #bomTable {
@@ -181,15 +101,11 @@ header button:hover {
     padding: 12px;
     text-align: left;
     border-bottom: 1px solid #ddd;
-    white-space: nowrap;
 }
 
 #bomTable th {
     background-color: #007BFF;
     color: #fff;
-    position: sticky;
-    top: 0;
-    z-index: 1;
 }
 
 #bomTable tr:nth-child(even) {
@@ -200,12 +116,10 @@ header button:hover {
     background-color: #e0f7ff;
 }
 
-/* Table Container Scroll */
+/* Table Scroll */
 .bom-table-container {
     max-height: 500px;
     overflow-y: auto;
-    border: 1px solid #ccc;
-    border-radius: 8px;
 }
 
 /* Responsive Design */
@@ -214,12 +128,8 @@ header button:hover {
         font-size: 1.2em;
     }
 
-    #onshapeDocumentUrl {
-        padding: 10px;
-    }
-
-    #fetchBOMButton,
-    header button {
+    #onshapeDocumentUrl,
+    #fetchBOMButton {
         padding: 10px;
         font-size: 0.9em;
     }

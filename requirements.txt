@@ -6,4 +6,4 @@ requests
 onshape-client
 bcrypt
 flask_sqlalchemy
-flask-socketio
+flask-socketio==5.3.4

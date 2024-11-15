@@ -37,8 +37,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const teamNumber = localStorage.getItem('team_number');
     document.getElementById('teamNumber').textContent = teamNumber;
 });
-const socket = io(API_BASE_URL);
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        const socket = io.connect('https://frcbom-production.up.railway.app');
 
+        socket.on('connect', () => {
+            console.log('WebSocket connection established.');
+        });
+
+        socket.on('connect_error', (error) => {
+            console.error('WebSocket connection error:', error);
+        });
+    } catch (error) {
+        console.error('Socket.IO Initialization Error:', error);
+    }
+});
 let teamNumber = localStorage.getItem('team_number');
 // Fetch BOM Data from Onshape Document URL
 document.getElementById('fetchBOMButton')?.addEventListener('click', async () => {

@@ -1,15 +1,17 @@
 const API_BASE_URL = 'https://frcbom-production.up.railway.app';
-let socket; // Declare socket variable globally
 let teamNumber = localStorage.getItem('team_number');
 
-// Redirect to login page if team number is missing
-if (!teamNumber) {
+// Check if we are on a protected page (e.g., `dashboard.html`)
+const currentPage = window.location.pathname;
+
+if (currentPage.includes('dashboard.html') && !teamNumber) {
     alert('You are not logged in. Redirecting to login page...');
     window.location.href = 'index.html';
 }
 
 // Initialize WebSocket connection
 document.addEventListener('DOMContentLoaded', () => {
+    let socket;
     try {
         socket = io(API_BASE_URL);
 
@@ -24,11 +26,13 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('Socket.IO Initialization Error:', error);
     }
 
-    // Fetch and display BOM data
-    fetchAndDisplayBOMData();
+    // Fetch and display BOM data if on the dashboard page
+    if (currentPage.includes('dashboard.html')) {
+        fetchAndDisplayBOMData();
+    }
 });
 
-// Function to fetch and display BOM data
+// Fetch BOM Data and Display it
 async function fetchAndDisplayBOMData() {
     const bomData = await getBOMData();
     if (bomData.length > 0) {
@@ -56,7 +60,7 @@ async function getBOMData() {
     }
 }
 
-// Function to display BOM data in the table
+// Display BOM Data
 function displayBOM(bomData) {
     const tableBody = document.querySelector('#bomTable tbody');
     tableBody.innerHTML = ''; // Clear existing rows
@@ -73,49 +77,6 @@ function displayBOM(bomData) {
         </tr>`;
         tableBody.innerHTML += row;
     });
-}
-
-// Fetch BOM data from Onshape Document URL
-document.getElementById('fetchBOMButton')?.addEventListener('click', async () => {
-    const documentUrl = document.getElementById('onshapeDocumentUrl').value;
-    if (!documentUrl) {
-        alert('Please enter an Onshape Document URL.');
-        return;
-    }
-
-    const bomData = await fetchBOMFromOnshape(documentUrl);
-    if (bomData) {
-        await saveBOMData(bomData);
-        displayBOM(bomData);
-    }
-});
-
-// Function to fetch BOM data from Onshape (Dummy function for testing)
-async function fetchBOMFromOnshape(documentUrl) {
-    console.log('Fetching BOM data from Onshape for URL:', documentUrl);
-    return [
-        { "Part Name": "Part1", "Description": "Test Part", "Material": "Aluminum", "Quantity": 10 },
-        { "Part Name": "Part2", "Description": "Test Part 2", "Material": "Steel", "Quantity": 5 }
-    ];
-}
-
-// Function to save BOM data to the server
-async function saveBOMData(bomData) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/save_bom`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ team_number: teamNumber, bom_data: bomData })
-        });
-
-        if (response.ok) {
-            console.log('BOM data saved successfully.');
-        } else {
-            console.error('Failed to save BOM data.');
-        }
-    } catch (error) {
-        console.error('Save BOM Data Error:', error);
-    }
 }
 
 // Logout Function

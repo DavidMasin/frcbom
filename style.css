@@ -74,16 +74,15 @@ button:hover {
 body {
     font-family: Arial, sans-serif;
     background-color: #f0f0f0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    color: #333;
     padding: 20px;
+    overflow-y: auto; /* Allow vertical scrolling */
 }
 
 /* Header styling */
 header {
     width: 100%;
-    max-width: 800px;
+    max-width: 1200px;
     background-color: #007BFF;
     color: #fff;
     padding: 15px;
@@ -116,7 +115,7 @@ header button:hover {
 /* Dashboard container styling */
 .dashboard-container {
     width: 100%;
-    max-width: 800px;
+    max-width: 1200px;
     display: flex;
     justify-content: center;
     gap: 10px;
@@ -132,7 +131,7 @@ header button:hover {
 
 #fetchBOMButton {
     padding: 10px 20px;
-    background-color: #007BFF;
+    background-color: #28a745;
     color: #fff;
     border: none;
     border-radius: 4px;
@@ -141,17 +140,18 @@ header button:hover {
 }
 
 #fetchBOMButton:hover {
-    background-color: #0056b3;
+    background-color: #218838;
 }
 
 /* BOM Table styling */
 .bom-table-container {
     width: 100%;
-    max-width: 800px;
+    max-width: 1200px;
     background-color: #fff;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    overflow-x: auto; /* Allow horizontal scrolling */
 }
 
 .bom-table-container h2 {
@@ -171,11 +171,15 @@ header button:hover {
     padding: 12px;
     text-align: left;
     border-bottom: 1px solid #ddd;
+    white-space: nowrap; /* Prevent text wrapping */
 }
 
 #bomTable th {
     background-color: #007BFF;
     color: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
 
 #bomTable tr:nth-child(even) {
@@ -186,7 +190,15 @@ header button:hover {
     background-color: #e0f7ff;
 }
 
-/* Responsive styling */
+/* Table Container Scroll */
+.bom-table-container {
+    max-height: 500px;
+    overflow-y: auto; /* Vertical scrolling for the table */
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+
+/* Responsive Design */
 @media (max-width: 600px) {
     header h1 {
         font-size: 1.2em;

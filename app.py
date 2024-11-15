@@ -3,10 +3,10 @@ import json
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token
+from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
 from onshape_client.client import Client
 from onshape_client.onshape_url import OnshapeElement
-from flask_socketio import SocketIO, emit
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///teams.db'
@@ -20,9 +20,13 @@ CORS(app, resources={r"/*": {"origins": ["https://frcbom.com"]}},
      allow_headers=["Content-Type", "Authorization", "X-Requested-With"])
 socketio = SocketIO(app, cors_allowed_origins="*")
 
+# In-memory dictionary to store BOM data per team
+bom_data_dict = {}
+bom_data_file = 'bom_data.json'  # File to persist BOM data
 # In-memory storage for BOM data per team
 teams = {}
 latest_bom_data = {}
+
 
 class Team(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -56,8 +60,6 @@ def fetch_bom_data(document_url):
 
     response = client.api_client.request('GET', url=base_url + fixed_url, headers=headers)
     return json.loads(response.data)
-
-
 
 
 # Register endpoint
@@ -185,12 +187,12 @@ def fetch_bom():
         print("Got parts!")
         # Prepare the response data
         bom_data = []
-        for part_name, (description,quantity, material, materialBOM, preProcess, Process1, Process2) in parts.items():
+        for part_name, (description, quantity, material, materialBOM, preProcess, Process1, Process2) in parts.items():
             bom_data.append({
                 "Part Name": part_name,
-                "Description" : description,
+                "Description": description,
                 "Quantity": quantity,
-                "Material":material,
+                "Material": material,
                 "materialBOM": materialBOM,
                 "preProcess": preProcess,
                 "Process1": Process1,
@@ -205,12 +207,80 @@ def fetch_bom():
         print("Error fetching BOM:", str(e))
         return jsonify({"error": str(e)}), 500
 
+
+# Helper function to load BOM data from file
+def load_bom_data():
+    global bom_data_dict
+    try:
+        with open(bom_data_file, 'r') as file:
+            bom_data_dict = json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        bom_data_dict = {}
+
+
+# Helper function to save BOM data to file
+def save_bom_data():
+    with open(bom_data_file, 'w') as file:
+        json.dump(bom_data_dict, file)
+
+
+# Load BOM data when the server starts
+load_bom_data()
+
+
+# Endpoint to save BOM data for a specific team
+@app.route('/api/save_bom', methods=['POST'])
+def save_bom():
+    data = request.json
+    team_number = data.get('team_number')
+    bom_data = data.get('bom_data')
+
+    if not team_number or not bom_data:
+        return jsonify({"error": "Team number and BOM data are required"}), 400
+
+    # Save BOM data for the team
+    bom_data_dict[team_number] = bom_data
+    save_bom_data()
+
+    return jsonify({"message": "BOM data saved successfully"}), 200
+
+
+# Endpoint to retrieve BOM data for a specific team
+@app.route('/api/get_bom', methods=['GET'])
+def get_bom():
+    team_number = request.args.get('team_number')
+
+    if not team_number:
+        return jsonify({"error": "Team number is required"}), 400
+
+    bom_data = bom_data_dict.get(team_number, [])
+    return jsonify({"bom_data": bom_data}), 200
+
+
+# Endpoint to clear BOM data for a specific team (Optional)
+@app.route('/api/clear_bom', methods=['POST'])
+def clear_bom():
+    data = request.json
+    team_number = data.get('team_number')
+
+    if not team_number:
+        return jsonify({"error": "Team number is required"}), 400
+
+    bom_data_dict.pop(team_number, None)
+    save_bom_data()
+
+    return jsonify({"message": "BOM data cleared successfully"}), 200
+
+
 @socketio.on('connect')
 def handle_connect():
     print('Client connected')
 
+
 @socketio.on('disconnect')
 def handle_disconnect():
     print('Client disconnected')
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

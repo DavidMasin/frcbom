@@ -118,11 +118,51 @@ async function fetchBOMData(documentUrl = null) {
         const data = await response.json();
         if (response.ok) {
             displayBOM(data.bom_data);
+            await saveBOMData(data.bom_data);
         } else {
             alert(`Error: ${data.error}`);
         }
     } catch (error) {
         console.error('Fetch BOM Error:', error);
+    }
+}
+document.addEventListener('DOMContentLoaded', async () => {
+    const savedBOMData = await getBOMData();
+    if (savedBOMData) {
+        displayBOM(savedBOMData);
+    } else {
+        console.log('No saved BOM data found for this team.');
+    }
+});
+
+// Function to retrieve BOM data from the server per team
+async function getBOMData() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/get_bom?team_number=${teamNumber}`);
+        const data = await response.json();
+        if (response.ok) {
+            return data.bom_data;
+        }
+        return [];
+    } catch (error) {
+        console.error('Get BOM Data Error:', error);
+        return [];
+    }
+}
+// Function to save BOM data to the server per team
+async function saveBOMData(bomData) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/save_bom`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ team_number: teamNumber, bom_data: bomData })
+        });
+
+        if (!response.ok) {
+            console.error('Failed to save BOM data.');
+        }
+    } catch (error) {
+        console.error('Save BOM Data Error:', error);
     }
 }
 

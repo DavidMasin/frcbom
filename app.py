@@ -142,6 +142,7 @@ def getPartsDict(bom_dict, partNameID, DescriptionID, quantityID, materialID, ma
 @app.route('/api/bom', methods=['POST'])
 def fetch_bom():
     data = request.json
+    print(data)
     document_url = data.get("document_url")
     team_number = data.get("team_number")
 

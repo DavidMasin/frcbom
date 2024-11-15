@@ -1,21 +1,94 @@
-/* Reset default styles */
+/* Global Reset */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+/* Global Styles */
 body {
     font-family: Arial, sans-serif;
     background-color: #f0f0f0;
     color: #333;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     padding: 20px;
+    overflow-y: auto; /* Allow vertical scrolling */
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
 }
 
-/* Header styling */
+/* Container Styling */
+.container {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 300px;
+    max-width: 100%;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* Headings */
+h1, h2 {
+    color: #333;
+    margin-bottom: 20px;
+}
+
+h1 {
+    font-size: 1.8em;
+}
+
+h2 {
+    font-size: 1.5em;
+}
+
+/* Form Styling */
+.form input {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    background-color: #007BFF;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+/* Link Button Styling */
+.link-button {
+    background-color: transparent;
+    color: #007BFF;
+    border: none;
+    cursor: pointer;
+    margin-top: 20px;
+}
+
+.link-button:hover {
+    color: #0056b3;
+}
+
+/* Message Styling */
+#loginMessage, #registerMessage {
+    color: red;
+    margin-top: 10px;
+}
+
+/* Header Styling */
 header {
     width: 100%;
     max-width: 800px;
@@ -24,7 +97,6 @@ header {
     padding: 15px;
     border-radius: 8px;
     margin-bottom: 20px;
-    text-align: center;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -48,7 +120,7 @@ header button:hover {
     background-color: #e03e3e;
 }
 
-/* Dashboard input and button styling */
+/* Dashboard Container Styling */
 .dashboard-container {
     width: 100%;
     max-width: 800px;
@@ -81,7 +153,7 @@ header button:hover {
     background-color: #218838;
 }
 
-/* BOM Table styling */
+/* BOM Table Styling */
 .bom-table-container {
     width: 100%;
     max-width: 800px;
@@ -89,7 +161,8 @@ header button:hover {
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    overflow-x: auto;
+    margin-bottom: 20px;
+    overflow-x: auto; /* Allow horizontal scrolling */
 }
 
 .bom-table-container h2 {
@@ -101,7 +174,6 @@ header button:hover {
 #bomTable {
     width: 100%;
     border-collapse: collapse;
-    overflow-x: auto;
 }
 
 #bomTable th,
@@ -115,6 +187,9 @@ header button:hover {
 #bomTable th {
     background-color: #007BFF;
     color: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
 
 #bomTable tr:nth-child(even) {
@@ -125,13 +200,24 @@ header button:hover {
     background-color: #e0f7ff;
 }
 
-/* Responsive styling */
+/* Table Container Scroll */
+.bom-table-container {
+    max-height: 500px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+
+/* Responsive Design */
 @media (max-width: 600px) {
     header h1 {
         font-size: 1.2em;
     }
 
-    #onshapeDocumentUrl,
+    #onshapeDocumentUrl {
+        padding: 10px;
+    }
+
     #fetchBOMButton,
     header button {
         padding: 10px;

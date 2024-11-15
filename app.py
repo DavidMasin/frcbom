@@ -172,7 +172,7 @@ def fetch_bom():
         part_nameID = findIDs(bom_dict, "Name")
         part_quantity = findIDs(bom_dict, "Quantity")
         part_materialID = findIDs(bom_dict, "Material")
-        part_materialBomID = findIDs(bom_dict, "Material BOM")
+        part_materialBomID = findIDs(bom_dict, "Bom Material")
         part_preProcessID = findIDs(bom_dict, "Pre Process")
         process1ID = findIDs(bom_dict, "Process 1")
         process2ID = findIDs(bom_dict, "Process 2")

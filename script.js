@@ -1,5 +1,10 @@
 const API_BASE_URL = 'https://frcbom-production.up.railway.app';
 
+// Redirect to registration page
+document.getElementById('registerButton')?.addEventListener('click', () => {
+    window.location.href = 'register.html';
+});
+
 // Handle Login
 document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -33,131 +38,15 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('teamNumber').textContent = teamNumber;
 });
 
-// Fetch BOM Data
-async function fetchBOM(filter = null) {
+// Fetch BOM Data from Onshape Document URL
+document.getElementById('fetchBOMButton')?.addEventListener('click', async () => {
+    const documentUrl = document.getElementById('onshapeDocumentUrl').value;
     const token = localStorage.getItem('jwt_token');
-    const response = await fetch(`${API_BASE_URL}/api/bom`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({})
-    });
 
-    const data = await response.json();
-    const tableBody = document.querySelector('#bomTable tbody');
-    tableBody.innerHTML = '';
-
-    data.bom_data
-        .filter(item => !filter || item.Process1 === filter)
-        .forEach(item => {
-            const row = `<tr>
-                <td>${item["Part Name"]}</td>
-                <td>${item.Description || 'N/A'}</td>
-                <td>${item.Material}</td>
-                <td>${item.Quantity}</td>
-                <td>${item.preProcess || 'N/A'}</td>
-                <td>${item.Process1 || 'N/A'}</td>
-                <td>${item.Process2 || 'N/A'}</td>
-            </tr>`;
-            tableBody.innerHTML += row;
-        });
-}
-
-// Dashboard Button Clicks
-document.getElementById('fetchCNC')?.addEventListener('click', () => fetchBOM('CNC'));
-document.getElementById('fetchLathe')?.addEventListener('click', () => fetchBOM('Lathe'));
-document.getElementById('fetch3DPrinter')?.addEventListener('click', () => fetchBOM('3D Printer'));
-document.getElementById('fetchAllParts')?.addEventListener('click', () => fetchBOM());
-
-// Logout Function
-document.getElementById('logoutButton')?.addEventListener('click', () => {
-    localStorage.clear();
-    window.location.href = 'index.html';
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-    displayGreeting();
-});
-
-// Display greeting message
-function displayGreeting() {
-    const teamNumber = localStorage.getItem('team_number');
-    const greetingDiv = document.getElementById('greetingMessage');
-
-    if (teamNumber) {
-        greetingDiv.textContent = `Hello, Team ${teamNumber}`;
-    } else {
-        greetingDiv.textContent = '';
+    if (!documentUrl) {
+        alert('Please enter an Onshape Document URL.');
+        return;
     }
-}
-
-// Registration function
-document.getElementById('registerForm').addEventListener('submit', async function (e) {
-    e.preventDefault();
-
-    const teamNumber = document.getElementById('registerTeamNumber').value;
-    const password = document.getElementById('registerPassword').value;
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/register`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ team_number: teamNumber, password: password })
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-            alert('Registration successful!');
-        } else {
-            alert(`Error: ${data.error}`);
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('An error occurred during registration.');
-    }
-});
-
-// Login function
-document.getElementById('loginForm').addEventListener('submit', async function (e) {
-    e.preventDefault();
-
-    const teamNumber = document.getElementById('loginTeamNumber').value;
-    const password = document.getElementById('loginPassword').value;
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ team_number: teamNumber, password: password })
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-            localStorage.setItem('jwt_token', data.access_token);
-            localStorage.setItem('team_number', data.team_number);
-            alert('Login successful!');
-            displayGreeting();
-        } else {
-            alert(`Error: ${data.error}`);
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('An error occurred during login.');
-    }
-});
-
-// Fetch BOM data
-document.getElementById('bomForm').addEventListener('submit', async function (e) {
-    e.preventDefault();
-
-    const documentUrl = document.getElementById('documentUrl').value;
-    const token = localStorage.getItem('jwt_token');
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/bom`, {
@@ -171,13 +60,37 @@ document.getElementById('bomForm').addEventListener('submit', async function (e)
 
         const data = await response.json();
         if (response.ok) {
-            const bomData = data.bom_data;
-            document.getElementById('bomData').textContent = JSON.stringify(bomData, null, 2);
+            displayBOM(data.bom_data);
         } else {
             alert(`Error: ${data.error}`);
         }
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Fetch BOM Error:', error);
         alert('An error occurred while fetching BOM data.');
     }
+});
+
+// Display BOM Data in Table
+function displayBOM(bomData) {
+    const tableBody = document.querySelector('#bomTable tbody');
+    tableBody.innerHTML = '';
+
+    bomData.forEach(item => {
+        const row = `<tr>
+            <td>${item["Part Name"]}</td>
+            <td>${item.Description || 'N/A'}</td>
+            <td>${item.Material}</td>
+            <td>${item.Quantity}</td>
+            <td>${item.preProcess || 'N/A'}</td>
+            <td>${item.Process1 || 'N/A'}</td>
+            <td>${item.Process2 || 'N/A'}</td>
+        </tr>`;
+        tableBody.innerHTML += row;
+    });
+}
+
+// Logout Function
+document.getElementById('logoutButton')?.addEventListener('click', () => {
+    localStorage.clear();
+    window.location.href = 'index.html';
 });

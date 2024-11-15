@@ -72,3 +72,41 @@ th, td {
     border-bottom: 1px solid #ccc;
     text-align: left;
 }
+/* Styling for Register Button */
+#registerButton {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    background-color: #28a745;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#registerButton:hover {
+    background-color: #218838;
+}
+
+/* Input for Onshape Document URL */
+#onshapeDocumentUrl {
+    width: 60%;
+    padding: 10px;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+#fetchBOMButton {
+    padding: 10px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#fetchBOMButton:hover {
+    background-color: #0056b3;
+}

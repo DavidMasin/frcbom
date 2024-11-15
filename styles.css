@@ -1,57 +1,24 @@
-/* Reset some default styles */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-/* Body styling */
+/* General styles */
 body {
     font-family: Arial, sans-serif;
-    background-color: #f0f2f5;
+    background-color: #f4f4f4;
     color: #333;
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-height: 100vh;
 }
 
-/* Navbar styling */
-header {
-    width: 100%;
+/* Login page */
+.login-container {
+    margin-top: 100px;
     padding: 20px;
-    background-color: #007bff;
-    color: #fff;
-    text-align: center;
-    position: relative;
-}
-
-#greetingMessage {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    font-weight: bold;
-}
-
-/* Main container */
-.container {
-    width: 90%;
-    max-width: 600px;
-    margin-top: 20px;
-}
-
-/* Form sections */
-.form-section {
     background-color: #fff;
-    padding: 20px;
-    margin-bottom: 20px;
-    border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
 }
 
-.form-section h2 {
-    margin-bottom: 15px;
-    color: #007bff;
+.login-container h2 {
+    margin-bottom: 20px;
 }
 
 input {
@@ -70,35 +37,38 @@ button {
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 16px;
 }
 
 button:hover {
     background-color: #0056b3;
 }
 
-/* Data sections */
-.data-section {
-    background-color: #fff;
-    padding: 20px;
-    margin-bottom: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+/* Dashboard */
+header {
+    display: flex;
+    justify-content: space-between;
+    width: 90%;
+    margin-top: 20px;
 }
 
-pre {
-    background-color: #f8f9fa;
-    padding: 10px;
-    border-radius: 5px;
-    overflow-x: auto;
+.dashboard-container {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
 }
 
-/* Footer styling */
-footer {
+.bom-table-container {
+    width: 90%;
+    margin-top: 20px;
+}
+
+table {
     width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
     padding: 10px;
-    text-align: center;
-    background-color: #007bff;
-    color: #fff;
-    margin-top: auto;
+    border-bottom: 1px solid #ccc;
+    text-align: left;
 }

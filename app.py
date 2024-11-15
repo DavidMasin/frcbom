@@ -1,11 +1,9 @@
-import bcrypt
-from flask import Flask, request, jsonify
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
-from flask_cors import CORS
 import json
 
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from flask_jwt_extended import JWTManager, create_access_token
 from flask_sqlalchemy import SQLAlchemy
-# import pandas as pd
 from onshape_client.client import Client
 from onshape_client.onshape_url import OnshapeElement
 
@@ -19,10 +17,13 @@ CORS(app, resources={r"/*": {"origins": ["https://frcbom.com"]}},
      supports_credentials=True,
      methods=["GET", "POST", "OPTIONS"],
      allow_headers=["Content-Type", "Authorization", "X-Requested-With"])
+
+
 class Team(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     team_number = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
+
 
 # Create tables within the application context
 with app.app_context():
@@ -55,6 +56,7 @@ def fetch_bom_data(document_url):
 # In-memory dictionary to store team data
 teams = {}
 
+
 # Register endpoint
 @app.route('/api/register', methods=['POST'])
 def register():
@@ -69,6 +71,7 @@ def register():
     # Store the team number and password (plain text)
     teams[team_number] = {"password": password, "parts": {}}
     return jsonify({"message": "Team registered successfully"}), 200
+
 
 # Login endpoint
 @app.route('/api/login', methods=['POST'])
@@ -89,15 +92,19 @@ def login():
     access_token = create_access_token(identity=team_number)
     return jsonify(access_token=access_token, team_number=team_number), 200
 
+
 # Health check endpoint
 @app.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({"status": "API is running"}), 200
 
+
 # Protected endpoint (example)
 @app.route('/api/dashboard', methods=['GET'])
 def get_dashboard():
     return jsonify({"message": "This is a protected endpoint"}), 200
+
+
 # Helper functions
 def findIDs(bom_dict, IDName):
     for head in bom_dict["headers"]:
@@ -105,18 +112,31 @@ def findIDs(bom_dict, IDName):
             return head['id']
     return None
 
-def getPartsDict(bom_dict):
+
+def getPartsDict(bom_dict, partNameID, DescriptionID, quantityID, materialID, materialBomID, preProcessID, process1ID,
+                 process2ID):
     partDict = {}
     rows = bom_dict.get("rows", [])
     for row in rows:
-        part_name = row.get("headerIdToValue", {}).get("57f3fb8efa3416c06701d60d", "Unknown")
-        quantity = row.get("headerIdToValue", {}).get("5ace84d3c046ad611c65a0dd", "N/A")
-        part_material = row.get("headerIdToValue", {}).get("57f3fb8efa3416c06701d615", "Unknown")
+        part_name = row.get("headerIdToValue", {}).get(partNameID, "Unknown")
+        part_description = row.get("headerIdToValue", {}).get(DescriptionID, "Unknown")
+        quantity = row.get("headerIdToValue", {}).get(quantityID, "N/A")
+        part_material = row.get("headerIdToValue", {}).get(materialID, "Unknown")
+        part_material_bom = row.get("headerIdToValue", {}).get(materialBomID, "Unknown")
+        part_preProcess = row.get("headerIdToValue", {}).get(preProcessID, "Unknown")
+        part_process1 = row.get("headerIdToValue", {}).get(process1ID, "Unknown")
+        part_process2 = row.get("headerIdToValue", {}).get(process2ID, "Unknown")
         if part_material != "N/A" and part_material is not None:
-            partDict[part_name] = (int(quantity), part_material["displayName"])
+            partDict[part_name] = (part_description,
+                                   int(quantity), part_material["displayName"], part_material_bom, part_preProcess,
+                                   part_process1,
+                                   part_process2)
         else:
-            partDict[part_name] = (int(quantity), "No material")
+            partDict[part_name] = (part_description,
+                                   int(quantity), "No material set", part_material_bom, part_preProcess, part_process1,
+                                   part_process2)
     return partDict
+
 
 @app.route('/api/bom', methods=['POST'])
 def fetch_bom():
@@ -129,37 +149,50 @@ def fetch_bom():
     try:
         element = OnshapeElement(document_url)
 
+        fixed_url = '/api/v9/assemblies/d/did/w/wid/e/eid/bom'
+        method = 'GET'
         did = element.did
         wid = element.wvmid
         eid = element.eid
-        fixed_url = f'/api/v9/assemblies/d/{did}/w/{wid}/e/{eid}/bom'
+        params = {}
+        payload = {}
+        headers = {'Accept': 'application/vnd.onshape.v1+json; charset=UTF-8;qs=0.1',
+                   'Content-Type': 'application/json'}
 
-        headers = {
-            'Accept': 'application/vnd.onshape.v1+json; charset=UTF-8;qs=0.1',
-            'Content-Type': 'application/json'
-        }
-
+        fixed_url = fixed_url.replace('did', did)
+        fixed_url = fixed_url.replace('wid', wid)
+        fixed_url = fixed_url.replace('eid', eid)
         print("Connecting to Onshape's API...")
-        response = client.api_client.request('GET', url=base_url + fixed_url, headers=headers)
+        response = client.api_client.request(method, url=base_url + fixed_url, query_params=params, headers=headers,
+                                             body=payload)
         print("Onshape API Connected.")
 
-        bom_dict = response.json()
-        print(bom_dict)
-
+        bom_dict = dict(json.loads(response.data))
         # Extract BOM data
+        part_nameID = findIDs(bom_dict, "Name")
+        part_quantity = findIDs(bom_dict, "Quantity")
+        part_materialID = findIDs(bom_dict, "Material")
+        part_materialBomID = findIDs(bom_dict, "Material BOM")
+        part_preProcessID = findIDs(bom_dict, "Pre Process")
         process1ID = findIDs(bom_dict, "Process 1")
         process2ID = findIDs(bom_dict, "Process 2")
         DescriptionID = findIDs(bom_dict, "Description")
-
-        parts = getPartsDict(bom_dict)
-        print(parts)
+        print("Trying to get Parts...")
+        parts = getPartsDict(bom_dict, part_nameID, DescriptionID, part_quantity, part_materialID, part_materialBomID,
+                             part_preProcessID, process1ID, process2ID)
+        print("Got parts!")
         # Prepare the response data
         bom_data = []
-        for part_name, (quantity, material) in parts.items():
+        for part_name, (description,quantity, material, materialBOM, preProcess, Process1, Process2) in parts.items():
             bom_data.append({
                 "Part Name": part_name,
+                "Description" : description,
                 "Quantity": quantity,
-                "Material": material,
+                "Material":material,
+                "materialBOM": materialBOM,
+                "preProcess": preProcess,
+                "Process1": Process1,
+                "Process2": Process2
             })
 
         return jsonify({"bom_data": bom_data}), 200
@@ -167,5 +200,7 @@ def fetch_bom():
     except Exception as e:
         print("Error fetching BOM:", str(e))
         return jsonify({"error": str(e)}), 500
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

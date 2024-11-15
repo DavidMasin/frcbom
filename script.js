@@ -37,7 +37,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const teamNumber = localStorage.getItem('team_number');
     document.getElementById('teamNumber').textContent = teamNumber;
 });
+const socket = io(API_BASE_URL);
 
+let teamNumber = localStorage.getItem('team_number');
 // Fetch BOM Data from Onshape Document URL
 document.getElementById('fetchBOMButton')?.addEventListener('click', async () => {
     const documentUrl = document.getElementById('onshapeDocumentUrl').value;
@@ -70,9 +72,7 @@ document.getElementById('fetchBOMButton')?.addEventListener('click', async () =>
     }
 });
 
-const socket = io(API_BASE_URL);
 
-let teamNumber = localStorage.getItem('team_number');
 
 // Function to fetch BOM data and update the table
 async function fetchBOMData(documentUrl = null) {

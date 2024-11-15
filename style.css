@@ -139,3 +139,115 @@ header button:hover {
         padding: 10px;
     }
 }
+/* Reset default styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Global Styles */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    padding: 20px;
+}
+
+/* Container Styling */
+.container {
+    width: 100%;
+    max-width: 400px;
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+/* Headings */
+h2 {
+    font-size: 1.8em;
+    color: #007BFF;
+    margin-bottom: 20px;
+}
+
+/* Form Input Styling */
+.form input {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1em;
+}
+
+.form input:focus {
+    border-color: #007BFF;
+    outline: none;
+}
+
+/* Button Styling */
+button {
+    width: 100%;
+    padding: 12px;
+    background-color: #007BFF;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    margin-top: 10px;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+/* Link Button Styling */
+.link-button {
+    background-color: transparent;
+    color: #007BFF;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9em;
+    margin-top: 15px;
+}
+
+.link-button:hover {
+    color: #0056b3;
+}
+
+/* Message Styling */
+#loginMessage,
+#registerMessage {
+    color: red;
+    margin-top: 10px;
+    font-size: 0.9em;
+}
+
+/* Success Message Styling */
+.success-message {
+    color: green;
+}
+
+/* Responsive Design */
+@media (max-width: 500px) {
+    .container {
+        padding: 20px;
+    }
+
+    h2 {
+        font-size: 1.5em;
+    }
+
+    button {
+        padding: 10px;
+        font-size: 0.9em;
+    }
+}

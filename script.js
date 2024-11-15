@@ -1,4 +1,6 @@
 const API_BASE_URL = 'https://frcbom-production.up.railway.app';
+let socket; // Declare socket variable globally
+let teamNumber = localStorage.getItem('team_number');
 
 // Redirect to registration page
 document.getElementById('registerButton')?.addEventListener('click', () => {
@@ -37,9 +39,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const teamNumber = localStorage.getItem('team_number');
     document.getElementById('teamNumber').textContent = teamNumber;
 });
+
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize WebSocket connection
     try {
-        const socket = io.connect('https://frcbom-production.up.railway.app');
+        socket = io('https://frcbom-production.up.railway.app');
 
         socket.on('connect', () => {
             console.log('WebSocket connection established.');
@@ -51,8 +55,17 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) {
         console.error('Socket.IO Initialization Error:', error);
     }
+
+    // Update team number text
+    const teamNumber = localStorage.getItem('team_number');
+    const teamNumberElement = document.getElementById('teamNumber');
+
+    if (teamNumberElement && teamNumber) {
+        teamNumberElement.textContent = teamNumber;
+    } else {
+        console.warn('Element #teamNumber not found or team number is missing.');
+    }
 });
-let teamNumber = localStorage.getItem('team_number');
 // Fetch BOM Data from Onshape Document URL
 document.getElementById('fetchBOMButton')?.addEventListener('click', async () => {
     const documentUrl = document.getElementById('onshapeDocumentUrl').value;

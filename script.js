@@ -68,7 +68,16 @@ async function handleRegister(event) {
     }
 }
 
-// Handle Fetch BOM
+// Initialize the Fetch BOM Button
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('fetchBOMButton')?.addEventListener('click', handleFetchBOM);
+    document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
+
+    // Display the team number in the header
+    document.getElementById('teamNumber').textContent = teamNumber;
+});
+
+// Function to Fetch BOM Data
 async function handleFetchBOM() {
     const documentUrl = document.getElementById('onshapeDocumentUrl').value;
     if (!documentUrl) {
@@ -76,9 +85,59 @@ async function handleFetchBOM() {
         return;
     }
 
-    const bomData = await fetchBOMFromOnshape(documentUrl);
-    await saveBOMData(bomData);
-    displayBOM(bomData);
+    const token = localStorage.getItem('jwt_token');
+    if (!token) {
+        alert('You are not authenticated. Please log in again.');
+        window.location.href = 'index.html';
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/bom`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ document_url: documentUrl, team_number: teamNumber })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            console.log('BOM data fetched successfully:', data.bom_data);
+            displayBOM(data.bom_data);
+        } else {
+            console.error('Failed to fetch BOM data:', data.error);
+            alert(`Error: ${data.error}`);
+        }
+    } catch (error) {
+        console.error('Fetch BOM Error:', error);
+        alert('An error occurred while fetching BOM data.');
+    }
+}
+
+// Function to Display BOM Data in the Table
+function displayBOM(bomData) {
+    const tableBody = document.querySelector('#bomTable tbody');
+    tableBody.innerHTML = ''; // Clear existing rows
+
+    if (!bomData || bomData.length === 0) {
+        alert('No BOM data available.');
+        return;
+    }
+
+    bomData.forEach(item => {
+        const row = `<tr>
+            <td>${item["Part Name"] || 'N/A'}</td>
+            <td>${item.Description || 'N/A'}</td>
+            <td>${item.Material || 'N/A'}</td>
+            <td>${item.Quantity || 'N/A'}</td>
+            <td>${item.preProcess || 'N/A'}</td>
+            <td>${item.Process1 || 'N/A'}</td>
+            <td>${item.Process2 || 'N/A'}</td>
+        </tr>`;
+        tableBody.innerHTML += row;
+    });
 }
 
 // Handle Logout

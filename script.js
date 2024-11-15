@@ -68,16 +68,23 @@ async function handleRegister(event) {
     }
 }
 
-// Initialize the Fetch BOM Button
+// Initialize event listeners
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('fetchBOMButton')?.addEventListener('click', handleFetchBOM);
     document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
 
-    // Display the team number in the header
+    // Display team number in header
     document.getElementById('teamNumber').textContent = teamNumber;
+
+    // Load saved BOM data from localStorage
+    const savedBOMData = getSavedBOMData();
+    if (savedBOMData) {
+        console.log('Loaded saved BOM data:', savedBOMData);
+        displayBOM(savedBOMData);
+    }
 });
 
-// Function to Fetch BOM Data
+// Function to handle fetching BOM data
 async function handleFetchBOM() {
     const documentUrl = document.getElementById('onshapeDocumentUrl').value;
     if (!documentUrl) {
@@ -104,7 +111,8 @@ async function handleFetchBOM() {
 
         const data = await response.json();
         if (response.ok) {
-            console.log('BOM data fetched successfully:', data.bom_data);
+            console.log('Fetched BOM data:', data.bom_data);
+            saveBOMData(data.bom_data);
             displayBOM(data.bom_data);
         } else {
             console.error('Failed to fetch BOM data:', data.error);
@@ -116,7 +124,21 @@ async function handleFetchBOM() {
     }
 }
 
-// Function to Display BOM Data in the Table
+// Function to save BOM data to localStorage
+function saveBOMData(bomData) {
+    const bomDict = JSON.parse(localStorage.getItem('bom_data')) || {};
+    bomDict[teamNumber] = bomData;
+    localStorage.setItem('bom_data', JSON.stringify(bomDict));
+    console.log('BOM data saved to localStorage for team:', teamNumber);
+}
+
+// Function to get saved BOM data from localStorage
+function getSavedBOMData() {
+    const bomDict = JSON.parse(localStorage.getItem('bom_data')) || {};
+    return bomDict[teamNumber] || null;
+}
+
+// Function to display BOM data in the table
 function displayBOM(bomData) {
     const tableBody = document.querySelector('#bomTable tbody');
     tableBody.innerHTML = ''; // Clear existing rows
@@ -139,7 +161,6 @@ function displayBOM(bomData) {
         tableBody.innerHTML += row;
     });
 }
-
 // Handle Logout
 function handleLogout() {
     localStorage.clear();

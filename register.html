@@ -4,16 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h2>Register</h2>
-    <form id="registerForm">
-        <input type="text" id="registerTeamNumber" placeholder="Team Number" required>
-        <input type="password" id="registerPassword" placeholder="Password" required>
-        <button type="submit" id="registerButton">Register</button>
-    </form>
-    <p id="registerMessage"></p>
-    <button id="backToLogin">Back to Login</button>
+    <div class="container">
+        <h2>Create Your Account</h2>
+        <form id="registerForm" class="form">
+            <input type="text" id="registerTeamNumber" placeholder="Team Number" required>
+            <input type="password" id="registerPassword" placeholder="Password" required>
+            <button type="submit" id="registerSubmitButton">Register</button>
+        </form>
+        <p id="registerMessage"></p>
+        <button id="backToLogin" class="link-button">Back to Login</button>
+    </div>
 </body>
 <script src="script.js"></script>
 </html>

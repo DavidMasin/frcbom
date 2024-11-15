@@ -1,138 +1,66 @@
-/* General styles */
+* {
+    box-sizing: border-box;
+}
+
 body {
     font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
-    color: #333;
+    background-color: #f0f0f0;
     display: flex;
-    flex-direction: column;
+    justify-content: center;
     align-items: center;
+    height: 100vh;
+    margin: 0;
 }
 
-/* Login page */
-.login-container {
-    margin-top: 100px;
-    padding: 20px;
+.container {
     background-color: #fff;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border-radius: 10px;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 300px;
+    text-align: center;
 }
 
-.login-container h2 {
-    margin-bottom: 20px;
+h2 {
+    color: #333;
 }
 
-input {
+.form input {
     width: 100%;
     padding: 10px;
-    margin-bottom: 10px;
-    border-radius: 5px;
+    margin: 10px 0;
     border: 1px solid #ccc;
+    border-radius: 4px;
 }
 
 button {
     width: 100%;
     padding: 10px;
-    background-color: #007bff;
+    background-color: #007BFF;
     color: #fff;
     border: none;
-    border-radius: 5px;
+    border-radius: 4px;
     cursor: pointer;
+    margin-top: 10px;
 }
 
 button:hover {
     background-color: #0056b3;
 }
 
-/* Dashboard */
-header {
-    display: flex;
-    justify-content: space-between;
-    width: 90%;
+.link-button {
+    background-color: transparent;
+    color: #007BFF;
+    border: none;
+    cursor: pointer;
     margin-top: 20px;
 }
 
-.dashboard-container {
-    display: flex;
-    gap: 10px;
-    margin-top: 20px;
+.link-button:hover {
+    color: #0056b3;
 }
 
-.bom-table-container {
-    width: 90%;
-    margin-top: 20px;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-th, td {
-    padding: 10px;
-    border-bottom: 1px solid #ccc;
-    text-align: left;
-}
-/* Styling for Register Button */
-#registerButton {
-    width: 100%;
-    padding: 10px;
+#loginMessage, #registerMessage {
+    color: red;
     margin-top: 10px;
-    background-color: #28a745;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-#registerButton:hover {
-    background-color: #218838;
-}
-
-/* Input for Onshape Document URL */
-#onshapeDocumentUrl {
-    width: 60%;
-    padding: 10px;
-    margin-top: 20px;
-    margin-bottom: 10px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-}
-
-#fetchBOMButton {
-    padding: 10px;
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-#fetchBOMButton:hover {
-    background-color: #0056b3;
-}
-.register-container {
-    margin-top: 100px;
-    padding: 20px;
-    background-color: #fff;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border-radius: 10px;
-}
-
-.register-container h2 {
-    margin-bottom: 20px;
-}
-
-#backToLogin {
-    width: 100%;
-    padding: 10px;
-    margin-top: 10px;
-    background-color: #6c757d;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-#backToLogin:hover {
-    background-color: #5a6268;
 }

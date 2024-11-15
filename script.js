@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('backToLogin')?.addEventListener('click', () => {
         window.location.href = 'index.html';
     });
+    document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
+    document.getElementById('fetchBOMButton')?.addEventListener('click', handleFetchBOM);
 });
 
 // Handle Login
@@ -33,12 +35,10 @@ async function handleLogin(event) {
             window.location.href = 'dashboard.html';
         } else {
             document.getElementById('loginMessage').textContent = data.error;
-            document.getElementById('loginMessage').style.color = 'red';
         }
     } catch (error) {
         console.error('Login Error:', error);
-        document.getElementById('loginMessage').textContent = 'An error occurred during login.';
-        document.getElementById('loginMessage').style.color = 'red';
+        document.getElementById('loginMessage').textContent = 'Login failed.';
     }
 }
 
@@ -57,15 +57,32 @@ async function handleRegister(event) {
 
         const data = await response.json();
         if (response.ok) {
-            document.getElementById('registerMessage').textContent = 'Registration successful! You can now log in.';
+            document.getElementById('registerMessage').textContent = 'Registration successful!';
             document.getElementById('registerMessage').style.color = 'green';
         } else {
             document.getElementById('registerMessage').textContent = `Error: ${data.error}`;
-            document.getElementById('registerMessage').style.color = 'red';
         }
     } catch (error) {
         console.error('Registration Error:', error);
-        document.getElementById('registerMessage').textContent = 'An error occurred during registration.';
-        document.getElementById('registerMessage').style.color = 'red';
+        document.getElementById('registerMessage').textContent = 'Registration failed.';
     }
+}
+
+// Handle Fetch BOM
+async function handleFetchBOM() {
+    const documentUrl = document.getElementById('onshapeDocumentUrl').value;
+    if (!documentUrl) {
+        alert('Please enter an Onshape Document URL.');
+        return;
+    }
+
+    const bomData = await fetchBOMFromOnshape(documentUrl);
+    await saveBOMData(bomData);
+    displayBOM(bomData);
+}
+
+// Handle Logout
+function handleLogout() {
+    localStorage.clear();
+    window.location.href = 'index.html';
 }

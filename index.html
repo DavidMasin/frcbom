@@ -4,16 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h2>Login</h2>
-    <form id="loginForm">
-        <input type="text" id="loginTeamNumber" placeholder="Team Number" required>
-        <input type="password" id="loginPassword" placeholder="Password" required>
-        <button type="submit" id="loginButton">Sign In</button>
-    </form>
-    <p id="loginMessage"></p>
-    <button id="registerButton">Register</button>
+    <div class="container">
+        <h2>Welcome to FRC BOM System</h2>
+        <form id="loginForm" class="form">
+            <input type="text" id="loginTeamNumber" placeholder="Team Number" required>
+            <input type="password" id="loginPassword" placeholder="Password" required>
+            <button type="submit" id="loginButton">Sign In</button>
+        </form>
+        <p id="loginMessage"></p>
+        <button id="registerButton" class="link-button">Register</button>
+    </div>
 </body>
 <script src="script.js"></script>
 </html>

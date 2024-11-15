@@ -3,21 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FRC BOM System - Register</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Register</title>
 </head>
 <body>
-    <div class="register-container">
-        <h2>Register</h2>
-        <form id="registerForm">
-            <input type="text" id="registerTeamNumber" placeholder="Enter Team Number" required>
-            <input type="password" id="registerPassword" placeholder="Enter Password" required>
-            <button type="submit">Register</button>
-        </form>
-        <button id="backToLogin">Back to Sign In</button>
-        <p id="registerMessage"></p>
-    </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
-    <script src="script.js"></script>
+    <h2>Register</h2>
+    <form id="registerForm">
+        <input type="text" id="registerTeamNumber" placeholder="Team Number" required>
+        <input type="password" id="registerPassword" placeholder="Password" required>
+        <button type="submit" id="registerButton">Register</button>
+    </form>
+    <p id="registerMessage"></p>
+    <button id="backToLogin">Back to Login</button>
 </body>
+<script src="script.js"></script>
 </html>

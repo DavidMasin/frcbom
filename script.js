@@ -2,6 +2,41 @@ const API_BASE_URL = 'https://frcbom-production.up.railway.app';
 let socket; // Declare socket variable globally
 let teamNumber = localStorage.getItem('team_number');
 
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize WebSocket connection
+    try {
+        socket = io('https://frcbom-production.up.railway.app');
+
+        socket.on('connect', () => {
+            console.log('WebSocket connection established.');
+        });
+
+        socket.on('connect_error', (error) => {
+            console.error('WebSocket connection error:', error);
+        });
+
+        // Listen for real-time updates from the server
+        socket.on('update_bom', (data) => {
+            const { team_number, bom_data } = data;
+            if (team_number === teamNumber) {
+                console.log('Real-time BOM update received');
+                displayBOM(bom_data);
+            }
+        });
+    } catch (error) {
+        console.error('Socket.IO Initialization Error:', error);
+    }
+
+    // Update team number text
+    const teamNumberElement = document.getElementById('teamNumber');
+
+    if (teamNumberElement && teamNumber) {
+        teamNumberElement.textContent = teamNumber;
+    } else {
+        console.warn('Element #teamNumber not found or team number is missing.');
+    }
+});
+
 // Redirect to registration page
 document.getElementById('registerButton')?.addEventListener('click', () => {
     window.location.href = 'register.html';
@@ -34,38 +69,6 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
     }
 });
 
-// Display Team Number on Dashboard
-document.addEventListener('DOMContentLoaded', () => {
-    const teamNumber = localStorage.getItem('team_number');
-    document.getElementById('teamNumber').textContent = teamNumber;
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Initialize WebSocket connection
-    try {
-        socket = io('https://frcbom-production.up.railway.app');
-
-        socket.on('connect', () => {
-            console.log('WebSocket connection established.');
-        });
-
-        socket.on('connect_error', (error) => {
-            console.error('WebSocket connection error:', error);
-        });
-    } catch (error) {
-        console.error('Socket.IO Initialization Error:', error);
-    }
-
-    // Update team number text
-    const teamNumber = localStorage.getItem('team_number');
-    const teamNumberElement = document.getElementById('teamNumber');
-
-    if (teamNumberElement && teamNumber) {
-        teamNumberElement.textContent = teamNumber;
-    } else {
-        console.warn('Element #teamNumber not found or team number is missing.');
-    }
-});
 // Fetch BOM Data from Onshape Document URL
 document.getElementById('fetchBOMButton')?.addEventListener('click', async () => {
     const documentUrl = document.getElementById('onshapeDocumentUrl').value;
@@ -83,7 +86,7 @@ document.getElementById('fetchBOMButton')?.addEventListener('click', async () =>
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ document_url: documentUrl ,team_number:teamNumber})
+            body: JSON.stringify({ document_url: documentUrl, team_number: teamNumber })
         });
 
         const data = await response.json();
@@ -97,8 +100,6 @@ document.getElementById('fetchBOMButton')?.addEventListener('click', async () =>
         alert('An error occurred while fetching BOM data.');
     }
 });
-
-
 
 // Function to fetch BOM data and update the table
 async function fetchBOMData(documentUrl = null) {
@@ -144,26 +145,12 @@ function displayBOM(bomData) {
     });
 }
 
-// Listen for real-time updates from the server
-socket.on('update_bom', (data) => {
-    const { team_number, bom_data } = data;
-    if (team_number === teamNumber) {
-        console.log('Real-time BOM update received');
-        displayBOM(bom_data);
-    }
-});
-
-// Fetch BOM data when the user inputs a document URL
-document.getElementById('fetchBOMButton')?.addEventListener('click', () => {
-    const documentUrl = document.getElementById('onshapeDocumentUrl').value;
-    fetchBOMData(documentUrl);
-});
-
 // Logout Function
 document.getElementById('logoutButton')?.addEventListener('click', () => {
     localStorage.clear();
     window.location.href = 'index.html';
 });
+
 // Handle Registration
 document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();

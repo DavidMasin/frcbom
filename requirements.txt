@@ -6,3 +6,4 @@ requests
 onshape-client
 bcrypt
 flask_sqlalchemy
+flask-socketio

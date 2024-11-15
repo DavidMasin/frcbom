@@ -38,6 +38,82 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('teamNumber').textContent = teamNumber;
 });
 
+let teamNumber = localStorage.getItem('team_number');
+
+// Function to fetch BOM data and update the table
+async function fetchBOMData(documentUrl = null) {
+    const token = localStorage.getItem('jwt_token');
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/bom`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ document_url: documentUrl, team_number: teamNumber })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            displayBOM(data.bom_data);
+        } else {
+            alert(`Error: ${data.error}`);
+        }
+    } catch (error) {
+        console.error('Fetch BOM Error:', error);
+    }
+}
+
+// Polling function to get the latest BOM data every 5 seconds
+async function pollBOMData() {
+    const token = localStorage.getItem('jwt_token');
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/get_latest_bom?team_number=${teamNumber}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            displayBOM(data.bom_data);
+        }
+    } catch (error) {
+        console.error('Polling BOM Data Error:', error);
+    }
+}
+
+// Display BOM data in the table
+function displayBOM(bomData) {
+    const tableBody = document.querySelector('#bomTable tbody');
+    tableBody.innerHTML = '';
+
+    bomData.forEach(item => {
+        const row = `<tr>
+            <td>${item["Part Name"]}</td>
+            <td>${item.Description || 'N/A'}</td>
+            <td>${item.Material}</td>
+            <td>${item.Quantity}</td>
+            <td>${item.preProcess || 'N/A'}</td>
+            <td>${item.Process1 || 'N/A'}</td>
+            <td>${item.Process2 || 'N/A'}</td>
+        </tr>`;
+        tableBody.innerHTML += row;
+    });
+}
+
+// Fetch BOM data when the user inputs a document URL
+document.getElementById('fetchBOMButton')?.addEventListener('click', () => {
+    const documentUrl = document.getElementById('onshapeDocumentUrl').value;
+    fetchBOMData(documentUrl);
+});
+
+// Start polling for BOM updates every 5 seconds
+setInterval(pollBOMData, 5000);
 // Fetch BOM Data from Onshape Document URL
 document.getElementById('fetchBOMButton')?.addEventListener('click', async () => {
     const documentUrl = document.getElementById('onshapeDocumentUrl').value;

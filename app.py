@@ -6,6 +6,7 @@ from flask_jwt_extended import JWTManager, create_access_token
 from flask_sqlalchemy import SQLAlchemy
 from onshape_client.client import Client
 from onshape_client.onshape_url import OnshapeElement
+from flask_socketio import SocketIO, emit
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///teams.db'
@@ -17,7 +18,11 @@ CORS(app, resources={r"/*": {"origins": ["https://frcbom.com"]}},
      supports_credentials=True,
      methods=["GET", "POST", "OPTIONS"],
      allow_headers=["Content-Type", "Authorization", "X-Requested-With"])
+socketio = SocketIO(app, cors_allowed_origins="*")
 
+# In-memory storage for BOM data per team
+teams = {}
+latest_bom_data = {}
 
 class Team(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -53,8 +58,6 @@ def fetch_bom_data(document_url):
     return json.loads(response.data)
 
 
-# In-memory dictionary to store team data
-teams = {}
 
 
 # Register endpoint
@@ -64,12 +67,10 @@ def register():
     team_number = data['team_number']
     password = data['password']
 
-    # Check if the team is already registered
     if team_number in teams:
         return jsonify({"error": "Team already exists"}), 400
 
-    # Store the team number and password (plain text)
-    teams[team_number] = {"password": password, "parts": {}}
+    teams[team_number] = {"password": password}
     return jsonify({"message": "Team registered successfully"}), 200
 
 
@@ -142,10 +143,10 @@ def getPartsDict(bom_dict, partNameID, DescriptionID, quantityID, materialID, ma
 def fetch_bom():
     data = request.json
     document_url = data.get("document_url")
+    team_number = data.get("team_number")
 
-    if not document_url:
-        return jsonify({"error": "Document URL is required"}), 400
-
+    if not document_url or not team_number:
+        return jsonify({"error": "Document URL and Team Number are required"}), 400
     try:
         element = OnshapeElement(document_url)
 
@@ -194,13 +195,21 @@ def fetch_bom():
                 "Process1": Process1,
                 "Process2": Process2
             })
-
+        # Store the latest BOM data for the team and emit it to all connected clients
+        latest_bom_data[team_number] = bom_data
+        socketio.emit('update_bom', {'team_number': team_number, 'bom_data': bom_data})
         return jsonify({"bom_data": bom_data}), 200
 
     except Exception as e:
         print("Error fetching BOM:", str(e))
         return jsonify({"error": str(e)}), 500
 
+@socketio.on('connect')
+def handle_connect():
+    print('Client connected')
 
+@socketio.on('disconnect')
+def handle_disconnect():
+    print('Client disconnected')
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

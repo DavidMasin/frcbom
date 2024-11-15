@@ -1,15 +1,35 @@
 const API_BASE_URL = 'https://frcbom-production.up.railway.app';
+let socket; // Declare socket variable globally
 let teamNumber = localStorage.getItem('team_number');
 
-// Fetch BOM Data when the page loads
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('Fetching BOM data for team:', teamNumber);
+// Redirect to login page if team number is missing
+if (!teamNumber) {
+    alert('You are not logged in. Redirecting to login page...');
+    window.location.href = 'index.html';
+}
 
-    if (!teamNumber) {
-        console.error('Team number is missing. Please log in.');
-        return;
+// Initialize WebSocket connection
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        socket = io(API_BASE_URL);
+
+        socket.on('connect', () => {
+            console.log('WebSocket connection established.');
+        });
+
+        socket.on('connect_error', (error) => {
+            console.error('WebSocket connection error:', error);
+        });
+    } catch (error) {
+        console.error('Socket.IO Initialization Error:', error);
     }
 
+    // Fetch and display BOM data
+    fetchAndDisplayBOMData();
+});
+
+// Function to fetch and display BOM data
+async function fetchAndDisplayBOMData() {
     const bomData = await getBOMData();
     if (bomData.length > 0) {
         console.log('BOM data loaded successfully:', bomData);
@@ -17,7 +37,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
         console.log('No BOM data found for this team.');
     }
-});
+}
 
 // Function to fetch BOM data from the server
 async function getBOMData() {
@@ -55,7 +75,7 @@ function displayBOM(bomData) {
     });
 }
 
-// Button to manually fetch BOM data from Onshape and save it
+// Fetch BOM data from Onshape Document URL
 document.getElementById('fetchBOMButton')?.addEventListener('click', async () => {
     const documentUrl = document.getElementById('onshapeDocumentUrl').value;
     if (!documentUrl) {
@@ -70,10 +90,9 @@ document.getElementById('fetchBOMButton')?.addEventListener('click', async () =>
     }
 });
 
-// Function to fetch BOM data from Onshape (dummy function for testing)
+// Function to fetch BOM data from Onshape (Dummy function for testing)
 async function fetchBOMFromOnshape(documentUrl) {
     console.log('Fetching BOM data from Onshape for URL:', documentUrl);
-    // Replace this with your actual Onshape API integration
     return [
         { "Part Name": "Part1", "Description": "Test Part", "Material": "Aluminum", "Quantity": 10 },
         { "Part Name": "Part2", "Description": "Test Part 2", "Material": "Steel", "Quantity": 5 }
@@ -103,4 +122,9 @@ async function saveBOMData(bomData) {
 document.getElementById('logoutButton')?.addEventListener('click', () => {
     localStorage.clear();
     window.location.href = 'index.html';
+});
+
+// Redirect to registration page
+document.getElementById('registerButton')?.addEventListener('click', () => {
+    window.location.href = 'register.html';
 });

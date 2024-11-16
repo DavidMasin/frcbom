@@ -1,6 +1,5 @@
 const API_BASE_URL = 'https://frcbom-production.up.railway.app';
-let teamNumber = localStorage.getItem('team_number') ;
-
+let teamNumber = localStorage.getItem('team_number');
 
 
 // Handle Login
@@ -29,6 +28,7 @@ async function handleLogin(event) {
         document.getElementById('loginMessage').textContent = 'Login failed.';
     }
 }
+
 function checkProcessProgress(item) {
     const requiredQuantity = item.Quantity;
 
@@ -83,6 +83,7 @@ function checkProcessProgress(item) {
         console.log(`No Process 2 for ${item["Part Name"]}, considered completed and available.`);
     }
 }
+
 // Handle Registration
 async function handleRegister(event) {
     event.preventDefault();
@@ -324,20 +325,18 @@ function displayBOM(bomData) {
 
         // Pre-Process
         row.innerHTML += `<td>${item.preProcess || 'N/A'}</td>`;
-
+        // Pre-Process Quantity Counter
+        row.innerHTML += `<td>${createQuantityCounter('preProcessQuantity', item["Part Name"], item.preProcessQuantity || 0, item.preProcessCompleted)}</td>`;
 
         // Process 1
         row.innerHTML += `<td>${item.Process1 || 'N/A'}</td>`;
-
+        // Process 1 Quantity Counter
+        row.innerHTML += `<td>${createQuantityCounter('process1Quantity', item["Part Name"], item.process1Quantity || 0, item.process1Completed, item.process1Available)}</td>`;
 
         // Process 2
         row.innerHTML += `<td>${item.Process2 || 'N/A'}</td>`;
         // Process 2 Quantity Counter
-        // Pre-Process Quantity Counter
-        row.innerHTML += `<td>${createQuantityCounter('preProcessQuantity', item["Part Name"], item.preProcessQuantity || 0, item.preProcessCompleted)}</td>`;
 
-        // Process 1 Quantity Counter
-        row.innerHTML += `<td>${createQuantityCounter('process1Quantity', item["Part Name"], item.process1Quantity || 0, item.process1Completed, item.process1Available)}</td>`;
 
         // Process 2 Quantity Counter
         row.innerHTML += `<td>${createQuantityCounter('process2Quantity', item["Part Name"], item.process2Quantity || 0, item.process2Completed, item.process2Available)}</td>`;
@@ -347,6 +346,7 @@ function displayBOM(bomData) {
     // Attach event listeners for the quantity counters
     attachQuantityCounterEventListeners();
 }
+
 function createQuantityCounter(fieldName, partName, quantity, isCompleted, isAvailable = true) {
     const disabledClass = isAvailable ? '' : 'disabled';
     const completedClass = isCompleted ? 'completed' : '';
@@ -359,6 +359,7 @@ function createQuantityCounter(fieldName, partName, quantity, isCompleted, isAva
         </div>
     `;
 }
+
 function attachQuantityCounterEventListeners() {
     document.querySelectorAll('.quantity-decrement').forEach(button => {
         button.addEventListener('click', handleQuantityDecrement);
@@ -367,6 +368,7 @@ function attachQuantityCounterEventListeners() {
         button.addEventListener('click', handleQuantityIncrement);
     });
 }
+
 function handleQuantityIncrement(event) {
     const partName = decodeURIComponent(event.target.getAttribute('data-part-name'));
     const field = event.target.getAttribute('data-field');
@@ -388,6 +390,7 @@ function handleQuantityIncrement(event) {
     // Update the display
     displayBOM(bomData);
 }
+
 // Function to initialize the dashboard
 function initializeDashboard() {
     // Ensure the user is logged in
@@ -432,6 +435,7 @@ function initializeDashboard() {
     settingsButton?.addEventListener('click', () => modal.style.display = 'flex');
     closeButton?.addEventListener('click', () => modal.style.display = 'none');
 }
+
 function handleFilterBOM(filter) {
     currentFilter = filter; // Update the current filter
     const bomData = getBOMDataFromLocal();
@@ -440,33 +444,36 @@ function handleFilterBOM(filter) {
     // Normalize filter value
     const normalizedFilter = filter.trim().toLowerCase();
 
+    console.log(`Filtering for '${filter}'. Normalized filter: '${normalizedFilter}'.`);
+
     switch (normalizedFilter) {
-        // ... existing cases ...
+        case 'all':
+            filteredData = bomData;
+            break;
+        case 'inhouse':
+            filteredData = bomData.filter(item => item.preProcess || item.Process1 || item.Process2);
+            break;
+        case 'cots':
+            filteredData = bomData.filter(item => !item.preProcess && !item.Process1 && !item.Process2);
+            break;
         default:
             filteredData = bomData.filter(item => {
-                const requiredQuantity = item.Quantity;
-
-                // Normalize process names
-                const preProcessName = (item.preProcess || '').trim().toLowerCase();
-                const process1Name = (item.Process1 || '').trim().toLowerCase();
-                const process2Name = (item.Process2 || '').trim().toLowerCase();
-
-                let includeItem = false;
-
-                if (normalizedFilter === preProcessName) {
-                    includeItem = !item.preProcessCompleted;
-                    console.log(`Filtering for Pre-Process '${filter}', Item '${item["Part Name"]}': Include=${includeItem}`);
-                } else if (normalizedFilter === process1Name) {
-                    includeItem = item.process1Available && !item.process1Completed;
-                    console.log(`Filtering for Process 1 '${filter}', Item '${item["Part Name"]}': Available=${item.process1Available}, Completed=${item.process1Completed}, Include=${includeItem}`);
-                } else if (normalizedFilter === process2Name) {
-                    includeItem = item.process2Available && !item.process2Completed;
-                    console.log(`Filtering for Process 2 '${filter}', Item '${item["Part Name"]}': Available=${item.process2Available}, Completed=${item.process2Completed}, Include=${includeItem}`);
+                // Process names are already normalized
+                if (normalizedFilter === item.preProcess) {
+                    const includeItem = !item.preProcessCompleted;
+                    console.log(`Item '${item["Part Name"]}': preProcess='${item.preProcess}', preProcessCompleted=${item.preProcessCompleted}, Include=${includeItem}`);
+                    return includeItem;
+                } else if (normalizedFilter === item.Process1) {
+                    const includeItem = item.process1Available && !item.process1Completed;
+                    console.log(`Item '${item["Part Name"]}': Process1='${item.Process1}', process1Available=${item.process1Available}, process1Completed=${item.process1Completed}, Include=${includeItem}`);
+                    return includeItem;
+                } else if (normalizedFilter === item.Process2) {
+                    const includeItem = item.process2Available && !item.process2Completed;
+                    console.log(`Item '${item["Part Name"]}': Process2='${item.Process2}', process2Available=${item.process2Available}, process2Completed=${item.process2Completed}, Include=${includeItem}`);
+                    return includeItem;
                 } else {
-                    includeItem = false;
+                    return false;
                 }
-
-                return includeItem;
             });
     }
 

@@ -235,7 +235,7 @@ document.getElementById('fetchBOMButton')?.addEventListener('click', async () =>
     }
 });
 
-// Filter BOM Data based on selected process
+// Filter BOM Data
 document.querySelectorAll('.filter-button').forEach(button => {
     button.addEventListener('click', () => {
         const filter = button.getAttribute('data-filter');
@@ -245,14 +245,17 @@ document.querySelectorAll('.filter-button').forEach(button => {
         if (filter === 'All') {
             filteredData = bomData;
         } else {
-            filteredData = bomData.filter(item => item.Process1 === filter || item.Process2 === filter);
+            filteredData = bomData.filter(item =>
+                item.Process1 === filter || item.Process2 === filter || item.preProcess === filter
+            );
         }
 
         displayBOM(filteredData);
+        document.getElementById('bomTableContainer').style.display = 'block';
     });
 });
 
-// Function to display and sort BOM data in the table
+// Function to display BOM data in the table
 function displayBOM(bomData) {
     const tableBody = document.querySelector('#bomTable tbody');
     tableBody.innerHTML = '';
@@ -262,19 +265,15 @@ function displayBOM(bomData) {
         return;
     }
 
-    // Sort the BOM data alphabetically by Part Name (A-Z)
-    bomData.sort((a, b) => {
-        const partNameA = (a["Part Name"] || '').toUpperCase();
-        const partNameB = (b["Part Name"] || '').toUpperCase();
-        return partNameA.localeCompare(partNameB);
-    });
+    // Sort BOM data alphabetically by Part Name
+    bomData.sort((a, b) => (a["Part Name"] || '').localeCompare(b["Part Name"] || ''));
 
-    // Populate the table with sorted data
+    // Populate the table
     bomData.forEach(item => {
         const row = `<tr>
             <td>${item["Part Name"] || 'N/A'}</td>
             <td>${item.Description || 'N/A'}</td>
-            <td>${item.materialBOM || 'N/A'}</td>
+            <td>${item.Material || 'N/A'}</td>
             <td>${item.Quantity || 'N/A'}</td>
             <td>${item.preProcess || 'N/A'}</td>
             <td>${item.Process1 || 'N/A'}</td>

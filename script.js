@@ -252,7 +252,7 @@ document.querySelectorAll('.filter-button').forEach(button => {
     });
 });
 
-// Function to display BOM data in the table
+// Function to display and sort BOM data in the table
 function displayBOM(bomData) {
     const tableBody = document.querySelector('#bomTable tbody');
     tableBody.innerHTML = '';
@@ -262,6 +262,14 @@ function displayBOM(bomData) {
         return;
     }
 
+    // Sort the BOM data alphabetically by Part Name (A-Z)
+    bomData.sort((a, b) => {
+        const partNameA = (a["Part Name"] || '').toUpperCase();
+        const partNameB = (b["Part Name"] || '').toUpperCase();
+        return partNameA.localeCompare(partNameB);
+    });
+
+    // Populate the table with sorted data
     bomData.forEach(item => {
         const row = `<tr>
             <td>${item["Part Name"] || 'N/A'}</td>

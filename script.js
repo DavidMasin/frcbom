@@ -36,9 +36,11 @@ function checkProcessProgress(item) {
     if (item.preProcess) {
         item.preProcessQuantity = item.preProcessQuantity || 0;
         item.preProcessCompleted = item.preProcessQuantity >= requiredQuantity;
+        console.log(`Pre-Process for ${item["Part Name"]}: Quantity=${item.preProcessQuantity}, Completed=${item.preProcessCompleted}`);
     } else {
         // If no Pre-Process, consider it completed by default
         item.preProcessCompleted = true;
+        console.log(`No Pre-Process for ${item["Part Name"]}, considered completed.`);
     }
 
     // Check Process 1 Completion
@@ -53,9 +55,12 @@ function checkProcessProgress(item) {
             item.process1Quantity = 0;  // Reset quantity if not available
             item.process1Completed = false;
         }
+        console.log(`Process 1 (${item.Process1}) for ${item["Part Name"]}: Available=${item.process1Available}, Quantity=${item.process1Quantity}, Completed=${item.process1Completed}`);
     } else {
         // If no Process 1, consider it completed by default
         item.process1Completed = true;
+        item.process1Available = true;
+        console.log(`No Process 1 for ${item["Part Name"]}, considered completed and available.`);
     }
 
     // Check Process 2 Completion
@@ -70,9 +75,12 @@ function checkProcessProgress(item) {
             item.process2Quantity = 0;  // Reset quantity if not available
             item.process2Completed = false;
         }
+        console.log(`Process 2 (${item.Process2}) for ${item["Part Name"]}: Available=${item.process2Available}, Quantity=${item.process2Quantity}, Completed=${item.process2Completed}`);
     } else {
         // If no Process 2, consider it completed by default
         item.process2Completed = true;
+        item.process2Available = true;
+        console.log(`No Process 2 for ${item["Part Name"]}, considered completed and available.`);
     }
 }
 // Handle Registration

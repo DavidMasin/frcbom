@@ -1,6 +1,6 @@
 import json
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token
 from flask_socketio import SocketIO, emit
@@ -61,7 +61,14 @@ def fetch_bom_data(document_url):
     response = client.api_client.request('GET', url=base_url + fixed_url, headers=headers)
     return json.loads(response.data)
 
-
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def catch_all(path):
+    if path.startswith('api'):
+        # Let API routes be handled normally
+        return
+    else:
+        return send_from_directory('static', 'dashboard.html')
 # Register endpoint
 @app.route('/api/register', methods=['POST'])
 def register():

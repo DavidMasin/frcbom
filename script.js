@@ -274,7 +274,7 @@ function displayBOM(bomData) {
         const row = `<tr>
             <td>${item["Part Name"] || 'N/A'}</td>
             <td>${item.Description || 'N/A'}</td>
-            <td>${item.Material || 'N/A'}</td>
+            <td>${item.materialBOM || 'N/A'}</td>
             <td>${item.Quantity || 'N/A'}</td>
             <td>${item.preProcess || 'N/A'}</td>
             <td>${item.Process1 || 'N/A'}</td>

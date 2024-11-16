@@ -187,6 +187,8 @@ def fetch_bom():
         print("Got parts!")
         # Prepare the response data
         bom_data = []
+
+
         for part_name, (description, quantity, material, materialBOM, preProcess, Process1, Process2) in parts.items():
             bom_data.append({
                 "Part Name": part_name,

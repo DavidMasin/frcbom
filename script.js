@@ -57,6 +57,16 @@ async function handleRegister(event) {
     }
 }
 
+// Attach event listener for the registration form
+document.addEventListener('DOMContentLoaded', () => {
+    const registerForm = document.getElementById('registerForm');
+    if (registerForm) {
+        registerForm.addEventListener('submit', handleRegister);
+    }
+});
+
+
+
 // Function to check if the user is logged in
 function checkLoginStatus() {
     const teamNumber = localStorage.getItem('team_number');
@@ -148,12 +158,43 @@ function handleLogout() {
     window.location.href = 'index.html';
 }
 
-// Function to save BOM Data to Local Storage
+// Listen for BOM updates
+socket.on('update_bom', (data) => {
+    const teamNumber = localStorage.getItem('team_number');
+    if (data.team_number === teamNumber) {
+        saveBOMDataToLocal(data.bom_data);
+        displayBOM(data.bom_data);
+    }
+});
+
+// Update the saveBOMDataToLocal function if necessary
 function saveBOMDataToLocal(bomData) {
     const teamNumber = localStorage.getItem('team_number');
     const bomDict = JSON.parse(localStorage.getItem('bom_data')) || {};
     bomDict[teamNumber] = bomData;
     localStorage.setItem('bom_data', JSON.stringify(bomDict));
+    socket.emit('bom_update', { team_number: teamNumber, bom_data: bomData });
+
+    // Optionally, send update to server
+    saveBOMDataToServer(bomData);
+}
+
+// Function to save BOM data to server
+async function saveBOMDataToServer(bomData) {
+    const teamNumber = localStorage.getItem('team_number');
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/save_bom`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ team_number: teamNumber, bom_data: bomData })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            console.error('Failed to save BOM data:', data.error);
+        }
+    } catch (error) {
+        console.error('Save BOM Data Error:', error);
+    }
 }
 
 // Function to get BOM Data from Local Storage
@@ -181,7 +222,6 @@ async function fetchBOMDataFromServer() {
     }
 }
 
-// Function to handle BOM Filtering
 function handleFilterBOM(filter) {
     const bomData = getBOMDataFromLocal();
     let filteredData;
@@ -190,12 +230,20 @@ function handleFilterBOM(filter) {
         filteredData = bomData;
     } else {
         filteredData = bomData.filter(item => {
-            const preProcessDone = item.preProcessDone || false;
-            return (
-                (filter === item.Process1 && preProcessDone) ||
-                filter === item.Process2 ||
-                filter === item.preProcess
-            );
+            const preProcessDone = item.preProcessDone || !item.preProcess;
+            const process1Done = item.Process1Done || !item.Process1;
+            if (filter === item.preProcess) {
+                // Show if pre-process not done
+                return !item.preProcessDone;
+            } else if (filter === item.Process1) {
+                // Show if pre-process is done and process 1 not done
+                return preProcessDone && !item.Process1Done;
+            } else if (filter === item.Process2) {
+                // Show if process 1 is done and process 2 not done
+                return process1Done && !item.Process2Done;
+            } else {
+                return false;
+            }
         });
     }
 
@@ -209,27 +257,71 @@ function displayBOM(bomData) {
     tableBody.innerHTML = '';
 
     if (!bomData || bomData.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="7">No parts found</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="11">No parts found</td></tr>';
         return;
     }
 
     // Sort BOM data alphabetically by Part Name
     bomData.sort((a, b) => (a["Part Name"] || '').localeCompare(b["Part Name"] || ''));
 
-    bomData.forEach(item => {
-        const row = `<tr>
-            <td>${item["Part Name"] || 'N/A'}</td>
-            <td>${item.Description || 'N/A'}</td>
-            <td>${item.Material || 'N/A'}</td>
-            <td>${item.Quantity || 'N/A'}</td>
-            <td>${item.preProcess || 'N/A'}</td>
-            <td>${item.Process1 || 'N/A'}</td>
-            <td>${item.Process2 || 'N/A'}</td>
-        </tr>`;
-        tableBody.innerHTML += row;
+    bomData.forEach((item, index) => {
+        const row = document.createElement('tr');
+
+        // Part Name
+        row.innerHTML += `<td>${item["Part Name"] || 'N/A'}</td>`;
+        // Description
+        row.innerHTML += `<td>${item.Description || 'N/A'}</td>`;
+        // Material
+        row.innerHTML += `<td>${item.Material || 'N/A'}</td>`;
+        // Quantity Required
+        row.innerHTML += `<td>${item.Quantity || 'N/A'}</td>`;
+        // Quantity Produced (Input Field)
+        row.innerHTML += `<td><input type="number" min="0" value="${item.QuantityProduced || 0}" data-index="${index}" class="quantity-produced"></td>`;
+        // Pre-Process
+        row.innerHTML += `<td>${item.preProcess || 'N/A'}</td>`;
+        // Pre-Process Done (Checkbox)
+        row.innerHTML += `<td><input type="checkbox" ${item.preProcessDone ? 'checked' : ''} data-index="${index}" data-process="preProcessDone" class="process-done"></td>`;
+        // Process 1
+        row.innerHTML += `<td>${item.Process1 || 'N/A'}</td>`;
+        // Process 1 Done (Checkbox)
+        row.innerHTML += `<td><input type="checkbox" ${item.Process1Done ? 'checked' : ''} data-index="${index}" data-process="Process1Done" class="process-done"></td>`;
+        // Process 2
+        row.innerHTML += `<td>${item.Process2 || 'N/A'}</td>`;
+        // Process 2 Done (Checkbox)
+        row.innerHTML += `<td><input type="checkbox" ${item.Process2Done ? 'checked' : ''} data-index="${index}" data-process="Process2Done" class="process-done"></td>`;
+
+        tableBody.appendChild(row);
+    });
+
+    // Add event listeners for quantity input fields
+    document.querySelectorAll('.quantity-produced').forEach(input => {
+        input.addEventListener('change', handleQuantityChange);
+    });
+
+    // Add event listeners for process done checkboxes
+    document.querySelectorAll('.process-done').forEach(checkbox => {
+        checkbox.addEventListener('change', handleProcessStatusChange);
     });
 }
+// Function to handle quantity produced change
+function handleQuantityChange(event) {
+    const index = event.target.getAttribute('data-index');
+    const bomData = getBOMDataFromLocal();
+    const newQuantity = parseInt(event.target.value, 10) || 0;
+    bomData[index].QuantityProduced = newQuantity;
+    saveBOMDataToLocal(bomData);
+    // Optionally, send update to server and other clients via Socket.IO
+}
 
+// Function to handle process status change
+function handleProcessStatusChange(event) {
+    const index = event.target.getAttribute('data-index');
+    const process = event.target.getAttribute('data-process');
+    const bomData = getBOMDataFromLocal();
+    bomData[index][process] = event.target.checked;
+    saveBOMDataToLocal(bomData);
+    // Optionally, send update to server and other clients via Socket.IO
+}
 // Attach event listeners after DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
     // Check if we are on the login page

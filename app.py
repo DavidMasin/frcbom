@@ -106,9 +106,10 @@ def handle_bom_update(data):
     bom_data = data.get('bom_data')
     if team_number and bom_data:
         # Update the latest BOM data
-        latest_bom_data[team_number] = bom_data
+        bom_data_dict[team_number] = bom_data
         # Broadcast the update to other clients
         emit('update_bom', {'team_number': team_number, 'bom_data': bom_data}, broadcast=True, include_self=False)
+
 
 # Protected endpoint (example)
 @app.route('/api/dashboard', methods=['GET'])

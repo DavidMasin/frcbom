@@ -259,3 +259,29 @@ button:hover {
         font-size: 0.9em;
     }
 }
+.quantity-counter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quantity-counter button {
+  padding: 5px 10px;
+  font-size: 16px;
+  margin: 0 5px;
+  border: none;
+  background-color: #007BFF;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.quantity-counter button:hover {
+  background-color: #0056b3;
+}
+
+.quantity-counter .quantity-value {
+  min-width: 30px;
+  text-align: center;
+  font-size: 16px;
+}

@@ -437,32 +437,36 @@ function handleFilterBOM(filter) {
     const bomData = getBOMDataFromLocal();
     let filteredData = [];
 
-    switch (filter) {
-        case 'All':
-            filteredData = bomData;
-            break;
-        case 'InHouse':
-            filteredData = bomData.filter(item => item.preProcess || item.Process1 || item.Process2);
-            break;
-        case 'COTS':
-            filteredData = bomData.filter(item => !item.preProcess && !item.Process1 && !item.Process2);
-            break;
+    // Normalize filter value
+    const normalizedFilter = filter.trim().toLowerCase();
+
+    switch (normalizedFilter) {
+        // ... existing cases ...
         default:
             filteredData = bomData.filter(item => {
                 const requiredQuantity = item.Quantity;
 
-                if (filter === item.preProcess) {
-                    // Include if Pre-Process is not yet completed
-                    return !item.preProcessCompleted;
-                } else if (filter === item.Process1) {
-                    // Include if Process1 is available and not completed
-                    return item.process1Available && !item.process1Completed;
-                } else if (filter === item.Process2) {
-                    // Include if Process2 is available and not completed
-                    return item.process2Available && !item.process2Completed;
+                // Normalize process names
+                const preProcessName = (item.preProcess || '').trim().toLowerCase();
+                const process1Name = (item.Process1 || '').trim().toLowerCase();
+                const process2Name = (item.Process2 || '').trim().toLowerCase();
+
+                let includeItem = false;
+
+                if (normalizedFilter === preProcessName) {
+                    includeItem = !item.preProcessCompleted;
+                    console.log(`Filtering for Pre-Process '${filter}', Item '${item["Part Name"]}': Include=${includeItem}`);
+                } else if (normalizedFilter === process1Name) {
+                    includeItem = item.process1Available && !item.process1Completed;
+                    console.log(`Filtering for Process 1 '${filter}', Item '${item["Part Name"]}': Available=${item.process1Available}, Completed=${item.process1Completed}, Include=${includeItem}`);
+                } else if (normalizedFilter === process2Name) {
+                    includeItem = item.process2Available && !item.process2Completed;
+                    console.log(`Filtering for Process 2 '${filter}', Item '${item["Part Name"]}': Available=${item.process2Available}, Completed=${item.process2Completed}, Include=${includeItem}`);
                 } else {
-                    return false;
+                    includeItem = false;
                 }
+
+                return includeItem;
             });
     }
 

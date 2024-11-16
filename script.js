@@ -452,7 +452,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Check if we are on the registration page
-    const registerForm = document.getElementById('registerButton');
+    const registerForm = document.getElementById('registerForm');
     if (registerForm) {
         registerForm.addEventListener('submit', handleRegister);
         console.log("Added Event Listener!!!")

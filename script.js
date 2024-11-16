@@ -406,6 +406,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const registerForm = document.getElementById('registerForm');
     if (registerForm) {
         registerForm.addEventListener('submit', handleRegister);
+        console.log("Added Event Listener!!!")
     }
 
     // If on dashboard, initialize dashboard

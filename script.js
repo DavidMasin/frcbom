@@ -10,8 +10,8 @@ async function handleLogin(event) {
     try {
         const response = await fetch(`${API_BASE_URL}/api/login`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ team_number: teamNumber, password: password })
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({team_number: teamNumber, password: password})
         });
 
         const data = await response.json();
@@ -41,8 +41,8 @@ async function handleRegister(event) {
     try {
         const response = await fetch(`${API_BASE_URL}/api/register`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ team_number: teamNumber, password: password })
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({team_number: teamNumber, password: password})
         });
 
         const data = await response.json();
@@ -66,7 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
         registerForm.addEventListener('submit', handleRegister);
     }
 });
-
 
 
 // Function to check if the user is logged in
@@ -95,6 +94,7 @@ function initializeDashboard() {
     // Attach event listeners
     document.getElementById('fetchBOMButton')?.addEventListener('click', handleFetchBOM);
     document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
+
     document.getElementById('settingsButton')?.addEventListener('click', () => {
         const modal = document.getElementById('settingsModal');
         modal.style.display = 'flex';
@@ -105,7 +105,9 @@ function initializeDashboard() {
 
     // Close settings modal
     const closeButton = document.querySelector('.close');
-    closeButton?.addEventListener('click', () => {
+    closeButto
+
+    n?.addEventListener('click', () => {
         const modal = document.getElementById('settingsModal');
         modal.style.display = 'none';
     });
@@ -137,7 +139,7 @@ async function handleFetchBOM() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ document_url: documentUrl, team_number: teamNumber })
+            body: JSON.stringify({document_url: documentUrl, team_number: teamNumber})
         });
 
         const data = await response.json();
@@ -159,6 +161,7 @@ function handleLogout() {
     localStorage.clear();
     window.location.href = 'index.html';
 }
+
 const socket = io(API_BASE_URL);
 
 // Listen for BOM updates
@@ -172,13 +175,13 @@ socket.on('update_bom', (data) => {
 
 // Update the saveBOMDataToLocal function if necessary
 function saveBOMDataToLocal(bomData) {
-  const teamNumber = localStorage.getItem('team_number');
-  const bomDict = JSON.parse(localStorage.getItem('bom_data')) || {};
-  bomDict[teamNumber] = bomData;
-  localStorage.setItem('bom_data', JSON.stringify(bomDict));
+    const teamNumber = localStorage.getItem('team_number');
+    const bomDict = JSON.parse(localStorage.getItem('bom_data')) || {};
+    bomDict[teamNumber] = bomData;
+    localStorage.setItem('bom_data', JSON.stringify(bomDict));
 
-  // Emit update to server
-  socket.emit('bom_update', { team_number: teamNumber, bom_data: bomData });
+    // Emit update to server
+    socket.emit('bom_update', {team_number: teamNumber, bom_data: bomData});
 }
 
 
@@ -188,8 +191,8 @@ async function saveBOMDataToServer(bomData) {
     try {
         const response = await fetch(`${API_BASE_URL}/api/save_bom`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ team_number: teamNumber, bom_data: bomData })
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({team_number: teamNumber, bom_data: bomData})
         });
         const data = await response.json();
         if (!response.ok) {
@@ -226,155 +229,162 @@ async function fetchBOMDataFromServer() {
 }
 
 function handleFilterBOM(filter) {
-  const bomData = getBOMDataFromLocal();
-  let filteredData = [];
+    const bomData = getBOMDataFromLocal();
+    let filteredData = [];
 
-  switch (filter) {
-    case 'All':
-      filteredData = bomData;
-      break;
-    case 'InHouse':
-      filteredData = bomData.filter(item => item.preProcess || item.Process1 || item.Process2);
-      break;
-    case 'COTS':
-      filteredData = bomData.filter(item => !item.preProcess && !item.Process1 && !item.Process2);
-      break;
-    default:
-      filteredData = bomData.filter(item => {
-        const requiredQuantity = item.Quantity;
+    switch (filter) {
+        case 'All':
+            filteredData = bomData;
+            break;
+        case 'InHouse':
+            filteredData = bomData.filter(item => item.preProcess || item.Process1 || item.Process2);
+            break;
+        case 'COTS':
+            filteredData = bomData.filter(item => !item.preProcess && !item.Process1 && !item.Process2);
+            break;
+        default:
+            filteredData = bomData.filter(item => {
+                const requiredQuantity = item.Quantity;
 
-        if (filter === item.preProcess) {
-          return (item.preProcessQuantity || 0) < requiredQuantity;
-        } else if (filter === item.Process1) {
-          return item.inProcess1 && (item.process1Quantity || 0) < requiredQuantity;
-        } else if (filter === item.Process2) {
-          return item.inProcess2 && (item.process2Quantity || 0) < requiredQuantity;
-        } else {
-          return false;
-        }
-      });
-  }
+                if (filter === item.preProcess) {
+                    return (item.preProcessQuantity || 0) < requiredQuantity;
+                } else if (filter === item.Process1) {
+                    return item.inProcess1 && (item.process1Quantity || 0) < requiredQuantity;
+                } else if (filter === item.Process2) {
+                    return item.inProcess2 && (item.process2Quantity || 0) < requiredQuantity;
+                } else {
+                    return false;
+                }
+            });
+    }
 
-  displayBOM(filteredData);
-  document.getElementById('bomTableContainer').style.display = 'block';
+    displayBOM(filteredData);
+    document.getElementById('bomTableContainer').style.display = 'block';
 }
 
 // Function to display BOM Data in Table
 function displayBOM(bomData) {
-  const tableBody = document.querySelector('#bomTable tbody');
-  tableBody.innerHTML = '';
+    const tableBody = document.querySelector('#bomTable tbody');
+    tableBody.innerHTML = '';
 
-  if (!bomData || bomData.length === 0) {
-    tableBody.innerHTML = '<tr><td colspan="10">No parts found</td></tr>';
-    return;
-  }
+    if (!bomData || bomData.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="10">No parts found</td></tr>';
+        return;
+    }
 
-  // Sort BOM data alphabetically by Part Name
-  bomData.sort((a, b) => (a["Part Name"] || '').localeCompare(b["Part Name"] || ''));
+    // Sort BOM data alphabetically by Part Name
+    bomData.sort((a, b) => (a["Part Name"] || '').localeCompare(b["Part Name"] || ''));
 
-  bomData.forEach((item, index) => {
-    const row = document.createElement('tr');
+    bomData.forEach((item) => {
+        const row = document.createElement('tr');
 
-    // Part Name
-    row.innerHTML += `<td>${item["Part Name"] || 'N/A'}</td>`;
-    // Description
-    row.innerHTML += `<td>${item.Description || 'N/A'}</td>`;
-    // Material
-    row.innerHTML += `<td>${item.Material || 'N/A'}</td>`;
-    // Quantity Required
-    row.innerHTML += `<td>${item.Quantity || 'N/A'}</td>`;
+        // Part Name
+        row.innerHTML += `<td>${item["Part Name"] || 'N/A'}</td>`;
+        // Description
+        row.innerHTML += `<td>${item.Description || 'N/A'}</td>`;
+        // Material
+        row.innerHTML += `<td>${item.Material || 'N/A'}</td>`;
+        // Quantity Required
+        row.innerHTML += `<td>${item.Quantity || 'N/A'}</td>`;
 
-    // Pre-Process
-    row.innerHTML += `<td>${item.preProcess || 'N/A'}</td>`;
-    // Pre-Process Quantity Counter
-    row.innerHTML += `<td>${createQuantityCounter('preProcessQuantity', index, item.preProcessQuantity || 0)}</td>`;
+        // Pre-Process
+        row.innerHTML += `<td>${item.preProcess || 'N/A'}</td>`;
+        // Pre-Process Quantity Counter
+        row.innerHTML += `<td>${createQuantityCounter('preProcessQuantity', item["Part Name"], item.preProcessQuantity || 0)}</td>`;
 
-    // Process 1
-    row.innerHTML += `<td>${item.Process1 || 'N/A'}</td>`;
-    // Process 1 Quantity Counter
-    row.innerHTML += `<td>${createQuantityCounter('process1Quantity', index, item.process1Quantity || 0)}</td>`;
+        // Process 1
+        row.innerHTML += `<td>${item.Process1 || 'N/A'}</td>`;
+        // Process 1 Quantity Counter
+        row.innerHTML += `<td>${createQuantityCounter('process1Quantity', item["Part Name"], item.process1Quantity || 0)}</td>`;
 
-    // Process 2
-    row.innerHTML += `<td>${item.Process2 || 'N/A'}</td>`;
-    // Process 2 Quantity Counter
-    row.innerHTML += `<td>${createQuantityCounter('process2Quantity', index, item.process2Quantity || 0)}</td>`;
+        // Process 2
+        row.innerHTML += `<td>${item.Process2 || 'N/A'}</td>`;
+        // Process 2 Quantity Counter
+        row.innerHTML += `<td>${createQuantityCounter('process2Quantity', item["Part Name"], item.process2Quantity || 0)}</td>`;
 
-    tableBody.appendChild(row);
-  });
+        tableBody.appendChild(row);
+    });
 
-  // Attach event listeners for the quantity counters
-  document.querySelectorAll('.quantity-decrement').forEach(button => {
-    button.addEventListener('click', handleQuantityDecrement);
-  });
-  document.querySelectorAll('.quantity-increment').forEach(button => {
-    button.addEventListener('click', handleQuantityIncrement);
-  });
+    // Attach event listeners for the quantity counters
+    document.querySelectorAll('.quantity-decrement').forEach(button => {
+        button.addEventListener('click', handleQuantityDecrement);
+    });
+    document.querySelectorAll('.quantity-increment').forEach(button => {
+        button.addEventListener('click', handleQuantityIncrement);
+    });
 }
+
 function handleQuantityIncrement(event) {
-  const index = event.target.getAttribute('data-index');
-  const field = event.target.getAttribute('data-field');
-  const bomData = getBOMDataFromLocal();
-  const item = bomData[index];
-  const maxQuantity = item.Quantity;
+    const partName = decodeURIComponent(event.target.getAttribute('data-part-name'));
+    const field = event.target.getAttribute('data-field');
+    const bomData = getBOMDataFromLocal();
 
-  item[field] = (item[field] || 0) + 1;
-  if (item[field] > maxQuantity) {
-    item[field] = maxQuantity;
-  }
+    const item = bomData.find(item => item["Part Name"] === partName);
+    if (!item) return;
 
-  // Check if quantity made equals required quantity to move to next process
-  checkProcessProgress(item);
+    const maxQuantity = item.Quantity;
+    item[field] = (item[field] || 0) + 1;
+    if (item[field] > maxQuantity) {
+        item[field] = maxQuantity;
+    }
 
-  saveBOMDataToLocal(bomData);
-  displayBOM(bomData);
+    // Check process progression
+    checkProcessProgress(item);
+
+    saveBOMDataToLocal(bomData);
+    displayBOM(bomData);
 }
 function checkProcessProgress(item) {
-  const requiredQuantity = item.Quantity;
+    const requiredQuantity = item.Quantity;
 
-  // Pre-Process to Process 1
-  if ((item.preProcess || item.preProcessQuantity !== undefined) && item.preProcessQuantity >= requiredQuantity) {
-    // Move to Process 1
-    item.inProcess1 = true;
-  } else {
-    item.inProcess1 = false;
-    item.process1Quantity = 0; // Reset Process 1 quantity if pre-process is incomplete
-  }
+    // Pre-Process to Process 1
+    if ((item.preProcess || item.preProcessQuantity !== undefined) && item.preProcessQuantity >= requiredQuantity) {
+        // Move to Process 1
+        item.inProcess1 = true;
+    } else {
+        item.inProcess1 = false;
+        item.process1Quantity = 0; // Reset Process 1 quantity if pre-process is incomplete
+    }
 
-  // Process 1 to Process 2
-  if ((item.Process1 || item.process1Quantity !== undefined) && item.process1Quantity >= requiredQuantity) {
-    // Move to Process 2
-    item.inProcess2 = true;
-  } else {
-    item.inProcess2 = false;
-    item.process2Quantity = 0; // Reset Process 2 quantity if Process 1 is incomplete
-  }
+    // Process 1 to Process 2
+    if ((item.Process1 || item.process1Quantity !== undefined) && item.process1Quantity >= requiredQuantity) {
+        // Move to Process 2
+        item.inProcess2 = true;
+    } else {
+        item.inProcess2 = false;
+        item.process2Quantity = 0; // Reset Process 2 quantity if Process 1 is incomplete
+    }
 }
+
 function handleQuantityDecrement(event) {
-  const index = event.target.getAttribute('data-index');
-  const field = event.target.getAttribute('data-field');
-  const bomData = getBOMDataFromLocal();
-  const item = bomData[index];
+    const partName = decodeURIComponent(event.target.getAttribute('data-part-name'));
+    const field = event.target.getAttribute('data-field');
+    const bomData = getBOMDataFromLocal();
 
-  item[field] = (item[field] || 0) - 1;
-  if (item[field] < 0) {
-    item[field] = 0;
-  }
+    const item = bomData.find(item => item["Part Name"] === partName);
+    if (!item) return;
 
-  // Check if quantity made equals required quantity to adjust process progress
-  checkProcessProgress(item);
+    item[field] = (item[field] || 0) - 1;
+    if (item[field] < 0) {
+        item[field] = 0;
+    }
 
-  saveBOMDataToLocal(bomData);
-  displayBOM(bomData);
+    // Check process progression
+    checkProcessProgress(item);
+
+    saveBOMDataToLocal(bomData);
+    displayBOM(bomData);
 }
-function createQuantityCounter(fieldName, index, quantity) {
-  return `
-    <div class="quantity-counter">
-      <button class="quantity-decrement" data-index="${index}" data-field="${fieldName}">-</button>
-      <span class="quantity-value">${quantity}</span>
-      <button class="quantity-increment" data-index="${index}" data-field="${fieldName}">+</button>
-    </div>
-  `;
+function createQuantityCounter(fieldName, partName, quantity) {
+    return `
+        <div class="quantity-counter">
+            <button class="quantity-decrement" data-part-name="${encodeURIComponent(partName)}" data-field="${fieldName}">-</button>
+            <span class="quantity-value">${quantity}</span>
+            <button class="quantity-increment" data-part-name="${encodeURIComponent(partName)}" data-field="${fieldName}">+</button>
+        </div>
+    `;
 }
+
 // Function to handle quantity produced change
 function handleQuantityChange(event) {
     const index = event.target.getAttribute('data-index');
@@ -394,6 +404,7 @@ function handleProcessStatusChange(event) {
     saveBOMDataToLocal(bomData);
     // Optionally, send update to server and other clients via Socket.IO
 }
+
 // Attach event listeners after DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
     // Check if we are on the login page

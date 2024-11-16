@@ -157,6 +157,7 @@ function handleLogout() {
     localStorage.clear();
     window.location.href = 'index.html';
 }
+const socket = io(API_BASE_URL);
 
 // Listen for BOM updates
 socket.on('update_bom', (data) => {

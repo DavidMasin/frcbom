@@ -7,14 +7,12 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div id="dashboard">
-    <!-- Existing content -->
 
-    <!-- Header Section -->
-    <header>
-        <h1>Welcome, Team <span id="teamNumber"></span></h1>
-        <button id="logoutButton">Log Out</button>
-    </header>
+<!-- Header Section -->
+<header>
+    <h1>Welcome, Team <span id="teamNumber"></span></h1>
+    <button id="logoutButton">Log Out</button>
+</header>
 
     <!-- Dashboard Buttons Section -->
     <div class="dashboard-buttons">
@@ -48,21 +46,21 @@
                 <th>Process 2</th>
                 <th>Process 2 Quantity</th>
             </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
 
-    <!-- Settings Modal (Hidden by Default) -->
-    <div id="settingsModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Settings</h2>
-            <input type="text" id="onshapeDocumentUrl" placeholder="Enter Onshape Document URL">
-            <button id="fetchBOMButton">Fetch BOM</button>
-        </div>
+<!-- Settings Modal (Hidden by Default) -->
+<div id="settingsModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Settings</h2>
+        <input type="text" id="onshapeDocumentUrl" placeholder="Enter Onshape Document URL">
+        <button id="fetchBOMButton">Fetch BOM</button>
     </div>
 </div>
+
 <!-- Include the Socket.IO client library and your custom script -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
 <script src="script.js"></script>

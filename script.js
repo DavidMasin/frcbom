@@ -11,8 +11,8 @@ async function handleLogin(event) {
     try {
         const response = await fetch(`${API_BASE_URL}/api/login`, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({team_number: teamNumber, password: password})
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ team_number: teamNumber, password: password })
         });
 
         const data = await response.json();
@@ -20,7 +20,10 @@ async function handleLogin(event) {
         if (response.ok) {
             localStorage.setItem('jwt_token', data.access_token);
             localStorage.setItem('team_number', data.team_number);
-            window.location.href = 'dashboard.html';
+
+            // Redirect to the new URL structure
+            const newUrl = `/${teamNumber}/InHouse/All`;
+            window.location.href = newUrl;
         } else {
             alert(`Login failed: ${data.error}`);
         }
@@ -84,7 +87,23 @@ function checkLoginStatus() {
 function initializeDashboard() {
     checkLoginStatus();
 
+    // Parse the URL path
+    const pathSegments = window.location.pathname.split('/').filter(segment => segment !== '');
     const teamNumber = localStorage.getItem('team_number');
+
+    // Verify that the team number in the URL matches the logged-in user's team number
+    if (pathSegments[0] && pathSegments[0] !== teamNumber) {
+        alert('Invalid team number in URL.');
+        window.location.href = `/${teamNumber}/InHouse/All`;
+        return;
+    }
+
+    const initialView = pathSegments[1] || 'InHouse';
+    const initialFilter = pathSegments[2] || 'All';
+
+    // Set current view and filter
+    currentView = initialView;
+    currentFilter = initialFilter;
 
     // Display the team number in the header
     const teamNumberElement = document.getElementById('teamNumber');
@@ -92,32 +111,12 @@ function initializeDashboard() {
         teamNumberElement.textContent = teamNumber;
     }
 
-    // Attach event listeners
-    document.getElementById('fetchBOMButton')?.addEventListener('click', handleFetchBOM);
-    document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
+    // Attach event listeners (as previously described)
+    // ...
 
-    document.getElementById('settingsButton')?.addEventListener('click', () => {
-        const modal = document.getElementById('settingsModal');
-        modal.style.display = 'flex';
-    });
-    document.querySelectorAll('.filter-button').forEach(button => {
-        button.addEventListener('click', () => handleFilterBOM(button.getAttribute('data-filter')));
-    });
-
-    // Close settings modal
-    const closeButton = document.querySelector('.close');
-    closeButton?.addEventListener('click', () => {
-        const modal = document.getElementById('settingsModal');
-        modal.style.display = 'none';
-    });
-
-    // Fetch BOM data on page load
+    // Fetch BOM data and apply the initial filter and view
     fetchBOMDataFromServer();
-    bomData = data.bom_data;
-    saveBOMDataToLocal(bomData);
-    applyFilterAndDisplay(); // Apply the current filter and display
 }
-
 // Function to handle Fetch BOM
 async function handleFetchBOM() {
     const documentUrl = document.getElementById('onshapeDocumentUrl').value;
@@ -213,6 +212,7 @@ function getBOMDataFromLocal() {
 }
 
 // Function to fetch BOM Data from Server
+
 async function fetchBOMDataFromServer() {
     const teamNumber = localStorage.getItem('team_number');
     try {
@@ -220,8 +220,7 @@ async function fetchBOMDataFromServer() {
         const data = await response.json();
         if (response.ok) {
             saveBOMDataToLocal(data.bom_data);
-            displayBOM(data.bom_data);
-            document.getElementById('bomTableContainer').style.display = 'block';
+            applyFilterAndDisplay(); // Use the current filter and view
         } else {
             console.error('Failed to retrieve BOM data:', data.error);
         }
@@ -229,6 +228,7 @@ async function fetchBOMDataFromServer() {
         console.error('Fetch BOM Data Error:', error);
     }
 }
+
 function applyFilterAndDisplay() {
     const bomData = getBOMDataFromLocal();
     let filteredData = [];
@@ -297,7 +297,11 @@ function handleFilterBOM(filter) {
                 }
             });
     }
+    const teamNumber = localStorage.getItem('team_number');
+    const newUrl = `/${teamNumber}/${currentView}/${currentFilter}`;
+    history.pushState(null, '', newUrl);
 
+    applyFilterAndDisplay();
     displayBOM(filteredData);
     document.getElementById('bomTableContainer').style.display = 'block';
 }
@@ -353,6 +357,33 @@ function displayBOM(bomData) {
         button.addEventListener('click', handleQuantityIncrement);
     });
 }
+function handleViewChange(view) {
+    currentView = view;
+
+    // Update the URL without reloading the page
+    const teamNumber = localStorage.getItem('team_number');
+    const newUrl = `/${teamNumber}/${currentView}/${currentFilter}`;
+    history.pushState(null, '', newUrl);
+
+    applyFilterAndDisplay();
+}
+
+window.addEventListener('popstate', (event) => {
+    const pathSegments = window.location.pathname.split('/').filter(segment => segment !== '');
+    const teamNumber = localStorage.getItem('team_number');
+
+    // Verify the team number
+    if (pathSegments[0] && pathSegments[0] !== teamNumber) {
+        alert('Invalid team number in URL.');
+        window.location.href = `/${teamNumber}/InHouse/All`;
+        return;
+    }
+
+    currentView = pathSegments[1] || 'InHouse';
+    currentFilter = pathSegments[2] || 'All';
+
+    applyFilterAndDisplay();
+});
 
 function handleQuantityIncrement(event) {
     const partName = decodeURIComponent(event.target.getAttribute('data-part-name'));

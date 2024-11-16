@@ -1,21 +1,7 @@
 const API_BASE_URL = 'https://frcbom-production.up.railway.app';
-let teamNumber = localStorage.getItem('team_number') || '';
-if (document.getElementById('loginMessage')) {
-    document.getElementById('loginMessage').textContent = data.error;
-}
-document.addEventListener('DOMContentLoaded', () => {
-    // Attach event listeners
-    document.getElementById('loginForm')?.addEventListener('submit', handleLogin);
-    document.getElementById('registerForm')?.addEventListener('submit', handleRegister);
-    document.getElementById('registerButton')?.addEventListener('click', () => {
-        window.location.href = 'register.html';
-    });
-    document.getElementById('backToLogin')?.addEventListener('click', () => {
-        window.location.href = 'index.html';
-    });
-    document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
-    document.getElementById('fetchBOMButton')?.addEventListener('click', handleFetchBOM);
-});
+let teamNumber = localStorage.getItem('team_number') ;
+
+
 
 // Handle Login
 async function handleLogin(event) {
@@ -43,7 +29,25 @@ async function handleLogin(event) {
         document.getElementById('loginMessage').textContent = 'Login failed.';
     }
 }
+function checkProcessProgress(item) {
+    const requiredQuantity = item.Quantity;
 
+    // Pre-Process to Process 1
+    if ((item.preProcess || item.preProcessQuantity !== undefined) && item.preProcessQuantity >= requiredQuantity) {
+        item.inProcess1 = true;
+    } else {
+        item.inProcess1 = false;
+        item.process1Quantity = 0; // Reset if not ready
+    }
+
+    // Process 1 to Process 2
+    if ((item.Process1 || item.process1Quantity !== undefined) && item.process1Quantity >= requiredQuantity) {
+        item.inProcess2 = true;
+    } else {
+        item.inProcess2 = false;
+        item.process2Quantity = 0; // Reset if not ready
+    }
+}
 // Handle Registration
 async function handleRegister(event) {
     event.preventDefault();
@@ -72,6 +76,10 @@ async function handleRegister(event) {
 
 // Initialize event listeners
 document.addEventListener('DOMContentLoaded', () => {
+    if (document.getElementById('dashboard')) {
+        initializeDashboard();
+        console.log("Dashboard initialized");
+    }
     // Attach event listeners
     document.getElementById('loginForm')?.addEventListener('submit', handleLogin);
     document.getElementById('registerForm')?.addEventListener('submit', handleRegister);
@@ -197,6 +205,8 @@ function saveBOMDataToLocal(bomData) {
     bomDict[teamNumber] = bomData;
     localStorage.setItem('bom_data', JSON.stringify(bomDict));
     console.log('BOM data saved to localStorage for team:', teamNumber);
+
+    saveBOMDataToServer(bomData);
 }
 
 // Function to get BOM data from localStorage
@@ -258,30 +268,146 @@ function displayBOM(bomData) {
     tableBody.innerHTML = '';
 
     if (!bomData || bomData.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="7">No parts found</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="10">No parts found</td></tr>';
         return;
     }
 
-    // Sort the BOM data alphabetically by Part Name (A-Z)
-    bomData.sort((a, b) => {
-        const partNameA = (a["Part Name"] || '').toUpperCase();
-        const partNameB = (b["Part Name"] || '').toUpperCase();
-        return partNameA.localeCompare(partNameB);
+    // Sort BOM data alphabetically by Part Name
+    bomData.sort((a, b) => (a["Part Name"] || '').localeCompare(b["Part Name"] || ''));
+
+    bomData.forEach((item) => {
+        const row = document.createElement('tr');
+
+        // Part Name
+        row.innerHTML += `<td>${item["Part Name"] || 'N/A'}</td>`;
+        // Description
+        row.innerHTML += `<td>${item.Description || 'N/A'}</td>`;
+        // Material
+        row.innerHTML += `<td>${item.Material || 'N/A'}</td>`;
+        // Quantity Required
+        row.innerHTML += `<td>${item.Quantity || 'N/A'}</td>`;
+
+        // Pre-Process
+        row.innerHTML += `<td>${item.preProcess || 'N/A'}</td>`;
+        // Pre-Process Quantity Counter
+        row.innerHTML += `<td>${createQuantityCounter('preProcessQuantity', item["Part Name"], item.preProcessQuantity || 0)}</td>`;
+
+        // Process 1
+        row.innerHTML += `<td>${item.Process1 || 'N/A'}</td>`;
+        // Process 1 Quantity Counter
+        row.innerHTML += `<td>${createQuantityCounter('process1Quantity', item["Part Name"], item.process1Quantity || 0)}</td>`;
+
+        // Process 2
+        row.innerHTML += `<td>${item.Process2 || 'N/A'}</td>`;
+        // Process 2 Quantity Counter
+        row.innerHTML += `<td>${createQuantityCounter('process2Quantity', item["Part Name"], item.process2Quantity || 0)}</td>`;
+
+        tableBody.appendChild(row);
     });
 
-    // Populate the table with sorted data
-    bomData.forEach(item => {
-        const row = `<tr>
-            <td>${item["Part Name"] || 'N/A'}</td>
-            <td>${item.Description || 'N/A'}</td>
-            <td>${item.materialBOM || 'N/A'}</td>
-            <td>${item.Quantity || 'N/A'}</td>
-            <td>${item.preProcess || 'N/A'}</td>
-            <td>${item.Process1 || 'N/A'}</td>
-            <td>${item.Process2 || 'N/A'}</td>
-        </tr>`;
-        tableBody.innerHTML += row;
+    // Attach event listeners for the quantity counters
+    attachQuantityCounterEventListeners();
+}
+function createQuantityCounter(fieldName, partName, quantity) {
+    return `
+        <div class="quantity-counter">
+            <button class="quantity-decrement" data-part-name="${encodeURIComponent(partName)}" data-field="${fieldName}">-</button>
+            <span class="quantity-value">${quantity}</span>
+            <button class="quantity-increment" data-part-name="${encodeURIComponent(partName)}" data-field="${fieldName}">+</button>
+        </div>
+    `;
+}
+function attachQuantityCounterEventListeners() {
+    document.querySelectorAll('.quantity-decrement').forEach(button => {
+        button.addEventListener('click', handleQuantityDecrement);
     });
+    document.querySelectorAll('.quantity-increment').forEach(button => {
+        button.addEventListener('click', handleQuantityIncrement);
+    });
+}
+function handleQuantityIncrement(event) {
+    const partName = decodeURIComponent(event.target.getAttribute('data-part-name'));
+    const field = event.target.getAttribute('data-field');
+    const bomData = getBOMDataFromLocal();
+
+    const item = bomData.find(item => item["Part Name"] === partName);
+    if (!item) return;
+
+    const maxQuantity = item.Quantity;
+    item[field] = (item[field] || 0) + 1;
+    if (item[field] > maxQuantity) {
+        item[field] = maxQuantity;
+    }
+
+    // Save updated BOM data
+    saveBOMDataToLocal(bomData);
+
+    // Update the display
+    displayBOM(bomData);
+}
+// Function to initialize the dashboard
+function initializeDashboard() {
+    // Ensure the user is logged in
+    checkLoginStatus();
+
+    // Update the team number variable
+    teamNumber = localStorage.getItem('team_number');
+
+    // Display the team number in the header
+    const teamNumberElement = document.getElementById('teamNumber');
+    if (teamNumberElement && teamNumber) {
+        teamNumberElement.textContent = teamNumber;
+    }
+
+    // Fetch BOM data and display it
+    const bomData = getBOMDataFromLocal();
+    if (bomData && bomData.length > 0) {
+        // If BOM data exists in localStorage, display it
+        displayBOM(bomData);
+    } else {
+        // If no BOM data in localStorage, fetch from the server
+        fetchBOMDataFromServer();
+    }
+
+    // Attach event listeners for buttons
+    document.getElementById('fetchBOMButton')?.addEventListener('click', handleFetchBOM);
+    document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
+
+    // Attach event listeners for filter buttons (if you have any)
+    document.querySelectorAll('.filter-button').forEach(button => {
+        button.addEventListener('click', () => {
+            const filter = button.getAttribute('data-filter');
+            handleFilterBOM(filter);
+        });
+    });
+
+    // Initialize modal logic (if applicable)
+    const modal = document.getElementById('settingsModal');
+    const settingsButton = document.getElementById('settingsButton');
+    const closeButton = document.querySelector('.close');
+
+    settingsButton?.addEventListener('click', () => modal.style.display = 'flex');
+    closeButton?.addEventListener('click', () => modal.style.display = 'none');
+}
+
+function handleQuantityDecrement(event) {
+    const partName = decodeURIComponent(event.target.getAttribute('data-part-name'));
+    const field = event.target.getAttribute('data-field');
+    const bomData = getBOMDataFromLocal();
+
+    const item = bomData.find(item => item["Part Name"] === partName);
+    if (!item) return;
+
+    item[field] = (item[field] || 0) - 1;
+    if (item[field] < 0) {
+        item[field] = 0;
+    }
+
+    // Save updated BOM data
+    saveBOMDataToLocal(bomData);
+
+    // Update the display
+    displayBOM(bomData);
 }
 
 // Handle Logout

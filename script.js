@@ -32,10 +32,12 @@ async function handleLogin(event) {
 // Function to handle registration
 async function handleRegister(event) {
     event.preventDefault();
+    console.log('Register button clicked');
 
     const teamNumber = document.getElementById('registerTeamNumber').value;
     const password = document.getElementById('registerPassword').value;
-
+    console.log('Team Number:', teamNumber);
+    console.log('Password:', password);
     try {
         const response = await fetch(`${API_BASE_URL}/api/register`, {
             method: 'POST',

@@ -70,14 +70,35 @@ async function handleRegister(event) {
 
 // Initialize event listeners
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('fetchBOMButton')?.addEventListener('click', handleFetchBOM);
+    // Attach event listeners
+    document.getElementById('loginForm')?.addEventListener('submit', handleLogin);
+    document.getElementById('registerForm')?.addEventListener('submit', handleRegister);
+    document.getElementById('registerButton')?.addEventListener('click', () => {
+        window.location.href = 'register.html';
+    });
+    document.getElementById('backToLogin')?.addEventListener('click', () => {
+        window.location.href = 'index.html';
+    });
     document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
+    document.getElementById('fetchBOMButton')?.addEventListener('click', handleFetchBOM);
 
     // Display team number in header
-    document.getElementById('teamNumber').textContent = teamNumber;
+    if (document.getElementById('teamNumber')) {
+        document.getElementById('teamNumber').textContent = teamNumber || '';
+    }
 
-    // Fetch BOM data from the server on page load
-    fetchBOMDataFromServer();
+    // Fetch BOM data from the server on page load (if applicable)
+    if (window.location.pathname.includes('dashboard.html')) {
+        fetchBOMDataFromServer();
+    }
+
+    // Modal Logic (move inside DOMContentLoaded)
+    const modal = document.getElementById('settingsModal');
+    const settingsButton = document.getElementById('settingsButton');
+    const closeButton = document.querySelector('.close');
+
+    settingsButton?.addEventListener('click', () => modal.style.display = 'flex');
+    closeButton?.addEventListener('click', () => modal.style.display = 'none');
 });
 
 // Function to handle fetching BOM data from Onshape
@@ -167,29 +188,6 @@ const closeButton = document.querySelector('.close');
 settingsButton.addEventListener('click', () => modal.style.display = 'flex');
 closeButton.addEventListener('click', () => modal.style.display = 'none');
 
-// Fetch BOM Data
-document.getElementById('fetchBOMButton')?.addEventListener('click', async () => {
-    const documentUrl = document.getElementById('onshapeDocumentUrl').value;
-    const token = localStorage.getItem('jwt_token');
-
-    if (!documentUrl) {
-        alert('Please enter a URL.');
-        return;
-    }
-
-    const response = await fetch(`${API_BASE_URL}/api/bom`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ document_url: documentUrl, team_number: teamNumber })
-    });
-
-    const data = await response.json();
-    if (response.ok) {
-        displayBOM(data.bom_data);
-    } else {
-        alert(`Error: ${data.error}`);
-    }
-});
 
 // Function to save BOM data to localStorage
 function saveBOMDataToLocal(bomData) {

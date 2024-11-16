@@ -100,6 +100,8 @@ def login():
 @app.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({"status": "API is running"}), 200
+
+
 @socketio.on('bom_update')
 def handle_bom_update(data):
     team_number = data.get('team_number')
@@ -196,7 +198,6 @@ def fetch_bom():
         print("Got parts!")
         # Prepare the response data
         bom_data = []
-
 
         for part_name, (description, quantity, material, materialBOM, preProcess, Process1, Process2) in parts.items():
             bom_data.append({

@@ -9,14 +9,19 @@
 <body>
     <header>
         <h1>Welcome, Team <span id="teamNumber"></span></h1>
+        <button id="settingsButton">Settings</button>
         <button id="logoutButton">Log Out</button>
     </header>
 
-    <div class="dashboard-container">
-        <input type="text" id="onshapeDocumentUrl" placeholder="Enter Onshape Document URL">
-        <button id="fetchBOMButton">Fetch BOM</button>
+    <!-- Filter Buttons -->
+    <div class="filter-buttons">
+        <button class="filter-button" data-filter="CNC">CNC</button>
+        <button class="filter-button" data-filter="Lathe">Lathe</button>
+        <button class="filter-button" data-filter="3D Printer">3D Printer</button>
+        <button class="filter-button" data-filter="All">Show All</button>
     </div>
 
+    <!-- BOM Table Container -->
     <div class="bom-table-container">
         <h2>BOM Table</h2>
         <table id="bomTable">
@@ -33,6 +38,16 @@
             </thead>
             <tbody></tbody>
         </table>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Settings</h2>
+            <input type="text" id="onshapeDocumentUrl" placeholder="Enter Onshape Document URL">
+            <button id="fetchBOMButton">Fetch BOM</button>
+        </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>

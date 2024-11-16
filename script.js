@@ -156,22 +156,66 @@ async function fetchBOMDataFromServer() {
     }
 }
 
-// Function to display BOM data in the table
-function displayBOM(bomData) {
-    const tableBody = document.querySelector('#bomTable tbody');
-    tableBody.innerHTML = ''; // Clear existing rows
+// Display team number
+document.getElementById('teamNumber').textContent = teamNumber;
 
-    if (!bomData || bomData.length === 0) {
-        alert('No BOM data available.');
+// Modal Logic
+const modal = document.getElementById('settingsModal');
+const settingsButton = document.getElementById('settingsButton');
+const closeButton = document.querySelector('.close');
+
+settingsButton.addEventListener('click', () => modal.style.display = 'flex');
+closeButton.addEventListener('click', () => modal.style.display = 'none');
+
+// Fetch BOM Data
+document.getElementById('fetchBOMButton')?.addEventListener('click', async () => {
+    const documentUrl = document.getElementById('onshapeDocumentUrl').value;
+    const token = localStorage.getItem('jwt_token');
+
+    if (!documentUrl) {
+        alert('Please enter a URL.');
         return;
     }
 
+    const response = await fetch(`${API_BASE_URL}/api/bom`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ document_url: documentUrl, team_number: teamNumber })
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+        displayBOM(data.bom_data);
+    } else {
+        alert(`Error: ${data.error}`);
+    }
+});
+
+// Filter BOM Data
+document.querySelectorAll('.filter-button').forEach(button => {
+    button.addEventListener('click', () => {
+        const filter = button.getAttribute('data-filter');
+        fetchFilteredBOMData(filter);
+    });
+});
+
+function fetchFilteredBOMData(filter) {
+    const bomData = JSON.parse(localStorage.getItem('bom_data'))?.[teamNumber] || [];
+    const filteredData = filter === 'All' ? bomData : bomData.filter(item => item.Process1 === filter);
+    displayBOM(filteredData);
+}
+
+// Display BOM Data
+function displayBOM(bomData) {
+    const tableBody = document.querySelector('#bomTable tbody');
+    tableBody.innerHTML = '';
+
     bomData.forEach(item => {
         const row = `<tr>
-            <td>${item["Part Name"] || 'N/A'}</td>
+            <td>${item["Part Name"]}</td>
             <td>${item.Description || 'N/A'}</td>
-            <td>${item.Material || 'N/A'}</td>
-            <td>${item.Quantity || 'N/A'}</td>
+            <td>${item.Material}</td>
+            <td>${item.Quantity}</td>
             <td>${item.preProcess || 'N/A'}</td>
             <td>${item.Process1 || 'N/A'}</td>
             <td>${item.Process2 || 'N/A'}</td>
@@ -179,6 +223,12 @@ function displayBOM(bomData) {
         tableBody.innerHTML += row;
     });
 }
+
+// Logout
+document.getElementById('logoutButton').addEventListener('click', () => {
+    localStorage.clear();
+    window.location.href = 'index.html';
+});
 // Handle Logout
 function handleLogout() {
     localStorage.clear();

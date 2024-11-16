@@ -1,17 +1,20 @@
 const API_BASE_URL = 'https://frcbom-production.up.railway.app';
+let teamNumber = localStorage.getItem('team_number') || '';
+let currentView = 'InHouse';
+let currentFilter = 'All';
 
 // Function to handle login
 async function handleLogin(event) {
     event.preventDefault();
 
-    const teamNumber = document.getElementById('loginTeamNumber').value;
+    const teamNumberInput = document.getElementById('loginTeamNumber').value;
     const password = document.getElementById('loginPassword').value;
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ team_number: teamNumber, password: password })
+            body: JSON.stringify({ team_number: teamNumberInput, password: password })
         });
 
         const data = await response.json();
@@ -19,6 +22,9 @@ async function handleLogin(event) {
         if (response.ok) {
             localStorage.setItem('jwt_token', data.access_token);
             localStorage.setItem('team_number', data.team_number);
+
+            // Update teamNumber variable
+            teamNumber = data.team_number;
 
             // Redirect to dashboard.html after login
             window.location.href = 'dashboard.html';
@@ -36,15 +42,15 @@ async function handleRegister(event) {
     event.preventDefault();
     console.log('Register button clicked');
 
-    const teamNumber = document.getElementById('registerTeamNumber').value;
+    const teamNumberInput = document.getElementById('registerTeamNumber').value;
     const password = document.getElementById('registerPassword').value;
-    console.log('Team Number:', teamNumber);
+    console.log('Team Number:', teamNumberInput);
     console.log('Password:', password);
     try {
         const response = await fetch(`${API_BASE_URL}/api/register`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({team_number: teamNumber, password: password})
+            body: JSON.stringify({team_number: teamNumberInput, password: password})
         });
 
         const data = await response.json();
@@ -63,7 +69,7 @@ async function handleRegister(event) {
 
 // Function to check if the user is logged in
 function checkLoginStatus() {
-    const teamNumber = localStorage.getItem('team_number');
+    teamNumber = localStorage.getItem('team_number');
     const token = localStorage.getItem('jwt_token');
 
     if (!teamNumber || !token) {
@@ -75,12 +81,6 @@ function checkLoginStatus() {
 // Function to initialize the dashboard
 function initializeDashboard() {
     checkLoginStatus();
-
-    const teamNumber = localStorage.getItem('team_number');
-
-    // Set default view and filter
-    currentView = 'InHouse';
-    currentFilter = 'All';
 
     // Display the team number in the header
     const teamNumberElement = document.getElementById('teamNumber');
@@ -112,7 +112,6 @@ async function handleFetchBOM() {
         return;
     }
 
-    const teamNumber = localStorage.getItem('team_number');
     const token = localStorage.getItem('jwt_token');
     if (!token) {
         alert('You are not authenticated. Please log in again.');
@@ -155,7 +154,9 @@ const socket = io(API_BASE_URL);
 
 // Listen for BOM updates
 socket.on('update_bom', (data) => {
-    const teamNumber = localStorage.getItem('team_number');
+    const token = localStorage.getItem('jwt_token');
+    if (!token) return;
+
     if (data.team_number === teamNumber) {
         saveBOMDataToLocal(data.bom_data);
         displayBOM(data.bom_data);
@@ -164,7 +165,6 @@ socket.on('update_bom', (data) => {
 
 // Function to save BOM data to localStorage and emit updates
 function saveBOMDataToLocal(bomData) {
-    const teamNumber = localStorage.getItem('team_number');
     const bomDict = JSON.parse(localStorage.getItem('bom_data')) || {};
     bomDict[teamNumber] = bomData;
     localStorage.setItem('bom_data', JSON.stringify(bomDict));
@@ -173,34 +173,14 @@ function saveBOMDataToLocal(bomData) {
     socket.emit('bom_update', {team_number: teamNumber, bom_data: bomData});
 }
 
-// Function to save BOM data to server
-async function saveBOMDataToServer(bomData) {
-    const teamNumber = localStorage.getItem('team_number');
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/save_bom`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({team_number: teamNumber, bom_data: bomData})
-        });
-        const data = await response.json();
-        if (!response.ok) {
-            console.error('Failed to save BOM data:', data.error);
-        }
-    } catch (error) {
-        console.error('Save BOM Data Error:', error);
-    }
-}
-
 // Function to get BOM Data from Local Storage
 function getBOMDataFromLocal() {
-    const teamNumber = localStorage.getItem('team_number');
     const bomDict = JSON.parse(localStorage.getItem('bom_data')) || {};
     return bomDict[teamNumber] || [];
 }
 
 // Function to fetch BOM Data from Server
 async function fetchBOMDataFromServer() {
-    const teamNumber = localStorage.getItem('team_number');
     try {
         const response = await fetch(`${API_BASE_URL}/api/get_bom?team_number=${teamNumber}`);
         const data = await response.json();
@@ -218,16 +198,9 @@ async function fetchBOMDataFromServer() {
 // Function to apply the current filter and display the BOM data
 function applyFilterAndDisplay() {
     const bomData = getBOMDataFromLocal();
-    displayBOM(bomData);
-}
-
-// Function to handle BOM filtering
-function handleFilterBOM(filter) {
-    currentFilter = filter; // Update the current filter
-    const bomData = getBOMDataFromLocal();
     let filteredData = [];
 
-    switch (filter) {
+    switch (currentFilter) {
         case 'All':
             filteredData = bomData;
             break;
@@ -241,11 +214,11 @@ function handleFilterBOM(filter) {
             filteredData = bomData.filter(item => {
                 const requiredQuantity = item.Quantity;
 
-                if (filter === item.preProcess) {
+                if (currentFilter === item.preProcess) {
                     return (item.preProcessQuantity || 0) < requiredQuantity;
-                } else if (filter === item.Process1) {
+                } else if (currentFilter === item.Process1) {
                     return item.inProcess1 && (item.process1Quantity || 0) < requiredQuantity;
-                } else if (filter === item.Process2) {
+                } else if (currentFilter === item.Process2) {
                     return item.inProcess2 && (item.process2Quantity || 0) < requiredQuantity;
                 } else {
                     return false;
@@ -255,6 +228,12 @@ function handleFilterBOM(filter) {
 
     displayBOM(filteredData);
     document.getElementById('bomTableContainer').style.display = 'block';
+}
+
+// Function to handle BOM filtering
+function handleFilterBOM(filter) {
+    currentFilter = filter; // Update the current filter
+    applyFilterAndDisplay();
 }
 
 // Function to display BOM Data in Table
@@ -392,6 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
         loginForm.addEventListener('submit', handleLogin);
+        console.log("Added Event Listener to loginForm");
     }
 
     // Check if we are on the registration page

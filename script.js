@@ -32,20 +32,47 @@ async function handleLogin(event) {
 function checkProcessProgress(item) {
     const requiredQuantity = item.Quantity;
 
-    // Pre-Process to Process 1
-    if ((item.preProcess || item.preProcessQuantity !== undefined) && item.preProcessQuantity >= requiredQuantity) {
-        item.inProcess1 = true;
+    // Check Pre-Process Completion
+    if (item.preProcess) {
+        item.preProcessQuantity = item.preProcessQuantity || 0;
+        item.preProcessCompleted = item.preProcessQuantity >= requiredQuantity;
     } else {
-        item.inProcess1 = false;
-        item.process1Quantity = 0; // Reset if not ready
+        // If no Pre-Process, consider it completed by default
+        item.preProcessCompleted = true;
     }
 
-    // Process 1 to Process 2
-    if ((item.Process1 || item.process1Quantity !== undefined) && item.process1Quantity >= requiredQuantity) {
-        item.inProcess2 = true;
+    // Check Process 1 Completion
+    if (item.Process1) {
+        item.process1Quantity = item.process1Quantity || 0;
+        // Process 1 can only start if Pre-Process is completed
+        if (item.preProcessCompleted) {
+            item.process1Available = true;
+            item.process1Completed = item.process1Quantity >= requiredQuantity;
+        } else {
+            item.process1Available = false;
+            item.process1Quantity = 0;  // Reset quantity if not available
+            item.process1Completed = false;
+        }
     } else {
-        item.inProcess2 = false;
-        item.process2Quantity = 0; // Reset if not ready
+        // If no Process 1, consider it completed by default
+        item.process1Completed = true;
+    }
+
+    // Check Process 2 Completion
+    if (item.Process2) {
+        item.process2Quantity = item.process2Quantity || 0;
+        // Process 2 can only start if Process 1 is completed
+        if (item.process1Completed) {
+            item.process2Available = true;
+            item.process2Completed = item.process2Quantity >= requiredQuantity;
+        } else {
+            item.process2Available = false;
+            item.process2Quantity = 0;  // Reset quantity if not available
+            item.process2Completed = false;
+        }
+    } else {
+        // If no Process 2, consider it completed by default
+        item.process2Completed = true;
     }
 }
 // Handle Registration
@@ -338,6 +365,7 @@ function handleQuantityIncrement(event) {
     if (item[field] > maxQuantity) {
         item[field] = maxQuantity;
     }
+    checkProcessProgress(item);
 
     // Save updated BOM data
     saveBOMDataToLocal(bomData);
@@ -402,6 +430,7 @@ function handleQuantityDecrement(event) {
     if (item[field] < 0) {
         item[field] = 0;
     }
+    checkProcessProgress(item);
 
     // Save updated BOM data
     saveBOMDataToLocal(bomData);

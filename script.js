@@ -1,6 +1,8 @@
 const API_BASE_URL = 'https://frcbom-production.up.railway.app';
-let teamNumber = localStorage.getItem('team_number');
-
+let teamNumber = localStorage.getItem('team_number') || '';
+if (document.getElementById('loginMessage')) {
+    document.getElementById('loginMessage').textContent = data.error;
+}
 document.addEventListener('DOMContentLoaded', () => {
     // Attach event listeners
     document.getElementById('loginForm')?.addEventListener('submit', handleLogin);
@@ -24,8 +26,8 @@ async function handleLogin(event) {
     try {
         const response = await fetch(`${API_BASE_URL}/api/login`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ team_number: teamNumber, password })
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({team_number: teamNumber, password})
         });
 
         const data = await response.json();
@@ -51,8 +53,8 @@ async function handleRegister(event) {
     try {
         const response = await fetch(`${API_BASE_URL}/api/register`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ team_number: teamNumber, password })
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({team_number: teamNumber, password})
         });
 
         const data = await response.json();
@@ -123,7 +125,7 @@ async function handleFetchBOM() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ document_url: documentUrl, team_number: teamNumber })
+            body: JSON.stringify({document_url: documentUrl, team_number: teamNumber})
         });
 
         const data = await response.json();
@@ -146,8 +148,8 @@ async function saveBOMDataToServer(bomData) {
     try {
         const response = await fetch(`${API_BASE_URL}/api/save_bom`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ team_number: teamNumber, bom_data: bomData })
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({team_number: teamNumber, bom_data: bomData})
         });
 
         if (response.ok) {
@@ -216,8 +218,8 @@ document.getElementById('fetchBOMButton')?.addEventListener('click', async () =>
     try {
         const response = await fetch(`${API_BASE_URL}/api/bom`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ document_url: documentUrl, team_number: teamNumber })
+            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
+            body: JSON.stringify({document_url: documentUrl, team_number: teamNumber})
         });
 
         const data = await response.json();
@@ -281,6 +283,7 @@ function displayBOM(bomData) {
         tableBody.innerHTML += row;
     });
 }
+
 // Handle Logout
 function handleLogout() {
     localStorage.clear();

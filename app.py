@@ -1,4 +1,5 @@
 import json
+import os
 
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
@@ -8,7 +9,7 @@ from flask_sqlalchemy import SQLAlchemy
 from onshape_client.client import Client
 from onshape_client.onshape_url import OnshapeElement
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///teams.db'
 app.config['JWT_SECRET_KEY'] = 'ysm201996'  # Update this with a secure key
 
@@ -69,6 +70,25 @@ def catch_all(path):
         return
     else:
         return send_from_directory('static', 'dashboard.html')
+
+# Serve static assets
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    return send_from_directory(app.static_folder, filename)
+
+# Catch-all route to serve dashboard.html
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def catch_all(path):
+    if path.startswith('api'):
+        # Return 404 for API paths not found
+        return jsonify({'error': 'API endpoint not found'}), 404
+    elif os.path.exists(os.path.join(app.static_folder, path)):
+        # Serve the file if it exists in the static folder
+        return send_from_directory(app.static_folder, path)
+    else:
+        # Serve dashboard.html for all other routes
+        return send_from_directory(app.static_folder, 'dashboard.html')
 # Register endpoint
 @app.route('/api/register', methods=['POST'])
 def register():

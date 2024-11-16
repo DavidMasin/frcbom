@@ -434,34 +434,17 @@ function applyFilterAndDisplay() {
         // Optionally, send update to server and other clients via Socket.IO
     }
 
-// Function to handle process status change
-    function handleProcessStatusChange(event) {
-        const index = event.target.getAttribute('data-index');
-        const process = event.target.getAttribute('data-process');
-        const bomData = getBOMDataFromLocal();
-        bomData[index][process] = event.target.checked;
-        saveBOMDataToLocal(bomData);
-        // Optionally, send update to server and other clients via Socket.IO
-    }
-
-// Attach event listeners after DOM is fully loaded
-    document.addEventListener('DOMContentLoaded', () => {
-        // Check if we are on the login page
-        const loginForm = document.getElementById('loginForm');
-        if (loginForm) {
-            loginForm.addEventListener('submit', handleLogin);
-        }
-
-        // Check if we are on the registration page
-        const registerForm = document.getElementById('registerForm');
-        if (registerForm) {
-            registerForm.addEventListener('submit', handleRegister);
-        }
-
-        // If on dashboard, initialize dashboard
-        const dashboard = document.getElementById('dashboard');
-        if (dashboard) {
-            initializeDashboard();
-        }
+    // Populate the table with sorted data
+    bomData.forEach(item => {
+        const row = `<tr>
+            <td>${item["Part Name"] || 'N/A'}</td>
+            <td>${item.Description || 'N/A'}</td>
+            <td>${item.Material || 'N/A'}</td>
+            <td>${item.Quantity || 'N/A'}</td>
+            <td>${item.preProcess || 'N/A'}</td>
+            <td>${item.Process1 || 'N/A'}</td>
+            <td>${item.Process2 || 'N/A'}</td>
+        </tr>`;
+        tableBody.innerHTML += row;
     });
 }

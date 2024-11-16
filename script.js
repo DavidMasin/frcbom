@@ -191,31 +191,83 @@ document.getElementById('fetchBOMButton')?.addEventListener('click', async () =>
     }
 });
 
-// Filter BOM Data
+// Function to save BOM data to localStorage
+function saveBOMDataToLocal(bomData) {
+    const bomDict = JSON.parse(localStorage.getItem('bom_data')) || {};
+    bomDict[teamNumber] = bomData;
+    localStorage.setItem('bom_data', JSON.stringify(bomDict));
+    console.log('BOM data saved to localStorage for team:', teamNumber);
+}
+
+// Function to get BOM data from localStorage
+function getBOMDataFromLocal() {
+    const bomDict = JSON.parse(localStorage.getItem('bom_data')) || {};
+    return bomDict[teamNumber] || [];
+}
+
+// Fetch BOM Data and Save to Local Storage
+document.getElementById('fetchBOMButton')?.addEventListener('click', async () => {
+    const documentUrl = document.getElementById('onshapeDocumentUrl').value;
+    const token = localStorage.getItem('jwt_token');
+
+    if (!documentUrl) {
+        alert('Please enter a URL.');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/bom`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ document_url: documentUrl, team_number: teamNumber })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            saveBOMDataToLocal(data.bom_data);
+            displayBOM(data.bom_data);
+        } else {
+            alert(`Error: ${data.error}`);
+        }
+    } catch (error) {
+        console.error('Fetch BOM Error:', error);
+        alert('An error occurred while fetching BOM data.');
+    }
+});
+
+// Filter BOM Data based on selected process
 document.querySelectorAll('.filter-button').forEach(button => {
     button.addEventListener('click', () => {
         const filter = button.getAttribute('data-filter');
-        fetchFilteredBOMData(filter);
+        const bomData = getBOMDataFromLocal();
+        let filteredData;
+
+        if (filter === 'All') {
+            filteredData = bomData;
+        } else {
+            filteredData = bomData.filter(item => item.Process1 === filter || item.Process2 === filter);
+        }
+
+        displayBOM(filteredData);
     });
 });
 
-function fetchFilteredBOMData(filter) {
-    const bomData = JSON.parse(localStorage.getItem('bom_data'))?.[teamNumber] || [];
-    const filteredData = filter === 'All' ? bomData : bomData.filter(item => item.Process1 === filter);
-    displayBOM(filteredData);
-}
-
-// Display BOM Data
+// Function to display BOM data in the table
 function displayBOM(bomData) {
     const tableBody = document.querySelector('#bomTable tbody');
     tableBody.innerHTML = '';
 
+    if (!bomData || bomData.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="7">No parts found</td></tr>';
+        return;
+    }
+
     bomData.forEach(item => {
         const row = `<tr>
-            <td>${item["Part Name"]}</td>
+            <td>${item["Part Name"] || 'N/A'}</td>
             <td>${item.Description || 'N/A'}</td>
-            <td>${item.Material}</td>
-            <td>${item.Quantity}</td>
+            <td>${item.Material || 'N/A'}</td>
+            <td>${item.Quantity || 'N/A'}</td>
             <td>${item.preProcess || 'N/A'}</td>
             <td>${item.Process1 || 'N/A'}</td>
             <td>${item.Process2 || 'N/A'}</td>
@@ -223,12 +275,6 @@ function displayBOM(bomData) {
         tableBody.innerHTML += row;
     });
 }
-
-// Logout
-document.getElementById('logoutButton').addEventListener('click', () => {
-    localStorage.clear();
-    window.location.href = 'index.html';
-});
 // Handle Logout
 function handleLogout() {
     localStorage.clear();

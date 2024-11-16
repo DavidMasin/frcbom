@@ -316,31 +316,38 @@ function displayBOM(bomData) {
 
         // Pre-Process
         row.innerHTML += `<td>${item.preProcess || 'N/A'}</td>`;
-        // Pre-Process Quantity Counter
-        row.innerHTML += `<td>${createQuantityCounter('preProcessQuantity', item["Part Name"], item.preProcessQuantity || 0)}</td>`;
+
 
         // Process 1
         row.innerHTML += `<td>${item.Process1 || 'N/A'}</td>`;
-        // Process 1 Quantity Counter
-        row.innerHTML += `<td>${createQuantityCounter('process1Quantity', item["Part Name"], item.process1Quantity || 0)}</td>`;
+
 
         // Process 2
         row.innerHTML += `<td>${item.Process2 || 'N/A'}</td>`;
         // Process 2 Quantity Counter
-        row.innerHTML += `<td>${createQuantityCounter('process2Quantity', item["Part Name"], item.process2Quantity || 0)}</td>`;
+        // Pre-Process Quantity Counter
+        row.innerHTML += `<td>${createQuantityCounter('preProcessQuantity', item["Part Name"], item.preProcessQuantity || 0, item.preProcessCompleted)}</td>`;
 
+        // Process 1 Quantity Counter
+        row.innerHTML += `<td>${createQuantityCounter('process1Quantity', item["Part Name"], item.process1Quantity || 0, item.process1Completed, item.process1Available)}</td>`;
+
+        // Process 2 Quantity Counter
+        row.innerHTML += `<td>${createQuantityCounter('process2Quantity', item["Part Name"], item.process2Quantity || 0, item.process2Completed, item.process2Available)}</td>`;
         tableBody.appendChild(row);
     });
 
     // Attach event listeners for the quantity counters
     attachQuantityCounterEventListeners();
 }
-function createQuantityCounter(fieldName, partName, quantity) {
+function createQuantityCounter(fieldName, partName, quantity, isCompleted, isAvailable = true) {
+    const disabledClass = isAvailable ? '' : 'disabled';
+    const completedClass = isCompleted ? 'completed' : '';
+
     return `
-        <div class="quantity-counter">
-            <button class="quantity-decrement" data-part-name="${encodeURIComponent(partName)}" data-field="${fieldName}">-</button>
+        <div class="quantity-counter ${disabledClass} ${completedClass}">
+            <button class="quantity-decrement" data-part-name="${encodeURIComponent(partName)}" data-field="${fieldName}" ${!isAvailable ? 'disabled' : ''}>-</button>
             <span class="quantity-value">${quantity}</span>
-            <button class="quantity-increment" data-part-name="${encodeURIComponent(partName)}" data-field="${fieldName}">+</button>
+            <button class="quantity-increment" data-part-name="${encodeURIComponent(partName)}" data-field="${fieldName}" ${!isAvailable ? 'disabled' : ''}>+</button>
         </div>
     `;
 }
@@ -416,6 +423,43 @@ function initializeDashboard() {
 
     settingsButton?.addEventListener('click', () => modal.style.display = 'flex');
     closeButton?.addEventListener('click', () => modal.style.display = 'none');
+}
+function handleFilterBOM(filter) {
+    currentFilter = filter; // Update the current filter
+    const bomData = getBOMDataFromLocal();
+    let filteredData = [];
+
+    switch (filter) {
+        case 'All':
+            filteredData = bomData;
+            break;
+        case 'InHouse':
+            filteredData = bomData.filter(item => item.preProcess || item.Process1 || item.Process2);
+            break;
+        case 'COTS':
+            filteredData = bomData.filter(item => !item.preProcess && !item.Process1 && !item.Process2);
+            break;
+        default:
+            filteredData = bomData.filter(item => {
+                const requiredQuantity = item.Quantity;
+
+                if (filter === item.preProcess) {
+                    // Include if Pre-Process is not yet completed
+                    return !item.preProcessCompleted;
+                } else if (filter === item.Process1) {
+                    // Include if Process1 is available and not completed
+                    return item.process1Available && !item.process1Completed;
+                } else if (filter === item.Process2) {
+                    // Include if Process2 is available and not completed
+                    return item.process2Available && !item.process2Completed;
+                } else {
+                    return false;
+                }
+            });
+    }
+
+    displayBOM(filteredData);
+    document.getElementById('bomTableContainer').style.display = 'block';
 }
 
 function handleQuantityDecrement(event) {

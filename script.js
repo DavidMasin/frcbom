@@ -105,9 +105,7 @@ function initializeDashboard() {
 
     // Close settings modal
     const closeButton = document.querySelector('.close');
-    closeButto
-
-    n?.addEventListener('click', () => {
+    closeButton?.addEventListener('click', () => {
         const modal = document.getElementById('settingsModal');
         modal.style.display = 'none';
     });

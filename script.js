@@ -227,13 +227,10 @@ async function fetchBOMDataFromServer() {
         console.error('Fetch BOM Data Error:', error);
     }
 }
-<<<<<<< HEAD
 
 function applyFilterAndDisplay() {
     const bomData = getBOMDataFromLocal();
     let filteredData = [];
-=======
->>>>>>> parent of 6dacdb5 (Trying to fix counter)
 
 function handleFilterBOM(filter) {
     const bomData = getBOMDataFromLocal();

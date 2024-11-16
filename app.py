@@ -62,14 +62,6 @@ def fetch_bom_data(document_url):
     response = client.api_client.request('GET', url=base_url + fixed_url, headers=headers)
     return json.loads(response.data)
 
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def catch_all(path):
-    if path.startswith('api'):
-        # Let API routes be handled normally
-        return
-    else:
-        return send_from_directory('static', 'dashboard.html')
 
 # Serve static assets
 @app.route('/static/<path:filename>')

@@ -64,37 +64,7 @@ def fetch_bom_data(document_url):
 
 
 
-# Serve static assets (if not already defined)
-@app.route('/static/<path:filename>')
-def serve_static(filename):
-    return send_from_directory(app.static_folder, filename)
 
-# Catch-all route
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve_dashboard(path):
-    if path.startswith('api'):
-        # Return 404 for unknown API endpoints
-        return jsonify({'error': 'API endpoint not found'}), 404
-    elif os.path.exists(os.path.join(app.static_folder, path)):
-        # Serve static files if they exist
-        return send_from_directory(app.static_folder, path)
-    else:
-        # Serve dashboard.html for all other routes
-        return send_from_directory(app.static_folder, 'dashboard.html')
-# Catch-all route to serve dashboard.html
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def catch_all(path):
-    if path.startswith('api'):
-        # Return 404 for API paths not found
-        return jsonify({'error': 'API endpoint not found'}), 404
-    elif os.path.exists(os.path.join(app.static_folder, path)):
-        # Serve the file if it exists in the static folder
-        return send_from_directory(app.static_folder, path)
-    else:
-        # Serve dashboard.html for all other routes
-        return send_from_directory(app.static_folder, 'dashboard.html')
 # Register endpoint
 @app.route('/api/register', methods=['POST'])
 def register():

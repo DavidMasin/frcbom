@@ -1,5 +1,4 @@
 const API_BASE_URL = 'https://frcbom-production.up.railway.app';
-let currentFilter = 'All';
 
 // Function to handle login
 async function handleLogin(event) {
@@ -228,47 +227,15 @@ async function fetchBOMDataFromServer() {
         console.error('Fetch BOM Data Error:', error);
     }
 }
+<<<<<<< HEAD
 
 function applyFilterAndDisplay() {
     const bomData = getBOMDataFromLocal();
     let filteredData = [];
+=======
+>>>>>>> parent of 6dacdb5 (Trying to fix counter)
 
-    switch (currentFilter) {
-        case 'All':
-            filteredData = bomData;
-            break;
-        case 'InHouse':
-            filteredData = bomData.filter(item => item.preProcess || item.Process1 || item.Process2);
-            break;
-        case 'COTS':
-            filteredData = bomData.filter(item => !item.preProcess && !item.Process1 && !item.Process2);
-            break;
-        default:
-            filteredData = bomData.filter(item => {
-                const requiredQuantity = item.Quantity;
-
-                if (currentFilter === item.preProcess) {
-                    return (item.preProcessQuantity || 0) < requiredQuantity;
-                } else if (currentFilter === item.Process1) {
-                    // Show if pre-process is complete or not required
-                    const preProcessComplete = !item.preProcess || (item.preProcessQuantity || 0) >= requiredQuantity;
-                    return preProcessComplete && (item.process1Quantity || 0) < requiredQuantity;
-                } else if (currentFilter === item.Process2) {
-                    // Show if Process 1 is complete
-                    const process1Complete = !item.Process1 || (item.process1Quantity || 0) >= requiredQuantity;
-                    return process1Complete && (item.process2Quantity || 0) < requiredQuantity;
-                } else {
-                    return false;
-                }
-            });
-    }
-
-    displayBOM(filteredData);
-    document.getElementById('bomTableContainer').style.display = 'block';
-}
 function handleFilterBOM(filter) {
-    currentFilter = filter; // Update the current filter
-    applyFilterAndDisplay();
     const bomData = getBOMDataFromLocal();
     let filteredData = [];
 
@@ -403,9 +370,7 @@ function handleQuantityIncrement(event) {
     checkProcessProgress(item);
 
     saveBOMDataToLocal(bomData);
-    applyFilterAndDisplay(); // Apply the current filter and display
     displayBOM(bomData);
-
 }
 function checkProcessProgress(item) {
     const requiredQuantity = item.Quantity;
@@ -446,8 +411,6 @@ function handleQuantityDecrement(event) {
     checkProcessProgress(item);
 
     saveBOMDataToLocal(bomData);
-    applyFilterAndDisplay(); // Apply the current filter and display
-
     displayBOM(bomData);
 }
 function createQuantityCounter(fieldName, partName, quantity) {

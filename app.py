@@ -1,10 +1,9 @@
 import json
-import os
 
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
 from onshape_client.client import Client
 from onshape_client.onshape_url import OnshapeElement
@@ -63,8 +62,6 @@ def fetch_bom_data(document_url):
     return json.loads(response.data)
 
 
-
-
 # Register endpoint
 @app.route('/api/register', methods=['POST'])
 def register():
@@ -103,17 +100,6 @@ def login():
 @app.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({"status": "API is running"}), 200
-
-
-@socketio.on('bom_update')
-def handle_bom_update(data):
-    team_number = data.get('team_number')
-    bom_data = data.get('bom_data')
-    if team_number and bom_data:
-        # Update the latest BOM data
-        bom_data_dict[team_number] = bom_data
-        # Broadcast the update to other clients
-        emit('update_bom', {'team_number': team_number, 'bom_data': bom_data}, broadcast=True, include_self=False)
 
 
 # Protected endpoint (example)
@@ -201,6 +187,7 @@ def fetch_bom():
         print("Got parts!")
         # Prepare the response data
         bom_data = []
+
 
         for part_name, (description, quantity, material, materialBOM, preProcess, Process1, Process2) in parts.items():
             bom_data.append({

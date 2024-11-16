@@ -1,9 +1,39 @@
 const API_BASE_URL = 'https://frcbom-production.up.railway.app';
 let teamNumber = localStorage.getItem('team_number');
 
-// Redirect to login if not logged in
-if (!teamNumber) {
-    alert('You are not logged in.');
+// Function to check if the user is logged in
+function checkLoginStatus() {
+    teamNumber = localStorage.getItem('team_number');
+    const token = localStorage.getItem('jwt_token');
+
+    // If team number or token is missing, redirect to login page
+    if (!teamNumber || !token) {
+        alert('You are not logged in.');
+        window.location.href = 'index.html';
+    }
+}
+
+// Ensure the check only runs after the DOM is fully loaded
+document.addEventListener('DOMContentLoaded', () => {
+    checkLoginStatus();
+
+    // Display the team number in the header
+    const teamNumberElement = document.getElementById('teamNumber');
+    if (teamNumberElement && teamNumber) {
+        teamNumberElement.textContent = teamNumber;
+    }
+
+    // Attach event listeners
+    document.getElementById('fetchBOMButton')?.addEventListener('click', handleFetchBOM);
+    document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
+    document.querySelectorAll('.filter-button').forEach(button => {
+        button.addEventListener('click', () => handleFilterBOM(button.getAttribute('data-filter')));
+    });
+});
+
+// Handle Logout
+function handleLogout() {
+    localStorage.clear();
     window.location.href = 'index.html';
 }
 

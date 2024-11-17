@@ -38,6 +38,7 @@ function checkProcessProgress(item) {
     if (item.preProcess) {
         item.preProcessQuantity = item.preProcessQuantity || 0;
         item.preProcessCompleted = item.preProcessQuantity >= requiredQuantity;
+        console.log("Set pre process qty!")
     } else {
         // If no Pre-Process, consider it completed by default
         item.preProcessCompleted = true;
@@ -271,6 +272,7 @@ async function saveBOMDataToServer(bomData) {
 
         if (response.ok) {
             console.log('BOM data saved to the server successfully.');
+            console.log("Running Check")
             bomData.forEach((item) => {
                 checkProcessProgress(item);
             });

@@ -10,59 +10,65 @@
 
 <!-- Header Section -->
 <header>
-    <h1>Welcome, Team <span id="teamNumber"></span></h1>
-    <button id="logoutButton">Log Out</button>
+    <h1>FRC BOM Dashboard</h1>
+    <h2>Welcome, Team <span id="teamNumber"></span></h2>
+    <button id="logoutButton" class="button-primary">Log Out</button>
 </header>
 
-    <!-- Dashboard Buttons Section -->
-    <div class="dashboard-buttons">
-        <button id="settingsButton">Settings</button>
+<!-- Dashboard Controls Section -->
+<section class="dashboard-controls">
+    <div class="settings-container">
+        <button id="settingsButton" class="button-secondary">Settings</button>
+    </div>
+    <div class="filter-buttons">
         <button class="filter-button" data-filter="All">Show All</button>
         <button class="filter-button" data-filter="InHouse">Show In-House Parts</button>
         <button class="filter-button" data-filter="COTS">Show COTS Parts</button>
-        <!-- Existing filter buttons -->
         <button class="filter-button" data-filter="CNC">CNC</button>
         <button class="filter-button" data-filter="Lathe">Lathe</button>
         <button class="filter-button" data-filter="3D Printer">3D Printer</button>
         <button class="filter-button" data-filter="Gerung">Gerung</button>
         <button class="filter-button" data-filter="Mill">Mill</button>
     </div>
+</section>
 
-    <!-- BOM Table Container Section -->
-    <div id="bomTableContainer">
-        <h2>BOM Table</h2>
-        <!-- Update the table headers -->
-        <table id="bomTable">
-            <thead>
-            <tr>
-                <th>Part Name</th>
-                <th>Description</th>
-                <th>Material</th>
-                <th>Quantity Required</th>
-                <th>Pre-Process</th>
-                <th>Pre-Process Quantity</th>
-                <th>Process 1</th>
-                <th>Process 1 Quantity</th>
-                <th>Process 2</th>
-                <th>Process 2 Quantity</th>
-            </tr>
+<!-- BOM Table Section -->
+<section id="bomTableContainer">
+    <h2>BOM Table</h2>
+    <table id="bomTable">
+        <thead>
+        <tr>
+            <th>Part Name</th>
+            <th>Description</th>
+            <th>Material</th>
+            <th>Quantity Required</th>
+            <th>Pre-Process</th>
+            <th>Pre-Process Quantity</th>
+            <th>Process 1</th>
+            <th>Process 1 Quantity</th>
+            <th>Process 2</th>
+            <th>Process 2 Quantity</th>
+        </tr>
         </thead>
         <tbody></tbody>
     </table>
-</div>
+</section>
 
-<!-- Settings Modal (Hidden by Default) -->
+<!-- Settings Modal -->
 <div id="settingsModal" class="modal">
     <div class="modal-content">
         <span class="close">&times;</span>
         <h2>Settings</h2>
-        <input type="text" id="onshapeDocumentUrl" placeholder="Enter Onshape Document URL">
-        <button id="fetchBOMButton">Fetch BOM</button>
+        <div class="modal-body">
+            <input type="text" id="onshapeDocumentUrl" placeholder="Enter Onshape Document URL">
+            <button id="fetchBOMButton" class="button-primary">Fetch BOM</button>
+        </div>
     </div>
 </div>
 
-<!-- Include the Socket.IO client library and your custom script -->
+<!-- Include External Libraries and Custom Script -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
 <script src="script.js"></script>
+
 </body>
 </html>

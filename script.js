@@ -340,6 +340,7 @@ document.getElementById('fetchBOMButton')?.addEventListener('click', async () =>
 document.querySelectorAll('.filter-button').forEach(button => {
     button.addEventListener('click', () => {
         const filter = button.getAttribute('data-filter');
+        console.log(filter)
         const bomData = getBOMDataFromLocal();
         let filteredData;
 

@@ -1,6 +1,7 @@
 // script.js
 
 const API_BASE_URL = 'https://frcbom-production.up.railway.app'; // Replace with your API base URL
+
 let teamNumber = localStorage.getItem('team_number') || '';
 let currentFilter = 'All';
 
@@ -271,19 +272,14 @@ function handleFilterBOM(filter) {
     const normalizedFilter = filter.trim().toLowerCase();
 
     filteredData = bomData.filter(item => {
-        const preProcessName = item.preProcess || '';
-        const process1Name = item.Process1 || '';
-        const process2Name = item.Process2 || '';
-
-        // Normalize process names
-        const itemPreProcess = preProcessName.trim().toLowerCase();
-        const itemProcess1 = process1Name.trim().toLowerCase();
-        const itemProcess2 = process2Name.trim().toLowerCase();
+        const itemPreProcess = item.preProcess || '';
+        const itemProcess1 = item.Process1 || '';
+        const itemProcess2 = item.Process2 || '';
 
         if (normalizedFilter === 'all') {
             return true;
         } else if (normalizedFilter === 'inhouse') {
-            return item.preProcess || item.Process1 || item.Process2;
+            return !!(item.preProcess || item.Process1 || item.Process2);
         } else if (normalizedFilter === 'cots') {
             return !item.preProcess && !item.Process1 && !item.Process2;
         } else if (normalizedFilter === itemPreProcess) {
@@ -433,15 +429,15 @@ function handleQuantityDecrement(event) {
 // Attach event listeners after DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
     // Check if we are on the login page
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-        loginForm.addEventListener('submit', handleLogin);
+    const loginButton = document.getElementById('loginButton');
+    if (loginButton) {
+        loginButton.addEventListener('click', handleLogin);
     }
 
     // Check if we are on the registration page
-    const registerForm = document.getElementById('registerForm');
-    if (registerForm) {
-        registerForm.addEventListener('submit', handleRegister);
+    const registerButton = document.getElementById('registerButton');
+    if (registerButton) {
+        registerButton.addEventListener('click', handleRegister);
     }
 
     // If on dashboard, initialize dashboard

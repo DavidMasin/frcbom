@@ -31,7 +31,7 @@ async function handleLogin(event) {
 
 function checkProcessProgress(item) {
     const requiredQuantity = item.Quantity;
-    console.log("Log Item: ",item)    // Check Pre-Process Completion
+    console.log("Log Item: ", item)    // Check Pre-Process Completion
     if (item.preProcess) {
         item.preProcessQuantity = item.preProcessQuantity || 0;
         item.preProcessCompleted = item.preProcessQuantity >= requiredQuantity;
@@ -374,8 +374,8 @@ function handleQuantityIncrement(event) {
     const bomData = getBOMDataFromLocal();
 
     const item = bomData.find(item => item["Part Name"] === partName);
+    print(item)
     if (!item) return;
-
     const maxQuantity = item.Quantity;
     item[field] = (item[field] || 0) + 1;
     if (item[field] > maxQuantity) {
@@ -440,43 +440,25 @@ function handleFilterBOM(filter) {
     const bomData = getBOMDataFromLocal();
     let filteredData = [];
 
-    // Normalize filter value
-    const normalizedFilter = filter.trim().toLowerCase();
+    console.log(`Applying filter: ${filter}`);
 
-    console.log(`Filtering for '${filter}'. Normalized filter: '${normalizedFilter}'.`);
+    filteredData = bomData.filter(item => {
 
-    switch (normalizedFilter) {
-        case 'all':
-            filteredData = bomData;
-            break;
-        case 'inhouse':
-            filteredData = bomData.filter(item => item.preProcess || item.Process1 || item.Process2);
-            console.log("FilterData Log: ",filteredData)
-            console.log("Item.PreProcess Log: "+item.preProcess)
-            break;
-        case 'cots':
-            filteredData = bomData.filter(item => !item.preProcessCompleted && !item.Process1 && !item.Process2);
-            break;
-        default:
-            filteredData = bomData.filter(item => {
-                // Process names are already normalized
-                if (normalizedFilter === item.preProcess) {
-                    const includeItem = !item.preProcessCompleted;
-                    console.log(`Item '${item["Part Name"]}': preProcess='${item.preProcess}', preProcessCompleted=${item.preProcessCompleted}, Include=${includeItem}`);
-                    return includeItem;
-                } else if (normalizedFilter === item.Process1) {
-                    const includeItem = item.process1Available && !item.process1Completed;
-                    console.log(`Item '${item["Part Name"]}': Process1='${item.Process1}', process1Available=${item.process1Available}, process1Completed=${item.process1Completed}, Include=${includeItem}`);
-                    return includeItem;
-                } else if (normalizedFilter === item.Process2) {
-                    const includeItem = item.process2Available && !item.process2Completed;
-                    console.log(`Item '${item["Part Name"]}': Process2='${item.Process2}', process2Available=${item.process2Available}, process2Completed=${item.process2Completed}, Include=${includeItem}`);
-                    return includeItem;
-                } else {
-                    return false;
-                }
-            });
-    }
+        const preProcessCompleted = item.preProcessCompleted || !item.preProcess;
+        const process1Available = preProcessCompleted && item.Process1;
+        const process2Available = item.Process2 && item.process1Completed;
+
+        // Apply the filter based on the selected process
+        if (filter === 'InHouse') {
+            return preProcessCompleted || process1Available || process2Available;
+        } else if (filter === item.preProcess) {
+            return !item.preProcessCompleted;
+        } else if (filter === item.Process1) {
+            return process1Available && !item.process1Completed;
+        } else if (filter === item.Process2) {
+            return process2Available && !item.process2Completed;
+        } else return filter === 'All';
+    });
 
     displayBOM(filteredData);
     document.getElementById('bomTableContainer').style.display = 'block';

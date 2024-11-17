@@ -411,6 +411,7 @@ function attachQuantityCounterEventListeners() {
         button.addEventListener('click', handleQuantityIncrement);
     });
 }
+
 function handleQuantityIncrement(event) {
     const partName = decodeURIComponent(event.target.getAttribute('data-part-name'));
     const field = event.target.getAttribute('data-field');
@@ -420,10 +421,24 @@ function handleQuantityIncrement(event) {
     if (!item) return;
 
     const maxQuantity = item.Quantity;
-    item[field] = (item[field] || 0) + 1;
-    if (item[field] > maxQuantity) {
-        item[field] = maxQuantity;
+    if (field === "preProcessQuantity" && item["preProcess"] !== null) {
+        item[field] = (item[field] || 0) + 1;
+        if (item[field] > maxQuantity) {
+            item[field] = maxQuantity;
+        }
+    } else if (field === "process1Quantity" && item["Process1"] !== null) {
+        item[field] = (item[field] || 0) + 1;
+        if (item[field] > maxQuantity) {
+            item[field] = maxQuantity;
+        }
+    } else if (field === "process2Quantity" && item["Process2"] !== null) {
+        item[field] = (item[field] || 0) + 1;
+        if (item[field] > maxQuantity) {
+            item[field] = maxQuantity;
+        }
     }
+
+
     checkProcessProgress(item);
 
     saveBOMDataToLocal(bomData);
@@ -441,8 +456,8 @@ function handleQuantityDecrement(event) {
     if (!item) return;
 
     item[field] = (item[field] || 0) - 1;
-    console.log("ITEM FIELD"+item[field])
-    console.log("FIELD"+field)
+    console.log("ITEM FIELD" + item[field])
+    console.log("FIELD" + field)
     if (item[field] < 0) {
         item[field] = 0;
     }

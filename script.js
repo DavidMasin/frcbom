@@ -357,8 +357,8 @@ function displayBOM(bomData) {
     }
 
     // Sort BOM data alphabetically by Part Name
-    // console.log("BOM DATA:")
-    // console.log(bomData)
+    console.log("BOM DATA:")
+    console.log(bomData)
     bomData.forEach((item) => {
         const row = document.createElement('tr');
 

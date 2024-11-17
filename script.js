@@ -33,6 +33,8 @@ function checkProcessProgress(item) {
     const requiredQuantity = item.Quantity;
 
     // Check Pre-Process Completion
+    console.log("THE PRE PROCESS IS:")
+    console.log(item.preProcess)
     if (item.preProcess) {
         item.preProcessQuantity = item.preProcessQuantity || 0;
         item.preProcessCompleted = item.preProcessQuantity >= requiredQuantity;

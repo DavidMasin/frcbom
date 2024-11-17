@@ -442,6 +442,7 @@ function handleQuantityDecrement(event) {
 
     item[field] = (item[field] || 0) - 1;
     console.log("ITEM FIELD"+item[field])
+    console.log("FIELD"+field)
     if (item[field] < 0) {
         item[field] = 0;
     }

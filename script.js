@@ -346,23 +346,7 @@ document.getElementById('fetchBOMButton')?.addEventListener('click', async () =>
     }
 });
 
-// Filter BOM Data based on selected process
-document.querySelectorAll('.filter-button').forEach(button => {
-    button.addEventListener('click', () => {
-        const filter = button.getAttribute('data-filter');
-        console.log(filter)
-        const bomData = getBOMDataFromLocal();
-        let filteredData;
 
-        if (filter === 'All') {
-            filteredData = bomData;
-        } else {
-            filteredData = bomData.filter(item => item.Process1 === filter || item.Process2 === filter);
-        }
-
-        displayBOM(filteredData);
-    });
-});
 
 // Function to display and sort BOM data in the table
 function displayBOM(bomData) {

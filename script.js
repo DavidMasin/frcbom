@@ -85,7 +85,7 @@ function initializeDashboard() {
     const bomData = getBOMDataFromLocal();
     if (bomData && bomData.length > 0) {
         initializeBOMData(bomData);
-        displayBOM(bomData);
+        handleFilterBOM(currentFilter); // Display the BOM with the current filter
     } else {
         fetchBOMDataFromServer();
     }
@@ -140,7 +140,7 @@ async function handleFetchBOM() {
         if (response.ok) {
             saveBOMDataToLocal(data.bom_data);
             initializeBOMData(data.bom_data);
-            displayBOM(data.bom_data);
+            handleFilterBOM(currentFilter); // Display the BOM with the current filter
             alert('BOM data fetched and saved successfully.');
         } else {
             alert(`Error: ${data.error}`);
@@ -179,7 +179,7 @@ async function fetchBOMDataFromServer() {
         if (response.ok) {
             saveBOMDataToLocal(data.bom_data);
             initializeBOMData(data.bom_data);
-            displayBOM(data.bom_data);
+            handleFilterBOM(currentFilter); // Display the BOM with the current filter
         } else {
             console.error('Failed to retrieve BOM data from the server:', data.error);
             alert(`Error: ${data.error}`);
@@ -274,18 +274,26 @@ function handleFilterBOM(filter) {
         const preProcessName = item.preProcess || '';
         const process1Name = item.Process1 || '';
         const process2Name = item.Process2 || '';
-        console.log(normalizedFilter)
+
+        // Normalize process names
+        const itemPreProcess = preProcessName.trim().toLowerCase();
+        const itemProcess1 = process1Name.trim().toLowerCase();
+        const itemProcess2 = process2Name.trim().toLowerCase();
+
         if (normalizedFilter === 'all') {
             return true;
         } else if (normalizedFilter === 'inhouse') {
             return item.preProcess || item.Process1 || item.Process2;
         } else if (normalizedFilter === 'cots') {
             return !item.preProcess && !item.Process1 && !item.Process2;
-        } else if (normalizedFilter === preProcessName) {
-            return true; // Show all items with this pre-process
-        } else if (normalizedFilter === process1Name) {
+        } else if (normalizedFilter === itemPreProcess) {
+            // Include all items with this pre-process
+            return true;
+        } else if (normalizedFilter === itemProcess1) {
+            // Include items available for Process 1
             return item.process1Available;
-        } else if (normalizedFilter === process2Name) {
+        } else if (normalizedFilter === itemProcess2) {
+            // Include items available for Process 2
             return item.process2Available;
         } else {
             return false;
@@ -395,7 +403,7 @@ function handleQuantityIncrement(event) {
     saveBOMDataToLocal(bomData);
 
     // Update the display
-    displayBOM(bomData);
+    handleFilterBOM(currentFilter);
 }
 
 // Function to handle quantity decrement
@@ -419,7 +427,7 @@ function handleQuantityDecrement(event) {
     saveBOMDataToLocal(bomData);
 
     // Update the display
-    displayBOM(bomData);
+    handleFilterBOM(currentFilter);
 }
 
 // Attach event listeners after DOM is fully loaded

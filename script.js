@@ -90,7 +90,7 @@ function handleFilterBOM(filter) {
     // Normalize the filter string
     const normalizedFilter = filter.trim().toLowerCase();
     console.log("LOG FILTER:")
-    console.log(filter)
+    console.log(normalizedFilter)
     // Apply filtering based on the selected filter
     switch (normalizedFilter) {
         case 'all':

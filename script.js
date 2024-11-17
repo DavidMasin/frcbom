@@ -33,12 +33,12 @@ function checkProcessProgress(item) {
     const requiredQuantity = item.Quantity;
 
     // Check Pre-Process Completion
-    console.log("THE PRE PROCESS IS:")
-    console.log(item.preProcess)
+    // console.log("THE PRE PROCESS IS:")
+    // console.log(item.preProcess)
     if (item.preProcess) {
         item.preProcessQuantity = item.preProcessQuantity || 0;
         item.preProcessCompleted = item.preProcessQuantity >= requiredQuantity;
-        console.log("Set pre process qty!")
+        // console.log("Set pre process qty!")
     } else {
         // If no Pre-Process, consider it completed by default
         item.preProcessCompleted = true;
@@ -348,8 +348,8 @@ function displayBOM(bomData) {
     const tableBody = document.querySelector('#bomTable tbody');
     tableBody.innerHTML = '';
     bomData.sort((a, b) => (a["Part Name"] || '').localeCompare(b["Part Name"] || ''));
-    console.log("LENGTH:")
-    console.log(bomData.length)
+    // console.log("LENGTH:")
+    // console.log(bomData.length)
     if (!bomData || bomData.length === 0) {
         tableBody.innerHTML = '<tr><td colspan="10">No parts found</td></tr>';
         console.log("BROKE!!")
@@ -357,8 +357,8 @@ function displayBOM(bomData) {
     }
 
     // Sort BOM data alphabetically by Part Name
-    console.log("BOM DATA:")
-    console.log(bomData)
+    // console.log("BOM DATA:")
+    // console.log(bomData)
     bomData.forEach((item) => {
         const row = document.createElement('tr');
 
@@ -441,7 +441,7 @@ function handleQuantityDecrement(event) {
     if (!item) return;
 
     item[field] = (item[field] || 0) - 1;
-    console.log(item[field])
+    console.log("ITEM FIELD"+item[field])
     if (item[field] < 0) {
         item[field] = 0;
     }

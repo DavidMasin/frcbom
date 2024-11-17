@@ -37,8 +37,21 @@ async function handleLogin(event) {
 // Function to handle user registration
 async function handleRegister(event) {
     event.preventDefault();
-    const teamNumberInput = document.getElementById('registerTeamNumber').value;
-    const passwordInput = document.getElementById('registerPassword').value;
+    const teamNumberElement = document.getElementById('registerTeamNumber');
+    const passwordElement = document.getElementById('registerPassword');
+
+    if (!teamNumberElement || !passwordElement) {
+        alert('Registration form elements not found');
+        return;
+    }
+
+    const teamNumberInput = teamNumberElement.value.trim();
+    const passwordInput = passwordElement.value.trim();
+
+    if (!teamNumberInput || !passwordInput) {
+        alert('Please fill in both fields.');
+        return;
+    }
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/register`, {
@@ -60,7 +73,6 @@ async function handleRegister(event) {
         alert('An error occurred during registration.');
     }
 }
-
 // Function to check if the user is logged in
 function checkLoginStatus() {
     teamNumber = localStorage.getItem('team_number');
@@ -267,7 +279,7 @@ function checkProcessProgress(item) {
 function handleFilterBOM(filter) {
     currentFilter = filter;
     const bomData = getBOMDataFromLocal();
-    let filteredData = [];
+    let filteredData;
 
     const normalizedFilter = filter.trim().toLowerCase();
 
@@ -435,9 +447,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Check if we are on the registration page
-    const registerButton = document.getElementById('registerButton');
-    if (registerButton) {
-        registerButton.addEventListener('click', handleRegister);
+    const registrationForm = document.getElementById('registrationForm');
+    if (registrationForm) {
+        registrationForm.addEventListener('submit', handleRegister);
     }
 
     // If on dashboard, initialize dashboard

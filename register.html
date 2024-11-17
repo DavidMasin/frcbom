@@ -9,11 +9,14 @@
 <body>
 <div class="container">
     <h2>Register</h2>
-    <form id="registerForm" class="form">
-        <input type="text" id="registerTeamNumber" placeholder="Team Number" required>
-        <input type="password" id="registerPassword" placeholder="Password" required>
-        <button type="submit">Register</button>
-        <p id="registerMessage"></p>
+    <form id="registrationForm">
+        <label for="registerTeamNumber">Team Number:</label>
+        <input type="text" id="registerTeamNumber" name="team_number" required>
+
+        <label for="registerPassword">Password:</label>
+        <input type="password" id="registerPassword" name="password" required>
+
+        <button type="submit" id="registerButton">Register</button>
     </form>
     <button class="link-button" id="backToLogin">Back to Sign In</button>
 </div>

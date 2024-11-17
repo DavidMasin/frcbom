@@ -75,6 +75,69 @@ function checkProcessProgress(item) {
         item.process2Completed = true;
     }
 }
+// Function to handle filtering BOM data
+function handleFilterBOM(filter) {
+    const bomData = getBOMDataFromLocal();
+    let filteredData;
+
+    // Normalize the filter string
+    const normalizedFilter = filter.trim().toLowerCase();
+
+    // Apply filtering based on the selected filter
+    switch (normalizedFilter) {
+        case 'all':
+            // Show all items
+            filteredData = bomData;
+            break;
+
+        case 'cots':
+            // Show only COTS parts (no pre-process, process 1, or process 2)
+            filteredData = bomData.filter(item =>
+                !item.preProcess && !item.Process1 && !item.Process2
+            );
+            break;
+
+        case 'inhouse':
+            // Show only in-house parts (with any pre-process, process 1, or process 2 defined)
+            filteredData = bomData.filter(item =>
+                item.preProcess || item.Process1 || item.Process2
+            );
+            break;
+
+        case 'pre-process':
+            // Show parts that require a pre-process step
+            filteredData = bomData.filter(item =>
+                item.preProcess && !item.preProcessCompleted
+            );
+            break;
+
+        case 'process1':
+            // Show parts available for Process 1 (pre-process must be completed)
+            filteredData = bomData.filter(item =>
+                item.Process1 && item.process1Available && !item.process1Completed
+            );
+            break;
+
+        case 'process2':
+            // Show parts available for Process 2 (Process 1 must be completed)
+            filteredData = bomData.filter(item =>
+                item.Process2 && item.process2Available && !item.process2Completed
+            );
+            break;
+
+        default:
+            // Custom filter based on specific process names (e.g., CNC, Laser Cut)
+            filteredData = bomData.filter(item =>
+                item.preProcess?.toLowerCase() === normalizedFilter ||
+                item.Process1?.toLowerCase() === normalizedFilter ||
+                item.Process2?.toLowerCase() === normalizedFilter
+            );
+            break;
+    }
+
+    // Display the filtered BOM data
+    displayBOM(filteredData);
+}
 
 // Handle Registration
 async function handleRegister(event) {

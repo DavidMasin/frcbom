@@ -35,17 +35,20 @@ async function handleLogin(event) {
 function checkProcessProgress(item) {
     const requiredQuantity = item.Quantity;
 
-    if (!teamNumberElement || !passwordElement) {
-        alert('Registration form elements not found');
-        return;
+    // Pre-Process to Process 1
+    if ((item.preProcess || item.preProcessQuantity !== undefined) && item.preProcessQuantity >= requiredQuantity) {
+        item.inProcess1 = true;
+    } else {
+        item.inProcess1 = false;
+        item.process1Quantity = 0; // Reset if not ready
     }
 
-    const teamNumberInput = teamNumberElement.value.trim();
-    const passwordInput = passwordElement.value.trim();
-
-    if (!teamNumberInput || !passwordInput) {
-        alert('Please fill in both fields.');
-        return;
+    // Process 1 to Process 2
+    if ((item.Process1 || item.process1Quantity !== undefined) && item.process1Quantity >= requiredQuantity) {
+        item.inProcess2 = true;
+    } else {
+        item.inProcess2 = false;
+        item.process2Quantity = 0; // Reset if not ready
     }
 }
 // Handle Registration
@@ -400,9 +403,6 @@ function handleQuantityIncrement(event) {
         item[field] = maxQuantity;
     }
 
-    // Update process progression
-    checkProcessProgress(item);
-
     // Save updated BOM data
     saveBOMDataToLocal(bomData);
 
@@ -507,9 +507,6 @@ function handleQuantityDecrement(event) {
     if (item[field] < 0) {
         item[field] = 0;
     }
-
-    // Update process progression
-    checkProcessProgress(item);
 
     // Save updated BOM data
     saveBOMDataToLocal(bomData);

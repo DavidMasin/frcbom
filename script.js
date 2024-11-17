@@ -1,6 +1,6 @@
 // script.js
 
-const API_BASE_URL = 'https://frcbom-production.up.railway.app/'; // Replace with your API base URL
+const API_BASE_URL = 'https://frcbom-production.up.railway.app'; // Replace with your API base URL
 let teamNumber = localStorage.getItem('team_number') || '';
 let currentFilter = 'All';
 

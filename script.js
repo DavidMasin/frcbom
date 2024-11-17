@@ -75,6 +75,7 @@ function checkProcessProgress(item) {
         item.process2Completed = true;
     }
 }
+
 document.querySelectorAll('.filter-button').forEach(button => {
     button.addEventListener('click', () => {
         const filter = button.getAttribute('data-filter');
@@ -134,6 +135,10 @@ function handleFilterBOM(filter) {
         default:
             // Custom filter based on specific process names (e.g., CNC, Lathe, Gerung)
             console.log("WENT TO DEFAULT!!")
+            for (let i = 0; i < bomData.length; i++) {
+                console.log(bomData[i])
+                console.log(bomData[i].preProcessCompleted)
+            }
             filteredData = bomData.filter(item =>
                 (item.preProcess?.toLowerCase() === normalizedFilter) ||
                 (item.Process1?.toLowerCase() === normalizedFilter && item.preProcessCompleted) ||
@@ -345,7 +350,6 @@ document.getElementById('fetchBOMButton')?.addEventListener('click', async () =>
         alert('An error occurred while fetching BOM data.');
     }
 });
-
 
 
 // Function to display and sort BOM data in the table

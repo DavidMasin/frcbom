@@ -426,7 +426,6 @@ function attachQuantityCounterEventListeners() {
         button.addEventListener('click', handleQuantityIncrement);
     });
 }
-
 function handleQuantityIncrement(event) {
     const partName = decodeURIComponent(event.target.getAttribute('data-part-name'));
     const field = event.target.getAttribute('data-field');

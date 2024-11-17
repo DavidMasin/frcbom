@@ -85,7 +85,7 @@ document.querySelectorAll('.filter-button').forEach(button => {
 // Function to handle filtering BOM data
 function handleFilterBOM(filter) {
     const bomData = getBOMDataFromLocal();
-    let filteredData = [];
+    let filteredData;
 
     // Normalize the filter string
     const normalizedFilter = filter.trim().toLowerCase();
@@ -135,11 +135,13 @@ function handleFilterBOM(filter) {
 
         default:
             // Custom filter based on specific process names (e.g., CNC, Lathe, Gerung)
+            console.log("WENT TO DEFAULT!!")
             filteredData = bomData.filter(item =>
-                item.preProcess?.toLowerCase() === normalizedFilter ||
+                (item.preProcess?.toLowerCase() === normalizedFilter) ||
                 (item.Process1?.toLowerCase() === normalizedFilter && item.preProcessCompleted) ||
                 (item.Process2?.toLowerCase() === normalizedFilter && item.process1Completed)
             );
+            console.log(filteredData)
             break;
     }
 

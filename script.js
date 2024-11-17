@@ -89,8 +89,6 @@ function handleFilterBOM(filter) {
 
     // Normalize the filter string
     const normalizedFilter = filter.trim().toLowerCase();
-    console.log("LOG FILTER:")
-    console.log(normalizedFilter)
     // Apply filtering based on the selected filter
     switch (normalizedFilter) {
         case 'all':
@@ -141,11 +139,12 @@ function handleFilterBOM(filter) {
                 (item.Process1?.toLowerCase() === normalizedFilter && item.preProcessCompleted) ||
                 (item.Process2?.toLowerCase() === normalizedFilter && item.process1Completed)
             );
-            console.log(filteredData)
             break;
     }
 
     // Display the filtered BOM data
+    console.log(filteredData)
+
     displayBOM(filteredData);
     console.log("Displayed BOM")
 }
@@ -377,7 +376,8 @@ function displayBOM(bomData) {
 
     // Sort BOM data alphabetically by Part Name
     bomData.sort((a, b) => (a["Part Name"] || '').localeCompare(b["Part Name"] || ''));
-
+    console.log("BOM DATA:")
+    console.log(bomData)
     bomData.forEach((item) => {
         const row = document.createElement('tr');
 

@@ -142,6 +142,7 @@ function handleFilterBOM(filter) {
                 (item.Process2?.toLowerCase() === normalizedFilter && item.process1Completed)
             );
             console.log(filteredData)
+            displayBOM(filteredData);
             break;
     }
 

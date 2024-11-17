@@ -369,10 +369,10 @@ function displayBOM(bomData) {
     const tableBody = document.querySelector('#bomTable tbody');
     tableBody.innerHTML = '';
 
-    if (!bomData || bomData.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="10">No parts found</td></tr>';
-        return;
-    }
+    // if (!bomData || bomData.length === 0) {
+    //     tableBody.innerHTML = '<tr><td colspan="10">No parts found</td></tr>';
+    //     return;
+    // }
 
     // Sort BOM data alphabetically by Part Name
     bomData.sort((a, b) => (a["Part Name"] || '').localeCompare(b["Part Name"] || ''));

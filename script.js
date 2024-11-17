@@ -257,6 +257,7 @@ async function handleFetchBOM() {
         console.error('Fetch BOM Error:', error);
         alert('An error occurred while fetching BOM data.');
     }
+
 }
 
 // Function to save BOM data to the server
@@ -270,6 +271,9 @@ async function saveBOMDataToServer(bomData) {
 
         if (response.ok) {
             console.log('BOM data saved to the server successfully.');
+            bomData.forEach((item) => {
+                checkProcessProgress(item);
+            });
         } else {
             console.error('Failed to save BOM data to the server.');
         }

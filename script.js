@@ -90,60 +90,49 @@ document.querySelectorAll('.filter-button').forEach(button => {
 function handleFilterBOM(filter) {
     const bomData = getBOMDataFromLocal();
     let filteredData;
+
+    // Save the current filter to localStorage
+    localStorage.setItem('current_filter', filter);
+
+    // Update process completion states
     bomData.forEach((item) => {
         checkProcessProgress(item);
     });
+
     // Normalize the filter string
     const normalizedFilter = filter.trim().toLowerCase();
+
     // Apply filtering based on the selected filter
     switch (normalizedFilter) {
         case 'all':
-            // Show all parts
             filteredData = bomData;
             break;
-
         case 'cots':
-            // Show only COTS parts (no pre-process, process 1, or process 2 defined)
             filteredData = bomData.filter(item =>
                 !item.preProcess && !item.Process1 && !item.Process2
             );
             break;
-
         case 'inhouse':
-            // Show only in-house parts (with any pre-process, process 1, or process 2 defined)
             filteredData = bomData.filter(item =>
                 item.preProcess || item.Process1 || item.Process2
             );
             break;
-
         case 'pre-process':
-            // Show parts that require a pre-process step and are not completed
             filteredData = bomData.filter(item =>
                 item.preProcess && !item.preProcessCompleted
             );
             break;
-
         case 'process1':
-            // Show parts available for Process 1 (pre-process must be completed)
             filteredData = bomData.filter(item =>
                 item.Process1 && item.preProcessCompleted && !item.process1Completed
             );
             break;
-
         case 'process2':
-            // Show parts available for Process 2 (Process 1 must be completed)
             filteredData = bomData.filter(item =>
                 item.Process2 && item.process1Completed && !item.process2Completed
             );
             break;
-
         default:
-            // Custom filter based on specific process names (e.g., CNC, Lathe, Gerung)
-            console.log("WENT TO DEFAULT!!")
-            for (let i = 0; i < bomData.length; i++) {
-                console.log(bomData[i])
-                console.log(bomData[i].preProcessCompleted)
-            }
             filteredData = bomData.filter(item =>
                 (item.preProcess?.toLowerCase() === normalizedFilter) ||
                 (item.Process1?.toLowerCase() === normalizedFilter && item.preProcessCompleted) ||
@@ -152,11 +141,7 @@ function handleFilterBOM(filter) {
             break;
     }
 
-    // Display the filtered BOM data
-    console.log(filteredData)
-
     displayBOM(filteredData);
-    console.log("Displayed BOM")
 }
 
 // Handle Registration
@@ -441,56 +426,10 @@ function handleQuantityIncrement(event) {
     }
     checkProcessProgress(item);
 
-    // Save updated BOM data
     saveBOMDataToLocal(bomData);
 
-    // Update the display
-    displayBOM(bomData);
-}
-
-// Function to initialize the dashboard
-function initializeDashboard() {
-    // Ensure the user is logged in
-    checkLoginStatus();
-
-    // Update the team number variable
-    teamNumber = localStorage.getItem('team_number');
-
-    // Display the team number in the header
-    const teamNumberElement = document.getElementById('teamNumber');
-    if (teamNumberElement && teamNumber) {
-        teamNumberElement.textContent = teamNumber;
-    }
-
-    // Fetch BOM data and display it
-    const bomData = getBOMDataFromLocal();
-    if (bomData && bomData.length > 0) {
-        // If BOM data exists in localStorage, display it
-        displayBOM(bomData);
-    } else {
-        // If no BOM data in localStorage, fetch from the server
-        fetchBOMDataFromServer();
-    }
-
-    // Attach event listeners for buttons
-    document.getElementById('fetchBOMButton')?.addEventListener('click', handleFetchBOM);
-    document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
-
-    // Attach event listeners for filter buttons (if you have any)
-    document.querySelectorAll('.filter-button').forEach(button => {
-        button.addEventListener('click', () => {
-            const filter = button.getAttribute('data-filter');
-            handleFilterBOM(filter);
-        });
-    });
-
-    // Initialize modal logic (if applicable)
-    const modal = document.getElementById('settingsModal');
-    const settingsButton = document.getElementById('settingsButton');
-    const closeButton = document.querySelector('.close');
-
-    settingsButton?.addEventListener('click', () => modal.style.display = 'flex');
-    closeButton?.addEventListener('click', () => modal.style.display = 'none');
+    const currentFilter = localStorage.getItem('current_filter') || 'All';
+    handleFilterBOM(currentFilter);
 }
 
 function handleQuantityDecrement(event) {
@@ -507,12 +446,53 @@ function handleQuantityDecrement(event) {
     }
     checkProcessProgress(item);
 
-    // Save updated BOM data
     saveBOMDataToLocal(bomData);
 
-    // Update the display
-    displayBOM(bomData);
+    const currentFilter = localStorage.getItem('current_filter') || 'All';
+    handleFilterBOM(currentFilter);
 }
+
+
+// Function to initialize the dashboard
+function initializeDashboard() {
+    checkLoginStatus();
+
+    teamNumber = localStorage.getItem('team_number');
+
+    const teamNumberElement = document.getElementById('teamNumber');
+    if (teamNumberElement && teamNumber) {
+        teamNumberElement.textContent = teamNumber;
+    }
+
+    const bomData = getBOMDataFromLocal();
+    if (bomData && bomData.length > 0) {
+        displayBOM(bomData);
+    } else {
+        fetchBOMDataFromServer();
+    }
+
+    document.getElementById('fetchBOMButton')?.addEventListener('click', handleFetchBOM);
+    document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
+
+    // Attach event listeners for filter buttons
+    document.querySelectorAll('.filter-button').forEach(button => {
+        button.addEventListener('click', () => {
+            const filter = button.getAttribute('data-filter');
+            handleFilterBOM(filter);
+        });
+    });
+
+    const savedFilter = localStorage.getItem('current_filter') || 'All';
+    handleFilterBOM(savedFilter);
+
+    const modal = document.getElementById('settingsModal');
+    const settingsButton = document.getElementById('settingsButton');
+    const closeButton = document.querySelector('.close');
+
+    settingsButton?.addEventListener('click', () => modal.style.display = 'flex');
+    closeButton?.addEventListener('click', () => modal.style.display = 'none');
+}
+
 
 // Handle Logout
 function handleLogout() {

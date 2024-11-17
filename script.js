@@ -31,8 +31,7 @@ async function handleLogin(event) {
 
 function checkProcessProgress(item) {
     const requiredQuantity = item.Quantity;
-
-    // Check Pre-Process Completion
+    console.log("Log Item: ",item)    // Check Pre-Process Completion
     if (item.preProcess) {
         item.preProcessQuantity = item.preProcessQuantity || 0;
         item.preProcessCompleted = item.preProcessQuantity >= requiredQuantity;
@@ -452,9 +451,11 @@ function handleFilterBOM(filter) {
             break;
         case 'inhouse':
             filteredData = bomData.filter(item => item.preProcess || item.Process1 || item.Process2);
+            console.log("FilterData Log: ",filteredData)
+            console.log("Item.PreProcess Log: "+item.preProcess)
             break;
         case 'cots':
-            filteredData = bomData.filter(item => !item.preProcess && !item.Process1 && !item.Process2);
+            filteredData = bomData.filter(item => !item.preProcessCompleted && !item.Process1 && !item.Process2);
             break;
         default:
             filteredData = bomData.filter(item => {

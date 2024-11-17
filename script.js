@@ -142,12 +142,12 @@ function handleFilterBOM(filter) {
                 (item.Process2?.toLowerCase() === normalizedFilter && item.process1Completed)
             );
             console.log(filteredData)
-            displayBOM(filteredData);
             break;
     }
 
     // Display the filtered BOM data
     displayBOM(filteredData);
+    console.log("Displayed BOM")
 }
 
 // Handle Registration

@@ -1,6 +1,5 @@
 const API_BASE_URL = 'https://frcbom-production.up.railway.app';
-let teamNumber = localStorage.getItem('team_number') ;
-
+let teamNumber = localStorage.getItem('team_number');
 
 
 // Handle Login
@@ -29,6 +28,7 @@ async function handleLogin(event) {
         document.getElementById('loginMessage').textContent = 'Login failed.';
     }
 }
+
 function checkProcessProgress(item) {
     const requiredQuantity = item.Quantity;
 
@@ -75,6 +75,7 @@ function checkProcessProgress(item) {
         item.process2Completed = true;
     }
 }
+
 // Handle Registration
 async function handleRegister(event) {
     event.preventDefault();
@@ -335,6 +336,7 @@ function displayBOM(bomData) {
     // Attach event listeners for the quantity counters
     attachQuantityCounterEventListeners();
 }
+
 function createQuantityCounter(fieldName, partName, quantity) {
     return `
         <div class="quantity-counter">
@@ -344,6 +346,7 @@ function createQuantityCounter(fieldName, partName, quantity) {
         </div>
     `;
 }
+
 function attachQuantityCounterEventListeners() {
     document.querySelectorAll('.quantity-decrement').forEach(button => {
         button.addEventListener('click', handleQuantityDecrement);
@@ -352,6 +355,7 @@ function attachQuantityCounterEventListeners() {
         button.addEventListener('click', handleQuantityIncrement);
     });
 }
+
 function handleQuantityIncrement(event) {
     const partName = decodeURIComponent(event.target.getAttribute('data-part-name'));
     const field = event.target.getAttribute('data-field');
@@ -373,6 +377,7 @@ function handleQuantityIncrement(event) {
     // Update the display
     displayBOM(bomData);
 }
+
 // Function to initialize the dashboard
 function initializeDashboard() {
     // Ensure the user is logged in

@@ -1,6 +1,6 @@
 // script.js
 
-const API_BASE_URL = 'https://your-api-base-url.com'; // Replace with your API base URL
+const API_BASE_URL = 'https://frcbom-production.up.railway.app/'; // Replace with your API base URL
 let teamNumber = localStorage.getItem('team_number') || '';
 let currentFilter = 'All';
 
@@ -274,7 +274,7 @@ function handleFilterBOM(filter) {
         const preProcessName = item.preProcess || '';
         const process1Name = item.Process1 || '';
         const process2Name = item.Process2 || '';
-
+        console.log(normalizedFilter)
         if (normalizedFilter === 'all') {
             return true;
         } else if (normalizedFilter === 'inhouse') {

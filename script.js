@@ -1,11 +1,10 @@
-// script.js
+const API_BASE_URL = 'https://frcbom-production.up.railway.app';
+let teamNumber = localStorage.getItem('team_number') ;
 
 const API_BASE_URL = 'https://frcbom-production.up.railway.app'; // Replace with your API base URL
 
-let teamNumber = localStorage.getItem('team_number') || '';
-let currentFilter = 'All';
 
-// Function to handle user login
+// Handle Login
 async function handleLogin(event) {
     event.preventDefault();
     const teamNumberInput = document.getElementById('loginTeamNumber').value;
@@ -33,12 +32,8 @@ async function handleLogin(event) {
         alert('An error occurred during login.');
     }
 }
-
-// Function to handle user registration
-async function handleRegister(event) {
-    event.preventDefault();
-    const teamNumberElement = document.getElementById('registerTeamNumber');
-    const passwordElement = document.getElementById('registerPassword');
+function checkProcessProgress(item) {
+    const requiredQuantity = item.Quantity;
 
     if (!teamNumberElement || !passwordElement) {
         alert('Registration form elements not found');
@@ -52,6 +47,12 @@ async function handleRegister(event) {
         alert('Please fill in both fields.');
         return;
     }
+}
+// Handle Registration
+async function handleRegister(event) {
+    event.preventDefault();
+    const teamNumber = document.getElementById('registerTeamNumber').value;
+    const password = document.getElementById('registerPassword').value;
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/register`, {
@@ -339,20 +340,21 @@ function displayBOM(bomData) {
 
         // Pre-Process
         row.innerHTML += `<td>${item.preProcess || 'N/A'}</td>`;
-        // Pre-Process Quantity Counter
-        row.innerHTML += `<td>${createQuantityCounter('preProcessQuantity', item["Part Name"], item.preProcessQuantity || 0, item.preProcessCompleted, true)}</td>`;
-        // Pre-Process Status
-        row.innerHTML += `<td>${item.preProcessCompleted ? 'Completed' : 'In Progress'}</td>`;
+
 
         // Process 1
         row.innerHTML += `<td>${item.Process1 || 'N/A'}</td>`;
-        // Process 1 Quantity Counter
-        row.innerHTML += `<td>${createQuantityCounter('process1Quantity', item["Part Name"], item.process1Quantity || 0, item.process1Completed, item.process1Available)}</td>`;
-        // Process 1 Status
-        row.innerHTML += `<td>${item.process1Completed ? 'Completed' : (item.process1Available ? 'In Progress' : 'Not Available')}</td>`;
+
 
         // Process 2
         row.innerHTML += `<td>${item.Process2 || 'N/A'}</td>`;
+        // Process 2 Quantity Counter
+        // Pre-Process Quantity Counter
+        row.innerHTML += `<td>${createQuantityCounter('preProcessQuantity', item["Part Name"], item.preProcessQuantity || 0, item.preProcessCompleted)}</td>`;
+
+        // Process 1 Quantity Counter
+        row.innerHTML += `<td>${createQuantityCounter('process1Quantity', item["Part Name"], item.process1Quantity || 0, item.process1Completed, item.process1Available)}</td>`;
+
         // Process 2 Quantity Counter
         row.innerHTML += `<td>${createQuantityCounter('process2Quantity', item["Part Name"], item.process2Quantity || 0, item.process2Completed, item.process2Available)}</td>`;
         // Process 2 Status
@@ -364,8 +366,6 @@ function displayBOM(bomData) {
     // Attach event listeners for the quantity counters
     attachQuantityCounterEventListeners();
 }
-
-// Function to create quantity counter HTML
 function createQuantityCounter(fieldName, partName, quantity, isCompleted, isAvailable = true) {
     const disabledClass = isAvailable ? '' : 'disabled';
     const completedClass = isCompleted ? 'completed' : '';
@@ -378,8 +378,6 @@ function createQuantityCounter(fieldName, partName, quantity, isCompleted, isAva
         </div>
     `;
 }
-
-// Function to attach event listeners to quantity counters
 function attachQuantityCounterEventListeners() {
     document.querySelectorAll('.quantity-decrement').forEach(button => {
         button.addEventListener('click', handleQuantityDecrement);
@@ -388,8 +386,6 @@ function attachQuantityCounterEventListeners() {
         button.addEventListener('click', handleQuantityIncrement);
     });
 }
-
-// Function to handle quantity increment
 function handleQuantityIncrement(event) {
     const partName = decodeURIComponent(event.target.getAttribute('data-part-name'));
     const field = event.target.getAttribute('data-field');
@@ -413,8 +409,92 @@ function handleQuantityIncrement(event) {
     // Update the display
     handleFilterBOM(currentFilter);
 }
+// Function to initialize the dashboard
+function initializeDashboard() {
+    // Ensure the user is logged in
+    checkLoginStatus();
 
-// Function to handle quantity decrement
+    // Update the team number variable
+    teamNumber = localStorage.getItem('team_number');
+
+    // Display the team number in the header
+    const teamNumberElement = document.getElementById('teamNumber');
+    if (teamNumberElement && teamNumber) {
+        teamNumberElement.textContent = teamNumber;
+    }
+
+    // Fetch BOM data and display it
+    const bomData = getBOMDataFromLocal();
+    if (bomData && bomData.length > 0) {
+        // If BOM data exists in localStorage, display it
+        displayBOM(bomData);
+    } else {
+        // If no BOM data in localStorage, fetch from the server
+        fetchBOMDataFromServer();
+    }
+
+    // Attach event listeners for buttons
+    document.getElementById('fetchBOMButton')?.addEventListener('click', handleFetchBOM);
+    document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
+
+    // Attach event listeners for filter buttons (if you have any)
+    document.querySelectorAll('.filter-button').forEach(button => {
+        button.addEventListener('click', () => {
+            const filter = button.getAttribute('data-filter');
+            handleFilterBOM(filter);
+        });
+    });
+
+    // Initialize modal logic (if applicable)
+    const modal = document.getElementById('settingsModal');
+    const settingsButton = document.getElementById('settingsButton');
+    const closeButton = document.querySelector('.close');
+
+    settingsButton?.addEventListener('click', () => modal.style.display = 'flex');
+    closeButton?.addEventListener('click', () => modal.style.display = 'none');
+}
+function handleFilterBOM(filter) {
+    currentFilter = filter; // Update the current filter
+    const bomData = getBOMDataFromLocal();
+    let filteredData = [];
+
+    // Normalize filter value
+    const normalizedFilter = filter.trim().toLowerCase();
+
+    switch (normalizedFilter) {
+        // ... existing cases ...
+        default:
+            filteredData = bomData.filter(item => {
+                const requiredQuantity = item.Quantity;
+
+                // Normalize process names
+                const preProcessName = (item.preProcess || '').trim().toLowerCase();
+                const process1Name = (item.Process1 || '').trim().toLowerCase();
+                const process2Name = (item.Process2 || '').trim().toLowerCase();
+
+                let includeItem = false;
+
+                if (normalizedFilter === preProcessName) {
+                    includeItem = !item.preProcessCompleted;
+                    console.log(`Filtering for Pre-Process '${filter}', Item '${item["Part Name"]}': Include=${includeItem}`);
+                } else if (normalizedFilter === process1Name) {
+                    includeItem = item.process1Available && !item.process1Completed;
+                    console.log(`Filtering for Process 1 '${filter}', Item '${item["Part Name"]}': Available=${item.process1Available}, Completed=${item.process1Completed}, Include=${includeItem}`);
+                } else if (normalizedFilter === process2Name) {
+                    includeItem = item.process2Available && !item.process2Completed;
+                    console.log(`Filtering for Process 2 '${filter}', Item '${item["Part Name"]}': Available=${item.process2Available}, Completed=${item.process2Completed}, Include=${includeItem}`);
+                } else {
+                    includeItem = false;
+                }
+
+                return includeItem;
+            });
+    }
+
+    displayBOM(filteredData);
+    document.getElementById('bomTableContainer').style.display = 'block';
+}
+
 function handleQuantityDecrement(event) {
     const partName = decodeURIComponent(event.target.getAttribute('data-part-name'));
     const field = event.target.getAttribute('data-field');

@@ -90,7 +90,9 @@ document.querySelectorAll('.filter-button').forEach(button => {
 function handleFilterBOM(filter) {
     const bomData = getBOMDataFromLocal();
     let filteredData;
-
+    bomData.forEach((item) => {
+        checkProcessProgress(item);
+    });
     // Normalize the filter string
     const normalizedFilter = filter.trim().toLowerCase();
     // Apply filtering based on the selected filter
@@ -272,10 +274,6 @@ async function saveBOMDataToServer(bomData) {
 
         if (response.ok) {
             console.log('BOM data saved to the server successfully.');
-            console.log("Running Check")
-            bomData.forEach((item) => {
-                checkProcessProgress(item);
-            });
         } else {
             console.error('Failed to save BOM data to the server.');
         }

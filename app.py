@@ -194,7 +194,7 @@ def fetch_bom():
 
     except Exception as e:
         print("Error fetching BOM:", str(e))
-        return jsonify({"bom_data": ()}), 200
+        return jsonify({"bom_data": ()}), 500
 
 
 # Helper function to load BOM data from file

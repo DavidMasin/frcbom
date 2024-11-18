@@ -39,12 +39,12 @@ with app.app_context():
     db.create_all()
 
 # Onshape API Client Setup
-# access_key = 'iVTJDrE6RTFeWKRTj8cF4VCa'
-# secret_key = 'hjhZYvSX1ylafeku5a7e4wDsBXUNQ6oKynl6HnocHTTddy0Q'
-access_key = ""
-secret_key = ""
+access_key = 'iVTJDrE6RTFeWKRTj8cF4VCa'
+secret_key = 'hjhZYvSX1ylafeku5a7e4wDsBXUNQ6oKynl6HnocHTTddy0Q'
+# access_key = ""
+# secret_key = ""
 base_url = 'https://cad.onshape.com'
-client = Client()
+client = Client(configuration={"base_url": base_url, "access_key": access_key, "secret_key": secret_key})
 
 
 # Helper function to fetch BOM data from Onshape
@@ -161,7 +161,7 @@ def fetch_bom():
         access_key = access_key_data
         secret_key = secret_key_data
         client = Client(configuration={"base_url": base_url, "access_key": access_key, "secret_key": secret_key})
-        print(client)
+        print(client.configuration)
     if not document_url or not team_number:
         return jsonify({"error": "Document URL and Team Number are required"}), 400
     try:

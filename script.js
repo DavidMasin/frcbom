@@ -131,9 +131,9 @@ function handleFilterBOM(filter) {
             break;
         default:
             filteredData = bomData.filter(item =>
-                (item.preProcess?.toLowerCase() === normalizedFilter&& !item.preProcessCompleted) ||
-                (item.Process1?.toLowerCase() === normalizedFilter && item.preProcessCompleted&& !item.process1Completed) ||
-                (item.Process2?.toLowerCase() === normalizedFilter && item.process1Completed&&!item.process2Completed)
+                (item.preProcess?.toLowerCase() === normalizedFilter && !item.preProcessCompleted) ||
+                (item.Process1?.toLowerCase() === normalizedFilter && item.preProcessCompleted && !item.process1Completed) ||
+                (item.Process2?.toLowerCase() === normalizedFilter && item.process1Completed && !item.process2Completed)
             );
             break;
     }
@@ -183,7 +183,9 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'index.html';
     });
     document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
-   document.getElementById('fetchBOMButton')?.addEventListener('click', handleFetchBOM);
+    if (document.getElementById("accessKey").value !== "" && document.getElementById("secretKey").value !== "") {
+        document.getElementById('fetchBOMButton')?.addEventListener('click', handleFetchBOM);
+    }
 
     // Display team number in header
     if (document.getElementById('teamNumber')) {
@@ -207,8 +209,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // Function to handle fetching BOM data from Onshape
 async function handleFetchBOM() {
     const documentUrl = document.getElementById('onshapeDocumentUrl').value;
-    const accessKey=document.getElementById("accessKey").value;
-    const secretKey=document.getElementById("secretKey").value;
+    const accessKey = document.getElementById("accessKey").value;
+    const secretKey = document.getElementById("secretKey").value;
 
     if (!documentUrl) {
         alert('Please enter an Onshape Document URL.');
@@ -229,7 +231,12 @@ async function handleFetchBOM() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({document_url: documentUrl, team_number: teamNumber,access_key:accessKey,secret_key:secretKey})
+            body: JSON.stringify({
+                document_url: documentUrl,
+                team_number: teamNumber,
+                access_key: accessKey,
+                secret_key: secretKey
+            })
         });
 
         const data = await response.json();

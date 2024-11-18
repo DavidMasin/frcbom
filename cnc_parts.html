@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNC Parts</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <h1>CNC Parts</h1>
+        <button onclick="window.location.href='/'" class="button-primary">Back to Main Hub</button>
+    </header>
+
+    <table id="bomTable">
+        <thead>
+            <tr>
+                <th>Part Name</th>
+                <th>Description</th>
+                <th>Material</th>
+                <th>Quantity</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        async function fetchCNCParts() {
+            try {
+                const response = await fetch('/api/get_bom/cnc');
+                const data = await response.json();
+                displayBOM(data);
+            } catch (error) {
+                console.error('Error fetching CNC parts:', error);
+            }
+        }
+
+        function displayBOM(bomData) {
+            const tableBody = document.querySelector('#bomTable tbody');
+            tableBody.innerHTML = '';
+
+            if (bomData.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="4">No parts found</td></tr>';
+                return;
+            }
+
+            bomData.forEach(part => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${part["Part Name"]}</td>
+                    <td>${part["Description"]}</td>
+                    <td>${part["Material"]}</td>
+                    <td>${part["Quantity"]}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Fetch CNC parts data when the page loads
+        document.addEventListener('DOMContentLoaded', fetchCNCParts);
+    </script>
+</body>
+</html>

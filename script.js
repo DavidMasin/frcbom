@@ -206,24 +206,30 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Function to handle fetching BOM data from Onshape
-async function handleFetchBOM() {
-    const documentUrl = document.getElementById('onshapeDocumentUrl').value;
-    const accessKey = document.getElementById("accessKey").value;
-    const secretKey = document.getElementById("secretKey").value;
-
-    if (!documentUrl) {
-        alert('Please enter an Onshape Document URL.');
-        return;
-    }
-
-    const token = localStorage.getItem('jwt_token');
-    if (!token) {
-        alert('You are not authenticated. Please log in again.');
-        window.location.href = 'index.html';
-        return;
-    }
+async function handleFetchBOM(event) {
+    event.preventDefault();
+    const fetchButton = document.getElementById('fetchBOMButton');
+    fetchButton.disabled = true; // Disable the button
 
     try {
+        const documentUrl = document.getElementById('onshapeDocumentUrl').value;
+        const accessKey = document.getElementById("accessKey").value;
+        const secretKey = document.getElementById("secretKey").value;
+
+        if (!documentUrl) {
+            alert('Please enter an Onshape Document URL.');
+            fetchButton.disabled = false; // Re-enable the button
+            return;
+        }
+
+        const token = localStorage.getItem('jwt_token');
+        if (!token) {
+            alert('You are not authenticated. Please log in again.');
+            window.location.href = 'index.html';
+            fetchButton.disabled = false;
+            return;
+        }
+
         const response = await fetch(`${API_BASE_URL}/api/bom`, {
             method: 'POST',
             headers: {
@@ -250,8 +256,9 @@ async function handleFetchBOM() {
     } catch (error) {
         console.error('Fetch BOM Error:', error);
         alert('An error occurred while fetching BOM data.');
+    } finally {
+        fetchButton.disabled = false; // Re-enable the button
     }
-
 }
 
 // Function to save BOM data to the server

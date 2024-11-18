@@ -10,7 +10,7 @@ from onshape_client.onshape_url import OnshapeElement
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///teams.db'
-app.config['JWT_SECRET_KEY'] = '12345678'  # Update this with a secure key
+app.config['JWT_SECRET_KEY'] = 'ysm201996'  # Update this with a secure key
 
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
@@ -41,8 +41,6 @@ with app.app_context():
 # Onshape API Client Setup
 access_key = 'iVTJDrE6RTFeWKRTj8cF4VCa'
 secret_key = 'hjhZYvSX1ylafeku5a7e4wDsBXUNQ6oKynl6HnocHTTddy0Q'
-# access_key = ""
-# secret_key = ""
 base_url = 'https://cad.onshape.com'
 client = Client(configuration={"base_url": base_url, "access_key": access_key, "secret_key": secret_key})
 
@@ -59,7 +57,6 @@ def fetch_bom_data(document_url):
         'Accept': 'application/vnd.onshape.v1+json; charset=UTF-8;qs=0.1',
         'Content-Type': 'application/json'
     }
-    print("Client: ", client)
 
     response = client.api_client.request('GET', url=base_url + fixed_url, headers=headers)
     return json.loads(response.data)
@@ -146,8 +143,6 @@ def getPartsDict(bom_dict, partNameID, DescriptionID, quantityID, materialID, ma
 
 @app.route('/api/bom', methods=['POST'])
 def fetch_bom():
-    global access_key, secret_key, client
-
     data = request.json
     print(data)
     document_url = data.get("document_url")
@@ -156,8 +151,24 @@ def fetch_bom():
     if not document_url or not team_number:
         return jsonify({"error": "Document URL and Team Number are required"}), 400
     try:
+        element = OnshapeElement(document_url)
+
+        fixed_url = '/api/v9/assemblies/d/did/w/wid/e/eid/bom'
+        method = 'GET'
+        did = element.did
+        wid = element.wvmid
+        eid = element.eid
+        params = {}
+        payload = {}
+        headers = {'Accept': 'application/vnd.onshape.v1+json; charset=UTF-8;qs=0.1',
+                   'Content-Type': 'application/json'}
+
+        fixed_url = fixed_url.replace('did', did)
+        fixed_url = fixed_url.replace('wid', wid)
+        fixed_url = fixed_url.replace('eid', eid)
         print("Connecting to Onshape's API...")
-        response = fetch_bom_data(document_url)
+        response = client.api_client.request(method, url=base_url + fixed_url, query_params=params, headers=headers,
+                                             body=payload)
         print("Onshape API Connected.")
 
         bom_dict = dict(json.loads(response.data))
@@ -176,7 +187,6 @@ def fetch_bom():
         print("Got parts!")
         # Prepare the response data
         bom_data = []
-
 
         for part_name, (description, quantity, material, materialBOM, preProcess, Process1, Process2) in parts.items():
             bom_data.append({

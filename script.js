@@ -33,12 +33,9 @@ function checkProcessProgress(item) {
     const requiredQuantity = item.Quantity;
 
     // Check Pre-Process Completion
-    // console.log("THE PRE PROCESS IS:")
-    // console.log(item.preProcess)
     if (item.preProcess) {
         item.preProcessQuantity = item.preProcessQuantity || 0;
         item.preProcessCompleted = item.preProcessQuantity >= requiredQuantity;
-        // console.log("Set pre process qty!")
     } else {
         // If no Pre-Process, consider it completed by default
         item.preProcessCompleted = true;

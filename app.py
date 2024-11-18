@@ -153,6 +153,8 @@ def fetch_bom():
     team_number = data.get("team_number")
     access_key_data = data.get("access_key")
     secret_key_data = data.get("secret_key")
+    print("Access_key: ",access_key_data)
+    print("Secret key: ",secret_key_data)
     if access_key_data != "" and secret_key_data != "":
         access_key = access_key_data
         secret_key = secret_key_data

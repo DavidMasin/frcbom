@@ -39,8 +39,10 @@ with app.app_context():
     db.create_all()
 
 # Onshape API Client Setup
-access_key = 'iVTJDrE6RTFeWKRTj8cF4VCa'
-secret_key = 'hjhZYvSX1ylafeku5a7e4wDsBXUNQ6oKynl6HnocHTTddy0Q'
+# access_key = 'iVTJDrE6RTFeWKRTj8cF4VCa'
+# secret_key = 'hjhZYvSX1ylafeku5a7e4wDsBXUNQ6oKynl6HnocHTTddy0Q'
+access_key = ""
+secret_key = ""
 base_url = 'https://cad.onshape.com'
 client = Client(configuration={"base_url": base_url, "access_key": access_key, "secret_key": secret_key})
 
@@ -143,11 +145,17 @@ def getPartsDict(bom_dict, partNameID, DescriptionID, quantityID, materialID, ma
 
 @app.route('/api/bom', methods=['POST'])
 def fetch_bom():
+    global access_key, secret_key
+
     data = request.json
     print(data)
     document_url = data.get("document_url")
     team_number = data.get("team_number")
-
+    access_key_data = data.get("access_key")
+    secret_key_data = data.get("secret_key")
+    if access_key_data != "" and secret_key_data != "":
+        access_key = access_key_data
+        secret_key = secret_key_data
     if not document_url or not team_number:
         return jsonify({"error": "Document URL and Team Number are required"}), 400
     try:

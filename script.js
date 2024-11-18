@@ -209,6 +209,8 @@ async function handleFetchBOM() {
     const documentUrl = document.getElementById('onshapeDocumentUrl').value;
     const accessKey=document.getElementById("accessKey")
     const secretKey=document.getElementById("secretKey")
+    console.log("AccessKey: " + accessKey)
+    console.log("SecretKey: " + secretKey)
     if (!documentUrl) {
         alert('Please enter an Onshape Document URL.');
         return;

@@ -10,7 +10,7 @@ from onshape_client.onshape_url import OnshapeElement
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///teams.db'
-app.config['JWT_SECRET_KEY'] = 'ysm201996'  # Update this with a secure key
+app.config['JWT_SECRET_KEY'] = '12345678'  # Update this with a secure key
 
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
@@ -163,24 +163,8 @@ def fetch_bom():
     if not document_url or not team_number:
         return jsonify({"error": "Document URL and Team Number are required"}), 400
     try:
-        element = OnshapeElement(document_url)
-
-        fixed_url = '/api/v9/assemblies/d/did/w/wid/e/eid/bom'
-        method = 'GET'
-        did = element.did
-        wid = element.wvmid
-        eid = element.eid
-        params = {}
-        payload = {}
-        headers = {'Accept': 'application/vnd.onshape.v1+json; charset=UTF-8;qs=0.1',
-                   'Content-Type': 'application/json'}
-
-        fixed_url = fixed_url.replace('did', did)
-        fixed_url = fixed_url.replace('wid', wid)
-        fixed_url = fixed_url.replace('eid', eid)
         print("Connecting to Onshape's API...")
-        response = client.api_client.request(method, url=base_url + fixed_url, query_params=params, headers=headers,
-                                             body=payload)
+        response = fetch_bom_data(document_url)
         print("Onshape API Connected.")
 
         bom_dict = dict(json.loads(response.data))

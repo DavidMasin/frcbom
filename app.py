@@ -44,7 +44,7 @@ with app.app_context():
 access_key = ""
 secret_key = ""
 base_url = 'https://cad.onshape.com'
-client = Client(configuration={"base_url": base_url, "access_key": access_key, "secret_key": secret_key})
+client = Client()
 
 
 # Helper function to fetch BOM data from Onshape
@@ -59,6 +59,7 @@ def fetch_bom_data(document_url):
         'Accept': 'application/vnd.onshape.v1+json; charset=UTF-8;qs=0.1',
         'Content-Type': 'application/json'
     }
+    print("Client: ", client)
 
     response = client.api_client.request('GET', url=base_url + fixed_url, headers=headers)
     return json.loads(response.data)
@@ -155,11 +156,12 @@ def fetch_bom():
     secret_key_data = data.get("secret_key")
     print("Access_key: ",access_key_data)
     print("Secret key: ",secret_key_data)
+    print("access_key_data != "" and secret_key_data != "": ",(access_key_data != "" and secret_key_data != "") )
     if access_key_data != "" and secret_key_data != "":
         access_key = access_key_data
         secret_key = secret_key_data
         client = Client(configuration={"base_url": base_url, "access_key": access_key, "secret_key": secret_key})
-
+        print(client)
     if not document_url or not team_number:
         return jsonify({"error": "Document URL and Team Number are required"}), 400
     try:

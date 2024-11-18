@@ -326,8 +326,8 @@ function displayBOM(bomData) {
         row.innerHTML += `<td>${item["Part Name"] || 'N/A'}</td>`;
         // Description
         row.innerHTML += `<td>${item.Description || 'N/A'}</td>`;
-        // Material
-        row.innerHTML += `<td>${item.Material || 'N/A'}</td>`;
+        // Material BOM
+        row.innerHTML += `<td>${item.materialBOM || 'N/A'}</td>`;
         // Quantity Required
         row.innerHTML += `<td>${item.Quantity || 'N/A'}</td>`;
 

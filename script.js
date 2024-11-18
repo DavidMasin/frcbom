@@ -210,10 +210,6 @@ document.addEventListener('DOMContentLoaded', () => {
 // Function to handle fetching BOM data from Onshape
 async function handleFetchBOM() {
     const documentUrl = document.getElementById('onshapeDocumentUrl').value;
-    const accessKey=document.getElementById("accessKey").value;
-    const secretKey=document.getElementById("secretKey").value;
-    console.log("AccessKey: " + accessKey)
-    console.log("SecretKey: " + secretKey)
     if (!documentUrl) {
         alert('Please enter an Onshape Document URL.');
         return;

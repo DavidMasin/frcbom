@@ -39,27 +39,12 @@ with app.app_context():
     db.create_all()
 
 # Onshape API Client Setup
-access_key = 'iVTJDrE6RTFeWKRTj8cF4VCa'
-secret_key = 'hjhZYvSX1ylafeku5a7e4wDsBXUNQ6oKynl6HnocHTTddy0Q'
+# access_key = 'iVTJDrE6RTFeWKRTj8cF4VCa'
+# secret_key = 'hjhZYvSX1ylafeku5a7e4wDsBXUNQ6oKynl6HnocHTTddy0Q'
+access_key = ""
+secret_key = ""
 base_url = 'https://cad.onshape.com'
 client = Client(configuration={"base_url": base_url, "access_key": access_key, "secret_key": secret_key})
-
-
-# Helper function to fetch BOM data from Onshape
-def fetch_bom_data(document_url):
-    element = OnshapeElement(document_url)
-    did = element.did
-    wid = element.wvmid
-    eid = element.eid
-    fixed_url = f'/api/v9/assemblies/d/{did}/w/{wid}/e/{eid}/bom'
-
-    headers = {
-        'Accept': 'application/vnd.onshape.v1+json; charset=UTF-8;qs=0.1',
-        'Content-Type': 'application/json'
-    }
-
-    response = client.api_client.request('GET', url=base_url + fixed_url, headers=headers)
-    return json.loads(response.data)
 
 
 # Register endpoint

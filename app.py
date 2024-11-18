@@ -1,6 +1,6 @@
 import json
 
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token
 from flask_socketio import SocketIO
@@ -39,7 +39,7 @@ with app.app_context():
     db.create_all()
 
 # Onshape API Client Setup
-    # access_key = 'iVTJDrE6RTFeWKRTj8cF4VCa'
+# access_key = 'iVTJDrE6RTFeWKRTj8cF4VCa'
 # secret_key = 'hjhZYvSX1ylafeku5a7e4wDsBXUNQ6oKynl6HnocHTTddy0Q'
 access_key = ""
 secret_key = ""
@@ -139,7 +139,7 @@ def fetch_bom():
     if not document_url or not team_number:
         return jsonify({"error": "Document URL and Team Number are required"}), 400
     try:
-        if access_key!=""and secret_key!="":
+        if access_key != "" and secret_key != "":
 
             element = OnshapeElement(document_url)
 
@@ -172,13 +172,15 @@ def fetch_bom():
             process2ID = findIDs(bom_dict, "Process 2")
             DescriptionID = findIDs(bom_dict, "Description")
             print("Trying to get Parts...")
-            parts = getPartsDict(bom_dict, part_nameID, DescriptionID, part_quantity, part_materialID, part_materialBomID,
+            parts = getPartsDict(bom_dict, part_nameID, DescriptionID, part_quantity, part_materialID,
+                                 part_materialBomID,
                                  part_preProcessID, process1ID, process2ID)
             print("Got parts!")
             # Prepare the response data
             bom_data = []
 
-            for part_name, (description, quantity, material, materialBOM, preProcess, Process1, Process2) in parts.items():
+            for part_name, (
+            description, quantity, material, materialBOM, preProcess, Process1, Process2) in parts.items():
                 bom_data.append({
                     "Part Name": part_name,
                     "Description": description,
@@ -274,40 +276,6 @@ def handle_connect():
 def handle_disconnect():
     print('Client disconnected')
 
-@app.route('/')
-def main_hub():
-    return render_template('main_hub.html')
 
-@app.route('/cnc_parts')
-def cnc_parts():
-    return render_template('cnc_parts.html')
-
-@app.route('/printer_parts')
-def printer_parts():
-    return render_template('printer_parts.html')
-
-@app.route('/lathe_parts')
-def lathe_parts():
-    return render_template('lathe_parts.html')
-
-@app.route('/mill_parts')
-def mill_parts():
-    return render_template('mill_parts.html')
-
-@app.route('/gerung_parts')
-def gerung_parts():
-    return render_template('gerung_parts.html')
-
-@app.route('/all_parts')
-def all_parts():
-    return render_template('all_parts.html')
-
-@app.route('/inhouse_parts')
-def inhouse_parts():
-    return render_template('inhouse_parts.html')
-
-@app.route('/cots_parts')
-def cots_parts():
-    return render_template('cots_parts.html')
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

@@ -183,7 +183,6 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'index.html';
     });
     document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
-    document.getElementById('fetchBOMButton')?.addEventListener('click', handleFetchBOM);
 
 
     // Display team number in header
@@ -205,63 +204,6 @@ document.addEventListener('DOMContentLoaded', () => {
     closeButton?.addEventListener('click', () => modal.style.display = 'none');
 });
 
-// Function to handle fetching BOM data from Onshape
-async function handleFetchBOM(event) {
-    event.preventDefault();
-    const fetchButton = document.getElementById('fetchBOMButton');
-    console.log("Fetch BOM button clicked");
-
-    fetchButton.disabled = true; // Disable the button
-
-    try {
-        const documentUrl = document.getElementById('onshapeDocumentUrl').value;
-        const accessKey = document.getElementById("accessKey").value;
-        const secretKey = document.getElementById("secretKey").value;
-
-        if (!documentUrl) {
-            alert('Please enter an Onshape Document URL.');
-            fetchButton.disabled = false; // Re-enable the button
-            return;
-        }
-
-        const token = localStorage.getItem('jwt_token');
-        if (!token) {
-            alert('You are not authenticated. Please log in again.');
-            window.location.href = 'index.html';
-            fetchButton.disabled = false;
-            return;
-        }
-
-        const response = await fetch(`${API_BASE_URL}/api/bom`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                document_url: documentUrl,
-                team_number: teamNumber,
-                access_key: accessKey,
-                secret_key: secretKey
-            })
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-            console.log('Fetched BOM data:', data.bom_data);
-            await saveBOMDataToServer(data.bom_data);
-            displayBOM(data.bom_data);
-        } else {
-            console.error('Failed to fetch BOM data:', data.error);
-            alert(`Error: ${data.error}`);
-        }
-    } catch (error) {
-        console.error('Fetch BOM Error:', error);
-        alert('An error occurred while fetching BOM data.');
-    } finally {
-        fetchButton.disabled = false; // Re-enable the button
-    }
-}
 
 // Function to save BOM data to the server
 async function saveBOMDataToServer(bomData) {

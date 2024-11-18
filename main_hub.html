@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FRC BOM Main Hub</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>FRC BOM Dashboard</h1>
+        <button id="logoutButton" class="button-primary">Log Out</button>
+    </header>
+
+    <section class="action-buttons">
+        <h2>Process Updates</h2>
+        <button id="updatePreProcess" class="button-primary">Update Pre-Process</button>
+        <button id="updateProcess1" class="button-primary">Update Process 1</button>
+        <button id="updateProcess2" class="button-primary">Update Process 2</button>
+    </section>
+
+    <section class="navigation-buttons">
+        <h2>View Parts by Machine</h2>
+        <button id="viewCNCParts" class="button-secondary">CNC Parts</button>
+        <button id="viewLatheParts" class="button-secondary">Lathe Parts</button>
+        <button id="viewPrinterParts" class="button-secondary">3D Printer Parts</button>
+        <button id="viewGerungParts" class="button-secondary">Gerung Parts</button>
+    </section>
+
+    <section class="filter-buttons">
+        <h2>Quick Filters</h2>
+        <button class="filter-button" data-filter="aluminum2mm">Aluminum 2mm</button>
+        <button class="filter-button" data-filter="aluminum5mm">Aluminum 5mm</button>
+        <button class="filter-button" data-filter="pla">PLA</button>
+        <button class="filter-button" data-filter="inhouse">In-House Parts</button>
+        <button class="filter-button" data-filter="cots">COTS Parts</button>
+    </section>
+
+    <footer>
+        <button id="settingsButton" class="button-secondary">Settings</button>
+        <button id="exportBOM" class="button-secondary">Export BOM Data</button>
+    </footer>
+
+    <script src="main_hub.js"></script>
+</body>
+</html>

@@ -110,7 +110,20 @@ header button:hover {
     border-radius: 4px;
     margin-bottom: 10px;
 }
-
+#accessKey {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+#secretKey {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
 #fetchBOMButton {
     width: 100%;
     padding: 12px;

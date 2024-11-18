@@ -12,29 +12,16 @@
         <button id="logoutButton" class="button-primary">Log Out</button>
     </header>
 
-    <section class="action-buttons">
-        <h2>Process Updates</h2>
-        <button id="updatePreProcess" class="button-primary">Update Pre-Process</button>
-        <button id="updateProcess1" class="button-primary">Update Process 1</button>
-        <button id="updateProcess2" class="button-primary">Update Process 2</button>
-    </section>
-
-    <section class="navigation-buttons">
-        <h2>View Parts by Machine</h2>
-        <button id="viewCNCParts" class="button-secondary">CNC Parts</button>
-        <button id="viewLatheParts" class="button-secondary">Lathe Parts</button>
-        <button id="viewPrinterParts" class="button-secondary">3D Printer Parts</button>
-        <button id="viewGerungParts" class="button-secondary">Gerung Parts</button>
-    </section>
-
-    <section class="filter-buttons">
-        <h2>Quick Filters</h2>
-        <button class="filter-button" data-filter="aluminum2mm">Aluminum 2mm</button>
-        <button class="filter-button" data-filter="aluminum5mm">Aluminum 5mm</button>
-        <button class="filter-button" data-filter="pla">PLA</button>
-        <button class="filter-button" data-filter="inhouse">In-House Parts</button>
-        <button class="filter-button" data-filter="cots">COTS Parts</button>
-    </section>
+    <div class="button-grid">
+        <button id="cncButton" class="action-button">CNC</button>
+        <button id="printerButton" class="action-button">3D Printer</button>
+        <button id="latheButton" class="action-button">Lathe</button>
+        <button id="millButton" class="action-button">Mill</button>
+        <button id="gerungButton" class="action-button">Gerung</button>
+        <button id="showAllButton" class="action-button">Show All Parts</button>
+        <button id="showInHouseButton" class="action-button">Show In-House</button>
+        <button id="showCOTSButton" class="action-button">Show COTS</button>
+    </div>
 
     <footer>
         <button id="settingsButton" class="button-secondary">Settings</button>

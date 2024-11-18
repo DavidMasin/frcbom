@@ -1,6 +1,6 @@
 import json
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token
 from flask_socketio import SocketIO
@@ -276,22 +276,40 @@ def handle_connect():
 def handle_disconnect():
     print('Client disconnected')
 
-@app.route('/api/update_process', methods=['POST'])
-def update_process():
-    data = request.json
-    part_name = data.get('part_name')
-    process_type = data.get('process_type')
-    quantity = data.get('quantity')
+@app.route('/')
+def main_hub():
+    return render_template('main_hub.html')
 
-    if part_name in bom_data_dict:
-        bom_data_dict[part_name][process_type] = quantity
-        return jsonify({"message": "Quantity updated successfully"}), 200
-    else:
-        return jsonify({"error": "Part not found"}), 404
+@app.route('/cnc_parts')
+def cnc_parts():
+    return render_template('cnc_parts.html')
 
-@app.route('/api/export_bom', methods=['GET'])
-def export_bom():
-    # Here you would generate an Excel file from bom_data and return it
-    return jsonify({"message": "BOM data exported successfully"}), 200
+@app.route('/printer_parts')
+def printer_parts():
+    return render_template('printer_parts.html')
+
+@app.route('/lathe_parts')
+def lathe_parts():
+    return render_template('lathe_parts.html')
+
+@app.route('/mill_parts')
+def mill_parts():
+    return render_template('mill_parts.html')
+
+@app.route('/gerung_parts')
+def gerung_parts():
+    return render_template('gerung_parts.html')
+
+@app.route('/all_parts')
+def all_parts():
+    return render_template('all_parts.html')
+
+@app.route('/inhouse_parts')
+def inhouse_parts():
+    return render_template('inhouse_parts.html')
+
+@app.route('/cots_parts')
+def cots_parts():
+    return render_template('cots_parts.html')
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

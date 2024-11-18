@@ -160,7 +160,7 @@ def fetch_bom():
     if access_key_data != "" and secret_key_data != "":
         access_key = access_key_data
         secret_key = secret_key_data
-        client = Client(configuration={"base_url": base_url, "access_key": access_key, "secret_key": secret_key})
+        # client = Client(configuration={"base_url": base_url, "access_key": access_key, "secret_key": secret_key})
         print(client.configuration)
     if not document_url or not team_number:
         return jsonify({"error": "Document URL and Team Number are required"}), 400

@@ -139,59 +139,63 @@ def fetch_bom():
     if not document_url or not team_number:
         return jsonify({"error": "Document URL and Team Number are required"}), 400
     try:
-        element = OnshapeElement(document_url)
+        if access_key!=""and secret_key!="":
 
-        fixed_url = '/api/v9/assemblies/d/did/w/wid/e/eid/bom'
-        method = 'GET'
-        did = element.did
-        wid = element.wvmid
-        eid = element.eid
-        params = {}
-        payload = {}
-        headers = {'Accept': 'application/vnd.onshape.v1+json; charset=UTF-8;qs=0.1',
-                   'Content-Type': 'application/json'}
+            element = OnshapeElement(document_url)
 
-        fixed_url = fixed_url.replace('did', did)
-        fixed_url = fixed_url.replace('wid', wid)
-        fixed_url = fixed_url.replace('eid', eid)
-        print("Connecting to Onshape's API...")
-        response = client.api_client.request(method, url=base_url + fixed_url, query_params=params, headers=headers,
-                                             body=payload)
-        print("Onshape API Connected.")
+            fixed_url = '/api/v9/assemblies/d/did/w/wid/e/eid/bom'
+            method = 'GET'
+            did = element.did
+            wid = element.wvmid
+            eid = element.eid
+            params = {}
+            payload = {}
+            headers = {'Accept': 'application/vnd.onshape.v1+json; charset=UTF-8;qs=0.1',
+                       'Content-Type': 'application/json'}
 
-        bom_dict = dict(json.loads(response.data))
-        # Extract BOM data
-        part_nameID = findIDs(bom_dict, "Name")
-        part_quantity = findIDs(bom_dict, "Quantity")
-        part_materialID = findIDs(bom_dict, "Material")
-        part_materialBomID = findIDs(bom_dict, "Bom Material")
-        part_preProcessID = findIDs(bom_dict, "Pre Process")
-        process1ID = findIDs(bom_dict, "Process 1")
-        process2ID = findIDs(bom_dict, "Process 2")
-        DescriptionID = findIDs(bom_dict, "Description")
-        print("Trying to get Parts...")
-        parts = getPartsDict(bom_dict, part_nameID, DescriptionID, part_quantity, part_materialID, part_materialBomID,
-                             part_preProcessID, process1ID, process2ID)
-        print("Got parts!")
-        # Prepare the response data
-        bom_data = []
+            fixed_url = fixed_url.replace('did', did)
+            fixed_url = fixed_url.replace('wid', wid)
+            fixed_url = fixed_url.replace('eid', eid)
+            print("Connecting to Onshape's API...")
+            response = client.api_client.request(method, url=base_url + fixed_url, query_params=params, headers=headers,
+                                                 body=payload)
+            print("Onshape API Connected.")
 
-        for part_name, (description, quantity, material, materialBOM, preProcess, Process1, Process2) in parts.items():
-            bom_data.append({
-                "Part Name": part_name,
-                "Description": description,
-                "Quantity": quantity,
-                "Material": material,
-                "materialBOM": materialBOM,
-                "preProcess": preProcess,
-                "Process1": Process1,
-                "Process2": Process2
-            })
-        # Store the latest BOM data for the team and emit it to all connected clients
-        latest_bom_data[team_number] = bom_data
-        socketio.emit('update_bom', {'team_number': team_number, 'bom_data': bom_data})
-        return jsonify({"bom_data": bom_data}), 200
+            bom_dict = dict(json.loads(response.data))
+            # Extract BOM data
+            part_nameID = findIDs(bom_dict, "Name")
+            part_quantity = findIDs(bom_dict, "Quantity")
+            part_materialID = findIDs(bom_dict, "Material")
+            part_materialBomID = findIDs(bom_dict, "Bom Material")
+            part_preProcessID = findIDs(bom_dict, "Pre Process")
+            process1ID = findIDs(bom_dict, "Process 1")
+            process2ID = findIDs(bom_dict, "Process 2")
+            DescriptionID = findIDs(bom_dict, "Description")
+            print("Trying to get Parts...")
+            parts = getPartsDict(bom_dict, part_nameID, DescriptionID, part_quantity, part_materialID, part_materialBomID,
+                                 part_preProcessID, process1ID, process2ID)
+            print("Got parts!")
+            # Prepare the response data
+            bom_data = []
 
+            for part_name, (description, quantity, material, materialBOM, preProcess, Process1, Process2) in parts.items():
+                bom_data.append({
+                    "Part Name": part_name,
+                    "Description": description,
+                    "Quantity": quantity,
+                    "Material": material,
+                    "materialBOM": materialBOM,
+                    "preProcess": preProcess,
+                    "Process1": Process1,
+                    "Process2": Process2
+                })
+            # Store the latest BOM data for the team and emit it to all connected clients
+            latest_bom_data[team_number] = bom_data
+            socketio.emit('update_bom', {'team_number': team_number, 'bom_data': bom_data})
+            return jsonify({"bom_data": bom_data}), 200
+        else:
+            print("DIDNT GET ACCESS AND SECRET!!")
+            return
     except Exception as e:
         print("Error fetching BOM:", str(e))
         return jsonify({"bom_data": ()}), 500

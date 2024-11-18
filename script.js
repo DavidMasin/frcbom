@@ -183,9 +183,8 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'index.html';
     });
     document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
-    if (document.getElementById("accessKey").value !== "" && document.getElementById("secretKey").value !== "") {
-        document.getElementById('fetchBOMButton')?.addEventListener('click', handleFetchBOM);
-    }
+    document.getElementById('fetchBOMButton')?.addEventListener('click', handleFetchBOM);
+
 
     // Display team number in header
     if (document.getElementById('teamNumber')) {

@@ -272,8 +272,8 @@ function getBOMDataFromLocal() {
 // Fetch BOM Data and Save to Local Storage
 document.getElementById('fetchBOMButton')?.addEventListener('click', async () => {
     const documentUrl = document.getElementById('onshapeDocumentUrl').value;
-    const access_key = document.getElementById("accessKey").value;
-    const secret_key = document.getElementById("secretKey").value;
+    const access_key=document.getElementById("accessKey").value;
+    const secret_key=document.getElementById("secretKey").value;
 
     const token = localStorage.getItem('jwt_token');
 
@@ -286,12 +286,7 @@ document.getElementById('fetchBOMButton')?.addEventListener('click', async () =>
         const response = await fetch(`${API_BASE_URL}/api/bom`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
-            body: JSON.stringify({
-                document_url: documentUrl,
-                team_number: teamNumber,
-                access_key: access_key,
-                secret_key: secret_key
-            })
+            body: JSON.stringify({document_url: documentUrl, team_number: teamNumber,access_key:access_key,secret_key:secret_key})
         });
 
         const data = await response.json();

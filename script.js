@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'index.html';
     });
     document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
-//    document.getElementById('fetchBOMButton')?.addEventListener('click', handleFetchBOM);
+   document.getElementById('fetchBOMButton')?.addEventListener('click', handleFetchBOM);
 
     // Display team number in header
     if (document.getElementById('teamNumber')) {
@@ -488,7 +488,7 @@ function initializeDashboard() {
         fetchBOMDataFromServer();
     }
 
-    document.getElementById('fetchBOMButton')?.addEventListener('click', handleFetchBOM);
+    // document.getElementById('fetchBOMButton')?.addEventListener('click', handleFetchBOM);
     document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
 
     // Attach event listeners for filter buttons

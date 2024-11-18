@@ -5,7 +5,17 @@
     box-sizing: border-box;
 }
 
-
+/* Global Styles */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    color: #333;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
 
 /* Header Styling */
 header {
@@ -21,7 +31,9 @@ header {
     align-items: center;
 }
 
-
+header h1 {
+    font-size: 1.5em;
+}
 
 header button {
     padding: 10px 20px;
@@ -98,7 +110,20 @@ header button:hover {
     border-radius: 4px;
     margin-bottom: 10px;
 }
-
+#accessKey {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+#secretKey {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
 #fetchBOMButton {
     width: 100%;
     padding: 12px;
@@ -272,65 +297,4 @@ button:hover {
   min-width: 30px;
   text-align: center;
   font-size: 16px;
-}
-
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f9f9f9;
-    color: #333;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-}
-
-header {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-h1 {
-    font-size: 2rem;
-}
-
-.button-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    width: 100%;
-    max-width: 800px;
-}
-
-.action-button {
-    padding: 20px;
-    font-size: 1.2rem;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    background-color: #007bff;
-    color: #fff;
-    transition: background-color 0.3s;
-}
-
-.action-button:hover {
-    background-color: #0056b3;
-}
-
-.button-primary {
-    background-color: #28a745;
-    color: #fff;
-}
-
-.button-secondary {
-    background-color: #6c757d;
-    color: #fff;
-}
-
-footer {
-    margin-top: 20px;
-    display: flex;
-    gap: 10px;
 }

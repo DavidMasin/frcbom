@@ -207,6 +207,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // Function to handle fetching BOM data from Onshape
 async function handleFetchBOM() {
     const documentUrl = document.getElementById('onshapeDocumentUrl').value;
+    const accessKey=document.getElementById("accessKey").value;
+    const secretKey=document.getElementById("secretKey").value;
+
     if (!documentUrl) {
         alert('Please enter an Onshape Document URL.');
         return;
@@ -226,7 +229,7 @@ async function handleFetchBOM() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({document_url: documentUrl, team_number: teamNumber})
+            body: JSON.stringify({document_url: documentUrl, team_number: teamNumber,access_key:accessKey,secret_key:secretKey})
         });
 
         const data = await response.json();

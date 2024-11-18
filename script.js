@@ -209,6 +209,8 @@ document.addEventListener('DOMContentLoaded', () => {
 async function handleFetchBOM(event) {
     event.preventDefault();
     const fetchButton = document.getElementById('fetchBOMButton');
+    console.log("Fetch BOM button clicked");
+
     fetchButton.disabled = true; // Disable the button
 
     try {
@@ -501,7 +503,6 @@ function initializeDashboard() {
         fetchBOMDataFromServer();
     }
 
-    // document.getElementById('fetchBOMButton')?.addEventListener('click', handleFetchBOM);
     document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
 
     // Attach event listeners for filter buttons

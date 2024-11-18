@@ -135,8 +135,8 @@ function handleFilterBOM(filter) {
         default:
             filteredData = bomData.filter(item =>
                 (item.preProcess?.toLowerCase() === normalizedFilter&& !item.preProcessCompleted) ||
-                (item.Process1?.toLowerCase() === normalizedFilter && item.preProcessCompleted) ||
-                (item.Process2?.toLowerCase() === normalizedFilter && item.process1Completed)
+                (item.Process1?.toLowerCase() === normalizedFilter && item.preProcessCompleted&& !item.process1Completed) ||
+                (item.Process2?.toLowerCase() === normalizedFilter && item.process1Completed&&!item.process2Completed)
             );
             break;
     }

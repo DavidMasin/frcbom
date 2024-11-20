@@ -16,15 +16,15 @@ async function handleLogin(event) {
     try {
         const response = await fetch(`${API_BASE_URL}/api/login`, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({team_number: teamNumber, password})
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ team_number: teamNumber, password })
         });
 
         const data = await response.json();
         if (response.ok) {
             localStorage.setItem('jwt_token', data.access_token);
             localStorage.setItem('team_number', teamNumber);
-            window.location.href = '/template/dashboard.html';
+            window.location.href = `/${teamNumber}`; // Redirect to /<team_number>
         } else {
             document.getElementById('loginMessage').textContent = data.error;
         }

@@ -44,17 +44,17 @@ secret_key = ""
 base_url = 'https://cad.onshape.com'
 client = Client(configuration={"base_url": base_url, "access_key": access_key, "secret_key": secret_key})
 
-
+@app.route('/', methods=['GET'])
+def index():
+    return app.send_static_file('index.html')
 @app.route('/<int:team_number>', methods=['GET'])
 def team_dashboard(team_number):
-    # Verify if the team exists (optional)
-    print(team_number)
-    print(teams)
+    # Optionally, validate that the team exists
     if str(team_number) not in teams:
         return jsonify({"error": "Team not found"}), 404
 
     # Serve the dashboard HTML
-    return app.send_static_file('/template/dashboard.html')
+    return app.send_static_file('dashboard.html')  # Ensure this file is in the static/templates folder
 
 
 # Register endpoint

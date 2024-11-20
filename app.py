@@ -277,7 +277,7 @@ def handle_disconnect():
     print('Client disconnected')
 
 
-@app.route('/<int:team_number>', methods=['GET'])
+@app.route('/<team_number>', methods=['GET'])
 def team_dashboard(team_number):
     # Verify if the team exists (optional)
     if str(team_number) not in teams:

@@ -1,12 +1,7 @@
 const API_BASE_URL = 'https://frcbom-production.up.railway.app';
 let teamNumber = localStorage.getItem('team_number');
 
-function getTeamNumberFromURL() {
-    const path = window.location.pathname;
-    const teamNumber = path.split('/').filter(segment => segment)[0]; // Extract the first segment
-    console.log(teamNumber)
-    return teamNumber;
-}
+
 // Handle Login
 async function handleLogin(event) {
     event.preventDefault();
@@ -16,15 +11,15 @@ async function handleLogin(event) {
     try {
         const response = await fetch(`${API_BASE_URL}/api/login`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ team_number: teamNumber, password })
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({team_number: teamNumber, password})
         });
 
         const data = await response.json();
         if (response.ok) {
             localStorage.setItem('jwt_token', data.access_token);
             localStorage.setItem('team_number', teamNumber);
-            window.location.href = `/${teamNumber}`; // Redirect to /<team_number>
+            window.location.href = 'dashboard.html';
         } else {
             document.getElementById('loginMessage').textContent = data.error;
         }
@@ -174,8 +169,6 @@ async function handleRegister(event) {
 
 // Initialize event listeners
 document.addEventListener('DOMContentLoaded', () => {
-    const teamNumber = getTeamNumberFromURL();
-    localStorage.setItem('team_number', teamNumber); // Store team number for later use
     if (document.getElementById('dashboard')) {
         initializeDashboard();
         console.log("Dashboard initialized");

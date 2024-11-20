@@ -277,5 +277,14 @@ def handle_disconnect():
     print('Client disconnected')
 
 
+@app.route('/<int:team_number>', methods=['GET'])
+def team_dashboard(team_number):
+    # Verify if the team exists (optional)
+    if str(team_number) not in teams:
+        return jsonify({"error": "Team not found"}), 404
+
+    # Serve the dashboard HTML
+    return app.send_static_file('dashboard.html')
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

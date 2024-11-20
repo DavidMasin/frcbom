@@ -320,7 +320,6 @@ function displayBOM(bomData) {
     const tableBody = document.querySelector('#bomTable tbody');
     tableBody.innerHTML = '';
     bomData.sort((a, b) => (a["Part Name"] || '').localeCompare(b["Part Name"] || ''));
-    console.log(bomData)
     // console.log("LENGTH:")
     // console.log(bomData.length)
     if (!bomData || bomData.length === 0) {

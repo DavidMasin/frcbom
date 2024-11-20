@@ -284,7 +284,7 @@ def team_dashboard(team_number):
         return jsonify({"error": "Team not found"}), 404
 
     # Serve the dashboard HTML
-    return app.send_static_file('dashboard.html')
+    return app.send_static_file('/template/dashboard.html')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

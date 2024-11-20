@@ -24,7 +24,7 @@ async function handleLogin(event) {
         if (response.ok) {
             localStorage.setItem('jwt_token', data.access_token);
             localStorage.setItem('team_number', teamNumber);
-            window.location.href = 'dashboard.html';
+            window.location.href = '/template/dashboard.html';
         } else {
             document.getElementById('loginMessage').textContent = data.error;
         }

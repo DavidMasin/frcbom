@@ -14,10 +14,8 @@ app.config['JWT_SECRET_KEY'] = 'ysm201996'  # Update this with a secure key
 
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
-CORS(app, resources={r"/*": {"origins": ["https://frcbom.com"]}},
-     supports_credentials=True,
-     methods=["GET", "POST", "OPTIONS"],
-     allow_headers=["Content-Type", "Authorization", "X-Requested-With"])
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # In-memory dictionary to store BOM data per team
@@ -45,6 +43,18 @@ access_key = ""
 secret_key = ""
 base_url = 'https://cad.onshape.com'
 client = Client(configuration={"base_url": base_url, "access_key": access_key, "secret_key": secret_key})
+
+
+@app.route('/<int:team_number>', methods=['GET'])
+def team_dashboard(team_number):
+    # Verify if the team exists (optional)
+    print(team_number)
+    print(teams)
+    if str(team_number) not in teams:
+        return jsonify({"error": "Team not found"}), 404
+
+    # Serve the dashboard HTML
+    return app.send_static_file('/template/dashboard.html')
 
 
 # Register endpoint
@@ -180,7 +190,7 @@ def fetch_bom():
             bom_data = []
 
             for part_name, (
-            description, quantity, material, materialBOM, preProcess, Process1, Process2) in parts.items():
+                    description, quantity, material, materialBOM, preProcess, Process1, Process2) in parts.items():
                 bom_data.append({
                     "Part Name": part_name,
                     "Description": description,
@@ -276,15 +286,6 @@ def handle_connect():
 def handle_disconnect():
     print('Client disconnected')
 
-
-@app.route('/<team_number>', methods=['GET'])
-def team_dashboard(team_number):
-    # Verify if the team exists (optional)
-    if str(team_number) not in teams:
-        return jsonify({"error": "Team not found"}), 404
-
-    # Serve the dashboard HTML
-    return app.send_static_file('/template/dashboard.html')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

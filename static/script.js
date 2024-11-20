@@ -1,7 +1,11 @@
 const API_BASE_URL = 'https://frcbom-production.up.railway.app';
 let teamNumber = localStorage.getItem('team_number');
 
-
+function getTeamNumberFromURL() {
+    const path = window.location.pathname;
+    const teamNumber = path.split('/').filter(segment => segment)[0]; // Extract the first segment
+    return teamNumber;
+}
 // Handle Login
 async function handleLogin(event) {
     event.preventDefault();
@@ -169,6 +173,8 @@ async function handleRegister(event) {
 
 // Initialize event listeners
 document.addEventListener('DOMContentLoaded', () => {
+    const teamNumber = getTeamNumberFromURL();
+    localStorage.setItem('team_number', teamNumber); // Store team number for later use
     if (document.getElementById('dashboard')) {
         initializeDashboard();
         console.log("Dashboard initialized");

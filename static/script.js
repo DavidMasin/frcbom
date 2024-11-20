@@ -4,6 +4,7 @@ let teamNumber = localStorage.getItem('team_number');
 function getTeamNumberFromURL() {
     const path = window.location.pathname;
     const teamNumber = path.split('/').filter(segment => segment)[0]; // Extract the first segment
+    console.log(teamNumber)
     return teamNumber;
 }
 // Handle Login

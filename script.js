@@ -331,6 +331,7 @@ function displayBOMAsButtons(bomData) {
             <p><strong>Quantity Left:</strong> ${part.Quantity || 'N/A'}</p>
             <p><strong>Current Process:</strong> ${currentProcess.name} (${currentProcess.remaining} left)</p>
         `;
+        console.log("PLACER2: part: " + part)
 
         // Add click event listener
         button.addEventListener('click', () => openEditModal(part));
@@ -378,10 +379,10 @@ function openEditModal(part) {
 
 // Function to save quantities and update the BOM data
 function savePartQuantities(part) {
+
     const preProcessQty = document.getElementById('preProcessQty')?.value || part.preProcessQuantity || 0;
     const process1Qty = document.getElementById('process1Qty')?.value || part.process1Quantity || 0;
     const process2Qty = document.getElementById('process2Qty')?.value || part.process2Quantity || 0;
-
     // Update the part's quantities
     part.preProcessQuantity = parseInt(preProcessQty, 10);
     part.process1Quantity = parseInt(process1Qty, 10);
@@ -414,6 +415,7 @@ window.addEventListener('click', (event) => {
 
 // Function to determine the current process and remaining quantity
 function determineCurrentProcess(part) {
+    console.log("PLACER1: part: " + part)
     if (part.preProcess && !part.preProcessCompleted) {
         return {name: part.preProcess, remaining: part.preProcessQuantity || part.Quantity};
     } else if (part.Process1 && !part.process1Completed) {

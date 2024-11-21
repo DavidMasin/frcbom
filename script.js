@@ -266,7 +266,8 @@ function saveBOMDataToLocal(bomData) {
     localStorage.setItem('bom_data', JSON.stringify(bomDict));
     console.log('BOM data saved to localStorage for team:', teamNumber);
 
-    saveBOMDataToServer(bomData).then(r =>{} );
+    saveBOMDataToServer(bomData).then(r => {
+    });
 }
 
 // Function to get BOM data from localStorage
@@ -344,6 +345,7 @@ function displayBOMAsButtons(bomData) {
         gridContainer.appendChild(button);
     });
 }
+
 // Function to open the modal with part details
 function openEditModal(part) {
     const modal = document.getElementById('editModal');
@@ -356,48 +358,81 @@ function openEditModal(part) {
     // Populate modal with editable fields for the part
     if (part.preProcess) {
         modalBody.innerHTML += `
-            <label for="preProcessQty">Pre-Process (${part.preProcess}):</label>
+        <label for="preProcessQty">Pre-Process (${part.preProcess}):</label>
+        <div class="quantity-counter">
+            <button class="decrement" data-target="preProcessQty">-</button>
             <input type="number" id="preProcessQty" value="${part.preProcessQuantity || 0}" min="0">
-        `;
+            <button class="increment" data-target="preProcessQty">+</button>
+        </div>
+    `;
     }
     if (part.Process1) {
         modalBody.innerHTML += `
-            <label for="process1Qty">Process 1 (${part.Process1}):</label>
+        <label for="process1Qty">Process 1 (${part.Process1}):</label>
+        <div class="quantity-counter">
+            <button class="decrement" data-target="process1Qty">-</button>
             <input type="number" id="process1Qty" value="${part.process1Quantity || 0}" min="0">
-        `;
+            <button class="increment" data-target="process1Qty">+</button>
+        </div>
+    `;
     }
     if (part.Process2) {
         modalBody.innerHTML += `
-            <label for="process2Qty">Process 2 (${part.Process2}):</label>
+        <label for="process2Qty">Process 2 (${part.Process2}):</label>
+        <div class="quantity-counter">
+            <button class="decrement" data-target="process2Qty">-</button>
             <input type="number" id="process2Qty" value="${part.process2Quantity || 0}" min="0">
-        `;
+            <button class="increment" data-target="process2Qty">+</button>
+        </div>
+    `;
     }
+
 
     // Show the modal
     modal.style.display = 'flex';
+    attachCounterListeners();
 
     // Save changes
     saveButton.onclick = () => savePartQuantities(part);
 }
+function attachCounterListeners() {
+    document.querySelectorAll('.increment').forEach(button => {
+        button.addEventListener('click', () => {
+            const target = document.getElementById(button.getAttribute('data-target'));
+            target.value = parseInt(target.value) + 1;
+        });
+    });
+
+    document.querySelectorAll('.decrement').forEach(button => {
+        button.addEventListener('click', () => {
+            const target = document.getElementById(button.getAttribute('data-target'));
+            target.value = Math.max(0, parseInt(target.value) - 1); // Ensure value doesn't go below 0
+        });
+    });
+}
 
 // Function to save quantities and update the BOM data
 function savePartQuantities(part) {
-
     const preProcessQty = document.getElementById('preProcessQty')?.value || part.preProcessQuantity || 0;
     const process1Qty = document.getElementById('process1Qty')?.value || part.process1Quantity || 0;
     const process2Qty = document.getElementById('process2Qty')?.value || part.process2Quantity || 0;
+
     // Update the part's quantities
     part.preProcessQuantity = parseInt(preProcessQty, 10);
     part.process1Quantity = parseInt(process1Qty, 10);
     part.process2Quantity = parseInt(process2Qty, 10);
-    console.log(part)
-    console.log(getBOMDataFromLocal())
-    // Save updated data to localStorage or server
+
+    // Save updated data
     saveBOMDataToLocal(getBOMDataFromLocal());
+
+    // Re-render the BOM grid
+    const currentFilter = localStorage.getItem('current_filter') || 'All';
+    handleFilterBOM(currentFilter);
 
     // Close the modal
     closeModal();
 }
+
 
 // Function to close the modal
 function closeModal() {
@@ -440,7 +475,6 @@ function checkLoginStatus() {
         alert('You are not logged in. Redirecting to the login page.');
         window.location.href = 'index.html'; // Replace with your login page path if different
     }
-
 
 
 }

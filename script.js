@@ -364,7 +364,8 @@ function openEditModal(part) {
 
     // Clear existing content
     modalBody.innerHTML = '';
-
+    modalBody.innerHTML += `
+    <button id="downloadCADButton" class="button-primary">Download STEP File</button>`;
     // Populate modal with editable fields for the part
     if (part.preProcess) {
         modalBody.innerHTML += `
@@ -395,9 +396,7 @@ function openEditModal(part) {
             <button class="increment" data-target="process2Qty">+</button>
         </div>
     `;
-        modalBody.innerHTML += `
-    <button id="downloadCADButton" class="button-primary">Download STEP File</button>
-`;
+
     }
 
 

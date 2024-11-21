@@ -58,32 +58,45 @@ header button:hover {
     margin-bottom: 20px;
 }
 
+/* Filter Buttons Container */
+.grid-layout {
+    display: grid;
+    gap: 20px; /* Space between buttons */
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Responsive grid */
+    justify-content: center; /* Center grid */
+    align-items: center;
+    margin: 20px auto;
+    max-width: 800px; /* Adjust max width as needed */
+    padding: 10px;
+}
+
+/* Individual Buttons */
 .filter-button {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 20px;
-    font-size: 1.1em;
+    padding: 15px;
+    font-size: 1em;
+    text-align: center;
     color: #fff;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
-    transition: transform 0.3s ease, background-color 0.3s ease;
     background-color: #007BFF;
-    text-align: center;
-    width: 120px; /* Adjust as needed */
-    height: 120px; /* Adjust as needed */
+    transition: transform 0.3s ease, background-color 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .filter-button:hover {
-    transform: scale(1.05);
+    transform: translateY(-5px); /* Subtle hover effect */
+    background-color: #0056b3;
 }
 
-.filter-button .button-icon {
-    width: 40px; /* Adjust size of icons */
-    height: 40px; /* Adjust size of icons */
-    margin-bottom: 10px; /* Space between icon and text */
+.filter-button img {
+    width: 50px; /* Icon size */
+    height: 50px;
+    margin-bottom: 8px;
 }
 
 .filter-button span {
@@ -247,24 +260,23 @@ button:hover {
     background-color: #0056b3;
 }
 
-/* Responsive Design */
+/* Responsive Adjustments */
 @media (max-width: 600px) {
-    header h1 {
-        font-size: 1.2em;
+    .grid-layout {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Adjust for smaller screens */
     }
 
     .filter-button {
-        font-size: 0.9em;
-        padding: 10px 20px;
-    }
-
-    .container {
-        padding: 20px;
-    }
-
-    button {
         padding: 10px;
-        font-size: 0.9em;
+    }
+
+    .filter-button img {
+        width: 40px;
+        height: 40px;
+    }
+
+    .filter-button span {
+        font-size: 0.8em;
     }
 }
 .quantity-counter {

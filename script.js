@@ -500,7 +500,7 @@ async function downloadCADFile(partId) {
 
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.message || 'Failed to download CAD file.');
+             console.error(error.message || 'Failed to download CAD file.');
         }
 
         const blob = await response.blob();

@@ -28,6 +28,15 @@ async function handleLogin(event) {
         document.getElementById('loginMessage').textContent = 'Login failed.';
     }
 }
+function getPartStatus(part) {
+    if (!part.preProcessQuantity && !part.process1Quantity && !part.process2Quantity) {
+        return 'not-started'; // RED
+    } else if (part.preProcessCompleted && part.process1Completed && part.process2Completed) {
+        return 'completed'; // GREEN
+    } else {
+        return 'in-progress'; // YELLOW
+    }
+}
 
 function checkProcessProgress(item) {
     const requiredQuantity = item.Quantity;
@@ -320,12 +329,14 @@ function displayBOMAsButtons(bomData) {
     const gridContainer = document.getElementById('bomPartsGrid');
     gridContainer.innerHTML = ''; // Clear previous content
     bomData.sort((a, b) => (a["Part Name"] || '').localeCompare(b["Part Name"] || ''));
+
     bomData.forEach(part => {
         const currentProcess = determineCurrentProcess(part);
+        const statusClass = getPartStatus(part); // Get status class
 
         // Create part button
         const button = document.createElement('div');
-        button.classList.add('part-button');
+        button.classList.add('part-button', statusClass); // Add status class
         button.dataset.partName = part["Part Name"];
 
         // Populate button content
@@ -333,14 +344,12 @@ function displayBOMAsButtons(bomData) {
             <h3>${part["Part Name"]}</h3>
             <p><strong>Material:</strong> ${part.Material || 'N/A'}</p>
             <p><strong>Description:</strong> ${part.Description || 'N/A'}</p>
-            <p><strong>Quantity Left:</strong> ${part.Quantity || 'N/A'}</p>
-            <p><strong>Current Process:</strong> ${currentProcess.name} (${currentProcess.remaining} left)</p>
+            <p><strong>Quantity Left:</strong> ${currentProcess.remaining || part.Quantity || 'N/A'}</p>
+            <p><strong>Current Process:</strong> ${currentProcess.name || 'Completed'}</p>
         `;
-        // console.log("PLACER2: part: " + part)
 
         // Add click event listener
         button.addEventListener('click', () => openEditModal(part));
-
 
         // Append button to grid
         gridContainer.appendChild(button);

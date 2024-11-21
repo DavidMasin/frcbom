@@ -305,3 +305,30 @@ button:hover {
 .button-secondary:hover {
     background-color: #5a6268;
 }
+.part-button.not-started {
+    background-color: #ffcccc; /* Light Red */
+    border-color: #ff6666; /* Darker Red */
+}
+
+.part-button.in-progress {
+    background-color: #fff5cc; /* Light Yellow */
+    border-color: #ffcc00; /* Darker Yellow */
+}
+
+.part-button.completed {
+    background-color: #ccffcc; /* Light Green */
+    border-color: #66cc66; /* Darker Green */
+}
+
+/* Optional: Add hover effects for better feedback */
+.part-button.not-started:hover {
+    background-color: #ff9999;
+}
+
+.part-button.in-progress:hover {
+    background-color: #ffe066;
+}
+
+.part-button.completed:hover {
+    background-color: #99ff99;
+}

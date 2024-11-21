@@ -485,10 +485,9 @@ window.addEventListener('click', (event) => {
         closeModal();
     }
 });
-async function downloadCADFile() {
-    console.log("IM HEREEEE")
+async function downloadCADFile(partId) {
     const jwtToken = localStorage.getItem('jwt_token');
-    let partId = 'R31D'
+
     try {
         const response = await fetch(`${API_BASE_URL}/api/download_cad`, {
             method: 'POST',
@@ -496,12 +495,12 @@ async function downloadCADFile() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${jwtToken}`,
             },
-            body: JSON.stringify({ id: partId,team_number:teamNumber }),
+            body: JSON.stringify({ id: partId, team_number: teamNumber }),
         });
 
         if (!response.ok) {
             const error = await response.json();
-             console.error(error.message || 'Failed to download CAD file.');
+            throw new Error(error.message || 'Failed to download CAD file.');
         }
 
         const blob = await response.blob();

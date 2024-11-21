@@ -19,11 +19,11 @@
 <section class="dashboard-controls">
     <div class="settings-container">
         <button class="button-secondary" data-filter="settingsButton">
-<!--            <img src="pictures/settings.png" alt="settingsButton" class="button-icon">-->
+            <!--            <img src="pictures/settings.png" alt="settingsButton" class="button-icon">-->
             <span>Settings</span>
         </button>
     </div>
-    <div class="filter-buttons">
+    <div class="filter-buttons grid-layout">
         <button class="filter-button" data-filter="All">
             <img src="pictures/all.png" alt="All" class="button-icon">
             <span>Show All</span>
@@ -57,6 +57,7 @@
             <span>Mill</span>
         </button>
     </div>
+
 </section>
 
 <!-- BOM Table Section -->
@@ -87,7 +88,8 @@
         <span class="close">&times;</span>
         <h2>Settings</h2>
         <div class="modal-body">
-            <label for="onshapeDocumentUrl"></label><input type="text" id="onshapeDocumentUrl" placeholder="Enter Onshape Document URL">
+            <label for="onshapeDocumentUrl"></label><input type="text" id="onshapeDocumentUrl"
+                                                           placeholder="Enter Onshape Document URL">
             <label for="accessKey"></label><input type="text" id="accessKey" placeholder="Enter Access Key">
             <label for="secretKey"></label><input type="text" id="secretKey" placeholder="Enter Secret Key">
             <button id="fetchBOMButton" class="button-primary" type="button">Fetch BOM</button>

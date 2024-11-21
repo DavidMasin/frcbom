@@ -62,11 +62,11 @@ header button:hover {
 .grid-layout {
     display: grid;
     gap: 20px; /* Space between buttons */
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Responsive grid */
-    justify-content: center; /* Center grid */
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Adjust column width */
+    justify-content: center;
     align-items: center;
     margin: 20px auto;
-    max-width: 800px; /* Adjust max width as needed */
+    max-width: 800px;
     padding: 10px;
 }
 
@@ -263,11 +263,7 @@ button:hover {
 /* Responsive Adjustments */
 @media (max-width: 600px) {
     .grid-layout {
-        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Adjust for smaller screens */
-    }
-
-    .filter-button {
-        padding: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
     }
 
     .filter-button img {

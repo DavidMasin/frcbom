@@ -363,9 +363,7 @@ function openEditModal(part) {
     const saveButton = document.getElementById('saveButton');
 
     // Clear existing content
-    modalBody.innerHTML = '';
-    modalBody.innerHTML += `
-    <button id="downloadCADButton" class="button-primary">Download STEP File</button>`;
+    modalBody.innerHTML = '<button id="downloadCADButton" class="button-primary">Download STEP File</button>';
     // Populate modal with editable fields for the part
     if (part.preProcess) {
         modalBody.innerHTML += `
@@ -398,7 +396,7 @@ function openEditModal(part) {
     `;
 
     }
-
+    console.log(modalBody.innerHTML)
 
     // Show the modal
     modal.style.display = 'flex';

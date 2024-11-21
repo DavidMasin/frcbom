@@ -352,19 +352,19 @@ function openEditModal(part) {
     // Populate modal with editable fields for the part
     if (part.preProcess) {
         modalBody.innerHTML += `
-            <label>Pre-Process (${part.preProcess}):</label>
+            <label for="preProcessQty">Pre-Process (${part.preProcess}):</label>
             <input type="number" id="preProcessQty" value="${part.preProcessQuantity || 0}" min="0">
         `;
     }
     if (part.Process1) {
         modalBody.innerHTML += `
-            <label>Process 1 (${part.Process1}):</label>
+            <label for="process1Qty">Process 1 (${part.Process1}):</label>
             <input type="number" id="process1Qty" value="${part.process1Quantity || 0}" min="0">
         `;
     }
     if (part.Process2) {
         modalBody.innerHTML += `
-            <label>Process 2 (${part.Process2}):</label>
+            <label for="process2Qty">Process 2 (${part.Process2}):</label>
             <input type="number" id="process2Qty" value="${part.process2Quantity || 0}" min="0">
         `;
     }
@@ -372,7 +372,7 @@ function openEditModal(part) {
     // Show the modal
     modal.style.display = 'flex';
 
-    // Handle save action
+    // Save changes
     saveButton.onclick = () => savePartQuantities(part);
 }
 
@@ -383,9 +383,9 @@ function savePartQuantities(part) {
     const process2Qty = document.getElementById('process2Qty')?.value || part.process2Quantity || 0;
 
     // Update the part's quantities
-    part.preProcessQuantity = parseInt(preProcessQty);
-    part.process1Quantity = parseInt(process1Qty);
-    part.process2Quantity = parseInt(process2Qty);
+    part.preProcessQuantity = parseInt(preProcessQty, 10);
+    part.process1Quantity = parseInt(process1Qty, 10);
+    part.process2Quantity = parseInt(process2Qty, 10);
 
     // Save updated data to localStorage or server
     saveBOMDataToLocal(getBOMDataFromLocal());

@@ -102,7 +102,7 @@ def findIDs(bom_dict, IDName):
 
 
 def getPartsDict(bom_dict, partNameID, DescriptionID, quantityID, materialID, materialBomID, preProcessID, process1ID,
-                 process2ID, idID):
+                 process2ID):
     partDict = {}
     rows = bom_dict.get("rows", [])
     for row in rows:
@@ -172,11 +172,10 @@ def fetch_bom():
             process1ID = findIDs(bom_dict, "Process 1")
             process2ID = findIDs(bom_dict, "Process 2")
             DescriptionID = findIDs(bom_dict, "Description")
-            idID = findIDs(bom_dict, "id")
             print("Trying to get Parts...")
             parts = getPartsDict(bom_dict, part_nameID, DescriptionID, part_quantity, part_materialID,
                                  part_materialBomID,
-                                 part_preProcessID, process1ID, process2ID, idID)
+                                 part_preProcessID, process1ID, process2ID)
             print("Got parts!")
             # Prepare the response data
             bom_data = []

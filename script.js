@@ -82,7 +82,7 @@ document.querySelectorAll('.filter-button').forEach(button => {
         handleFilterBOM(filter);
     });
 });
-// Function to handle filtering BOM data
+
 // Function to handle filtering BOM data
 function handleFilterBOM(filter) {
     const bomData = getBOMDataFromLocal();
@@ -491,12 +491,14 @@ function initializeDashboard() {
         teamNumberElement.textContent = teamNumber;
     }
 
-    const bomData = getBOMDataFromLocal();
-    if (bomData && bomData.length > 0) {
-        displayBOMAsButtons(bomData);
-    } else {
-        fetchBOMDataFromServer().then(displayBOMAsButtons);
-    }
+    // const bomData = getBOMDataFromLocal();
+    const savedFilter = localStorage.getItem('current_filter') || 'inhouse';
+    handleFilterBOM(savedFilter);
+    // if (bomData && bomData.length > 0) {
+    //     displayBOMAsButtons(bomData);
+    // } else {
+    //     fetchBOMDataFromServer().then(displayBOMAsButtons);
+    // }
 
     document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
 
@@ -508,8 +510,7 @@ function initializeDashboard() {
         });
     });
 
-    const savedFilter = localStorage.getItem('current_filter') || 'inhouse';
-    handleFilterBOM(savedFilter);
+
 
     const modal = document.getElementById('settingsModal');
     const settingsButton = document.getElementById('settingsButton');

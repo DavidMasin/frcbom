@@ -481,9 +481,10 @@ window.addEventListener('click', (event) => {
         closeModal();
     }
 });
-async function downloadCADFile(partId) {
+async function downloadCADFile() {
+    console.log("IM HEREEEE")
     const jwtToken = localStorage.getItem('jwt_token');
-
+    let partId = 'R31D'
     try {
         const response = await fetch(`${API_BASE_URL}/api/download_cad`, {
             method: 'POST',
@@ -509,7 +510,7 @@ async function downloadCADFile(partId) {
         alert('Failed to download CAD file. Check the console for details.');
     }
 }
-document.getElementById('downloadCADButton')?.addEventListener('click', () => downloadCADFile(part.id));
+document.getElementById('downloadCADButton')?.addEventListener('click', () => downloadCADFile());
 
 // Function to determine the current process and remaining quantity
 function determineCurrentProcess(part) {

@@ -311,7 +311,6 @@ document.getElementById('fetchBOMButton')?.addEventListener('click', async () =>
 function displayBOMAsButtons(bomData) {
     const gridContainer = document.getElementById('bomPartsGrid');
     gridContainer.innerHTML = ''; // Clear previous content
-    console.log("BOM DATA IN DISPLAY BOM: " + bomData)
     bomData.forEach(part => {
         const currentProcess = determineCurrentProcess(part);
 
@@ -492,9 +491,10 @@ function initializeDashboard() {
     }
 
     const bomData = getBOMDataFromLocal();
-
+    console.log("bomData: " + bomData)
     if (bomData && bomData.length > 0) {
         const savedFilter = localStorage.getItem('current_filter') || 'inhouse';
+        console.log("savedFilter: " + savedFilter)
         handleFilterBOM(savedFilter);
     } else {
         const savedFilter = localStorage.getItem('current_filter') || 'inhouse';

@@ -232,7 +232,7 @@ async function fetchBOMDataFromServer() {
         const data = await response.json();
         if (response.ok) {
             console.log('Loaded BOM data from the server:', data.bom_data);
-            const savedFilter = localStorage.getItem('current_filter') || 'inhouse';
+            const savedFilter = localStorage.getItem('current_filter') || 'InHouse';
             saveBOMDataToLocal(data.bom_data)
             handleFilterBOM(savedFilter)
         } else {
@@ -496,11 +496,11 @@ function initializeDashboard() {
     const bomData = getBOMDataFromLocal();
     console.log("bomData: " + bomData)
     if (bomData && bomData.length > 0) {
-        const savedFilter = localStorage.getItem('current_filter') || 'inhouse';
+        const savedFilter = localStorage.getItem('current_filter') || 'InHouse';
         console.log("savedFilter: " + savedFilter)
         handleFilterBOM(savedFilter);
     } else {
-        const savedFilter = localStorage.getItem('current_filter') || 'inhouse';
+        const savedFilter = localStorage.getItem('current_filter') || 'InHouse';
         fetchBOMDataFromServer().then(r => handleFilterBOM(savedFilter));
 
     }

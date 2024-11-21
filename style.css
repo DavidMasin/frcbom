@@ -291,3 +291,48 @@ button:hover {
   text-align: center;
   font-size: 16px;
 }
+/* BOM Parts Grid */
+#bomPartsGrid {
+    display: grid;
+    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    justify-content: center;
+    align-items: start;
+    margin: 20px auto;
+    max-width: 1000px;
+    padding: 10px;
+}
+
+/* Part Button */
+.part-button {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border: 2px solid #007BFF;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.part-button:hover {
+    background-color: #e9ecef;
+    transform: translateY(-5px);
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+}
+
+.part-button h3 {
+    font-size: 1.2em;
+    color: #007BFF;
+    margin-bottom: 10px;
+}
+
+.part-button p {
+    font-size: 0.9em;
+    color: #333;
+    margin: 5px 0;
+    text-align: center;
+}

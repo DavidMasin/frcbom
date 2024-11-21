@@ -480,3 +480,12 @@ function handleLogout() {
     localStorage.clear();
     window.location.href = 'index.html';
 }
+
+document.querySelectorAll('.filter-button').forEach(button => {
+    button.addEventListener('mouseover', () => {
+        button.style.backgroundColor = '#0056b3'; // Hover effect
+    });
+    button.addEventListener('mouseout', () => {
+        button.style.backgroundColor = '#007BFF'; // Revert back
+    });
+});

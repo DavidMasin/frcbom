@@ -59,41 +59,36 @@ header button:hover {
 }
 
 .filter-button {
-    padding: 15px 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
     font-size: 1.1em;
     color: #fff;
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.filter-button[data-filter="CNC"] {
-    background-color: #28a745;
-}
-
-.filter-button[data-filter="Lathe"] {
-    background-color: #6c757d;
-}
-
-.filter-button[data-filter="3D Printer"] {
-    background-color: #17a2b8;
-}
-
-.filter-button[data-filter="Gerung"] {
-    background-color: #ffc107;
-}
-
-.filter-button[data-filter="Mill"] {
-    background-color: #007bff;
-}
-
-.filter-button[data-filter="All"] {
-    background-color: #343a40;
+    transition: transform 0.3s ease, background-color 0.3s ease;
+    background-color: #007BFF;
+    text-align: center;
+    width: 120px; /* Adjust as needed */
+    height: 120px; /* Adjust as needed */
 }
 
 .filter-button:hover {
-    opacity: 0.8;
+    transform: scale(1.05);
+}
+
+.filter-button .button-icon {
+    width: 40px; /* Adjust size of icons */
+    height: 40px; /* Adjust size of icons */
+    margin-bottom: 10px; /* Space between icon and text */
+}
+
+.filter-button span {
+    font-size: 0.9em;
+    font-weight: bold;
 }
 
 /* Input and Fetch Button Styling */

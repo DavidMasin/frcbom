@@ -296,7 +296,8 @@ def download_cad():
     team_number = data.get("team_number")
     if not part_id or not team_number:
         return jsonify({'message': 'Missing part ID or team number'}), 400
-    document_url = settings_data_dict[team_number]["documentURL"]
+    # document_url = settings_data_dict[team_number]["documentURL"]
+    document_url = "https://cad.onshape.com/documents/0f3c906136618fd7ebb6090c/w/ad4ff8bac9eff7f8abe5f2f7/e/3427958cf6a5e5b7120e3a42"
     access_key_data = settings_data_dict[team_number]["accessKey"]
     secret_key_data = settings_data_dict[team_number]["secretKey"]
     client_data = Client(

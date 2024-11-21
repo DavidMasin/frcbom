@@ -232,7 +232,9 @@ async function fetchBOMDataFromServer() {
         const data = await response.json();
         if (response.ok) {
             console.log('Loaded BOM data from the server:', data.bom_data);
-            displayBOMAsButtons(data.bom_data);
+            const savedFilter = localStorage.getItem('current_filter') || 'inhouse';
+            saveBOMDataToLocal(data.bom_data)
+            handleFilterBOM(savedFilter)
         } else {
             console.error('Failed to retrieve BOM data from the server:', data.error);
             alert(`Error: ${data.error}`);

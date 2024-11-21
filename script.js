@@ -386,7 +386,7 @@ function savePartQuantities(part) {
     part.preProcessQuantity = parseInt(preProcessQty, 10);
     part.process1Quantity = parseInt(process1Qty, 10);
     part.process2Quantity = parseInt(process2Qty, 10);
-
+    console.log(part)
     // Save updated data to localStorage or server
     saveBOMDataToLocal(getBOMDataFromLocal());
 
@@ -424,131 +424,6 @@ function determineCurrentProcess(part) {
     }
 }
 
-// Function to display and sort BOM data in the table
-function displayBOM(bomData) {
-    const tableBody = document.querySelector('#bomTable tbody');
-    tableBody.innerHTML = '';
-    bomData.sort((a, b) => (a["Part Name"] || '').localeCompare(b["Part Name"] || ''));
-    // console.log("LENGTH:")
-    // console.log(bomData.length)
-    if (!bomData || bomData.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="10">No parts found</td></tr>';
-        console.log("BROKE!!")
-        return;
-    }
-
-    // Sort BOM data alphabetically by Part Name
-    console.log("BOM DATA:")
-    console.log(bomData)
-    bomData.forEach((item) => {
-        const row = document.createElement('tr');
-
-        // Part Name
-        row.innerHTML += `<td>${item["Part Name"] || 'N/A'}</td>`;
-        // Description
-        row.innerHTML += `<td>${item.Description || 'N/A'}</td>`;
-        // Material BOM
-        row.innerHTML += `<td>${item.materialBOM || 'N/A'}</td>`;
-        // Quantity Required
-        row.innerHTML += `<td>${item.Quantity || 'N/A'}</td>`;
-
-        // Pre-Process
-        row.innerHTML += `<td>${item.preProcess || 'N/A'}</td>`;
-        // Pre-Process Quantity Counter
-        row.innerHTML += `<td>${createQuantityCounter('preProcessQuantity', item["Part Name"], item.preProcessQuantity || 0)}</td>`;
-
-        // Process 1
-        row.innerHTML += `<td>${item.Process1 || 'N/A'}</td>`;
-        // Process 1 Quantity Counter
-        row.innerHTML += `<td>${createQuantityCounter('process1Quantity', item["Part Name"], item.process1Quantity || 0)}</td>`;
-
-        // Process 2
-        row.innerHTML += `<td>${item.Process2 || 'N/A'}</td>`;
-        // Process 2 Quantity Counter
-        row.innerHTML += `<td>${createQuantityCounter('process2Quantity', item["Part Name"], item.process2Quantity || 0)}</td>`;
-
-        tableBody.appendChild(row);
-    });
-
-    // Attach event listeners for the quantity counters
-    attachQuantityCounterEventListeners();
-}
-
-function createQuantityCounter(fieldName, partName, quantity) {
-    return `
-        <div class="quantity-counter">
-            <button class="quantity-decrement" data-part-name="${encodeURIComponent(partName)}" data-field="${fieldName}">-</button>
-            <span class="quantity-value">${quantity}</span>
-            <button class="quantity-increment" data-part-name="${encodeURIComponent(partName)}" data-field="${fieldName}">+</button>
-        </div>
-    `;
-}
-
-function attachQuantityCounterEventListeners() {
-    document.querySelectorAll('.quantity-decrement').forEach(button => {
-        button.addEventListener('click', handleQuantityDecrement);
-    });
-    document.querySelectorAll('.quantity-increment').forEach(button => {
-        button.addEventListener('click', handleQuantityIncrement);
-    });
-}
-
-function handleQuantityIncrement(event) {
-    const partName = decodeURIComponent(event.target.getAttribute('data-part-name'));
-    const field = event.target.getAttribute('data-field');
-    const bomData = getBOMDataFromLocal();
-
-    const item = bomData.find(item => item["Part Name"] === partName);
-    if (!item) return;
-
-    const maxQuantity = item.Quantity;
-    if (field === "preProcessQuantity" && item["preProcess"] !== null) {
-        item[field] = (item[field] || 0) + 1;
-        if (item[field] > maxQuantity) {
-            item[field] = maxQuantity;
-        }
-    } else if (field === "process1Quantity" && item["Process1"] !== null) {
-        item[field] = (item[field] || 0) + 1;
-        if (item[field] > maxQuantity) {
-            item[field] = maxQuantity;
-        }
-    } else if (field === "process2Quantity" && item["Process2"] !== null) {
-        item[field] = (item[field] || 0) + 1;
-        if (item[field] > maxQuantity) {
-            item[field] = maxQuantity;
-        }
-    }
-
-
-    checkProcessProgress(item);
-
-    saveBOMDataToLocal(bomData);
-
-    const currentFilter = localStorage.getItem('current_filter') || 'All';
-    handleFilterBOM(currentFilter);
-}
-
-function handleQuantityDecrement(event) {
-    const partName = decodeURIComponent(event.target.getAttribute('data-part-name'));
-    const field = event.target.getAttribute('data-field');
-    const bomData = getBOMDataFromLocal();
-
-    const item = bomData.find(item => item["Part Name"] === partName);
-    if (!item) return;
-
-    item[field] = (item[field] || 0) - 1;
-    console.log("ITEM FIELD" + item[field])
-    console.log("FIELD" + field)
-    if (item[field] < 0) {
-        item[field] = 0;
-    }
-    checkProcessProgress(item);
-
-    saveBOMDataToLocal(bomData);
-
-    const currentFilter = localStorage.getItem('current_filter') || 'All';
-    handleFilterBOM(currentFilter);
-}
 function checkLoginStatus() {
     // Retrieve the JWT token from localStorage
     const jwtToken = localStorage.getItem('jwt_token');

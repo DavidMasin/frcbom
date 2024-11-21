@@ -181,7 +181,7 @@ def fetch_bom():
             bom_data = []
 
             for part_name, (
-                    description, quantity, material, materialBOM, preProcess, Process1, Process2) in parts.items():
+                    description, quantity, material, materialBOM, preProcess, Process1, Process2,part_id) in parts.items():
                 bom_data.append({
                     "Part Name": part_name,
                     "Description": description,
@@ -190,7 +190,8 @@ def fetch_bom():
                     "materialBOM": materialBOM,
                     "preProcess": preProcess,
                     "Process1": Process1,
-                    "Process2": Process2
+                    "Process2": Process2,
+                    "ID":part_id
                 })
             # Store the latest BOM data for the team and emit it to all connected clients
             latest_bom_data[team_number] = bom_data

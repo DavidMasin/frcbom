@@ -192,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Fetch BOM data from the server on page load (if applicable)
     if (window.location.pathname.includes('dashboard.html')) {
-        fetchBOMDataFromServer();
+        fetchBOMDataFromServer().then(displayBOMAsButtons);
     }
 
     // Modal Logic (move inside DOMContentLoaded)
@@ -307,7 +307,51 @@ document.getElementById('fetchBOMButton')?.addEventListener('click', async () =>
     }
 });
 
+// Function to display BOM data as buttons
+function displayBOMAsButtons(bomData) {
+    const gridContainer = document.getElementById('bomPartsGrid');
+    gridContainer.innerHTML = ''; // Clear previous content
 
+    bomData.forEach(part => {
+        const currentProcess = determineCurrentProcess(part);
+
+        // Create part button
+        const button = document.createElement('div');
+        button.classList.add('part-button');
+        button.dataset.partName = part["Part Name"];
+
+        // Populate button content
+        button.innerHTML = `
+            <h3>${part["Part Name"]}</h3>
+            <p><strong>Material:</strong> ${part.Material || 'N/A'}</p>
+            <p><strong>Description:</strong> ${part.Description || 'N/A'}</p>
+            <p><strong>Quantity Left:</strong> ${part.Quantity || 'N/A'}</p>
+            <p><strong>Current Process:</strong> ${currentProcess.name} (${currentProcess.remaining} left)</p>
+        `;
+
+        // Add click event listener
+        button.addEventListener('click', () => {
+            alert(`You clicked on ${part["Part Name"]}.`);
+            // Add further functionality here
+        });
+
+        // Append button to grid
+        gridContainer.appendChild(button);
+    });
+}
+
+// Function to determine the current process and remaining quantity
+function determineCurrentProcess(part) {
+    if (part.preProcess && !part.preProcessCompleted) {
+        return { name: part.preProcess, remaining: part.preProcessQuantity || part.Quantity };
+    } else if (part.Process1 && !part.process1Completed) {
+        return { name: part.Process1, remaining: part.process1Quantity || part.Quantity };
+    } else if (part.Process2 && !part.process2Completed) {
+        return { name: part.Process2, remaining: part.process2Quantity || part.Quantity };
+    } else {
+        return { name: 'Completed', remaining: 0 };
+    }
+}
 // Function to display and sort BOM data in the table
 function displayBOM(bomData) {
     const tableBody = document.querySelector('#bomTable tbody');
@@ -450,7 +494,7 @@ function initializeDashboard() {
     if (bomData && bomData.length > 0) {
         displayBOM(bomData);
     } else {
-        fetchBOMDataFromServer();
+        fetchBOMDataFromServer().then(displayBOMAsButtons);
     }
 
     document.getElementById('logoutButton')?.addEventListener('click', handleLogout);

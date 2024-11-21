@@ -397,7 +397,13 @@ function openEditModal(part) {
 
     }
     console.log(modalBody.innerHTML)
-
+    const downloadCADButton = document.getElementById('downloadCADButton');
+    if (downloadCADButton) {
+        downloadCADButton.addEventListener('click', () => {
+            console.log('Downloading CAD for part:', part["Part Name"]);
+            downloadCADFile(part.id).then(r => {});
+        });
+    }
     // Show the modal
     modal.style.display = 'flex';
     attachCounterListeners();
@@ -508,7 +514,6 @@ async function downloadCADFile() {
         alert('Failed to download CAD file. Check the console for details.');
     }
 }
-document.getElementById('downloadCADButton')?.addEventListener('click', () => downloadCADFile());
 
 // Function to determine the current process and remaining quantity
 function determineCurrentProcess(part) {

@@ -169,6 +169,7 @@ async function handleRegister(event) {
 
 // Initialize event listeners
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("Loading content")
     if (document.getElementById('dashboard')) {
         initializeDashboard();
         console.log("Dashboard initialized");
@@ -191,9 +192,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Fetch BOM data from the server on page load (if applicable)
-    // if (window.location.pathname.includes('dashboard.html')) {
-    //     fetchBOMDataFromServer().then(displayBOMAsButtons);
-    // }
+    if (window.location.pathname.includes('dashboard.html')) {
+        fetchBOMDataFromServer();
+    }
 
     // Modal Logic (move inside DOMContentLoaded)
     const modal = document.getElementById('settingsModal');

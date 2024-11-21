@@ -191,9 +191,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Fetch BOM data from the server on page load (if applicable)
-    if (window.location.pathname.includes('dashboard.html')) {
-        fetchBOMDataFromServer().then(displayBOMAsButtons);
-    }
+    // if (window.location.pathname.includes('dashboard.html')) {
+    //     fetchBOMDataFromServer().then(displayBOMAsButtons);
+    // }
 
     // Modal Logic (move inside DOMContentLoaded)
     const modal = document.getElementById('settingsModal');
@@ -260,7 +260,7 @@ function saveBOMDataToLocal(bomData) {
     localStorage.setItem('bom_data', JSON.stringify(bomDict));
     console.log('BOM data saved to localStorage for team:', teamNumber);
 
-    saveBOMDataToServer(bomData);
+    saveBOMDataToServer(bomData).then(r =>{} );
 }
 
 // Function to get BOM data from localStorage
@@ -491,14 +491,16 @@ function initializeDashboard() {
         teamNumberElement.textContent = teamNumber;
     }
 
-    // const bomData = getBOMDataFromLocal();
-    const savedFilter = localStorage.getItem('current_filter') || 'inhouse';
-    handleFilterBOM(savedFilter);
-    // if (bomData && bomData.length > 0) {
-    //     displayBOMAsButtons(bomData);
-    // } else {
-    //     fetchBOMDataFromServer().then(displayBOMAsButtons);
-    // }
+    const bomData = getBOMDataFromLocal();
+
+    if (bomData && bomData.length > 0) {
+        const savedFilter = localStorage.getItem('current_filter') || 'inhouse';
+        handleFilterBOM(savedFilter);
+    } else {
+        const savedFilter = localStorage.getItem('current_filter') || 'inhouse';
+        fetchBOMDataFromServer().then(r => handleFilterBOM(savedFilter));
+
+    }
 
     document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
 
@@ -509,7 +511,6 @@ function initializeDashboard() {
             handleFilterBOM(filter);
         });
     });
-
 
 
     const modal = document.getElementById('settingsModal');

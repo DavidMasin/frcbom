@@ -14,7 +14,7 @@ app.config['JWT_SECRET_KEY'] = 'ysm201996'  # Update this with a secure key
 
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
-CORS(app, resources={r"/*": {"origins": ["https://frcbom.com"]}},
+CORS(app, resources={"/*": {"origins": ["https://frcbom.com"]}},
      supports_credentials=True,
      methods=["GET", "POST", "OPTIONS"],
      allow_headers=["Content-Type", "Authorization", "X-Requested-With"])

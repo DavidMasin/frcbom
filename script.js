@@ -342,7 +342,7 @@ function displayBOMAsButtons(bomData) {
         // Populate button content
         button.innerHTML = `
             <h3>${part["Part Name"]}</h3>
-            <p><strong>Material:</strong> ${part.Material || 'N/A'}</p>
+            <p><strong>Material:</strong> ${part.materialBOM || 'N/A'}</p>
             <p><strong>Description:</strong> ${part.Description || 'N/A'}</p>
             <p><strong>Quantity Left:</strong> ${currentProcess.remaining || part.Quantity || 'N/A'}</p>
             <p><strong>Current Process:</strong> ${currentProcess.name || 'Completed'}</p>

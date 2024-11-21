@@ -275,15 +275,7 @@ def handle_connect():
 @socketio.on('disconnect')
 def handle_disconnect():
     print('Client disconnected')
-@app.route('/api/verify_token', methods=['POST'])
-def verify_token():
-    try:
-        # Verify the JWT in the request
-        verify_jwt_in_request()
-        identity = get_jwt_identity()
-        return jsonify({"message": "Token is valid", "identity": identity}), 200
-    except Exception as e:
-        return jsonify({"message": "Token is invalid or expired", "error": str(e)}), 401
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

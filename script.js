@@ -560,27 +560,7 @@ function checkLoginStatus() {
         window.location.href = 'index.html'; // Replace with your login page path if different
     }
 
-    // Optionally: Verify the token with the server
-    // Uncomment the following section if you want server-side token verification
 
-    fetch(`${API_BASE_URL}/api/verify_token`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${jwtToken}`
-        }
-    })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Token is invalid or expired');
-            }
-        })
-        .catch(error => {
-            console.error('Token verification failed:', error);
-            alert('Session expired. Please log in again.');
-            localStorage.clear();
-            window.location.href = 'index.html';
-        });
 
 }
 

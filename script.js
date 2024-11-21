@@ -138,7 +138,7 @@ function handleFilterBOM(filter) {
             break;
     }
 
-    displayBOM(filteredData);
+    displayBOMAsButtons(filteredData);
 }
 
 // Handle Registration
@@ -231,7 +231,7 @@ async function fetchBOMDataFromServer() {
         const data = await response.json();
         if (response.ok) {
             console.log('Loaded BOM data from the server:', data.bom_data);
-            displayBOM(data.bom_data);
+            displayBOMAsButtons(data.bom_data);
         } else {
             console.error('Failed to retrieve BOM data from the server:', data.error);
             alert(`Error: ${data.error}`);
@@ -297,7 +297,7 @@ document.getElementById('fetchBOMButton')?.addEventListener('click', async () =>
         const data = await response.json();
         if (response.ok) {
             saveBOMDataToLocal(data.bom_data);
-            displayBOM(data.bom_data);
+            displayBOMAsButtons(data.bom_data);
         } else {
             alert(`Error: ${data.error}`);
         }
@@ -492,7 +492,7 @@ function initializeDashboard() {
 
     const bomData = getBOMDataFromLocal();
     if (bomData && bomData.length > 0) {
-        displayBOM(bomData);
+        displayBOMAsButtons(bomData);
     } else {
         fetchBOMDataFromServer().then(displayBOMAsButtons);
     }

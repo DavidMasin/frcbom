@@ -333,15 +333,83 @@ function displayBOMAsButtons(bomData) {
         `;
 
         // Add click event listener
-        button.addEventListener('click', () => {
-            alert(`You clicked on ${part["Part Name"]}.`);
-            // Add further functionality here
-        });
+        button.addEventListener('click', () => openEditModal(part));
+
 
         // Append button to grid
         gridContainer.appendChild(button);
     });
 }
+// Function to open the modal with part details
+function openEditModal(part) {
+    const modal = document.getElementById('editModal');
+    const modalBody = document.getElementById('modalBody');
+    const saveButton = document.getElementById('saveButton');
+
+    // Clear existing content
+    modalBody.innerHTML = '';
+
+    // Populate modal with editable fields for the part
+    if (part.preProcess) {
+        modalBody.innerHTML += `
+            <label>Pre-Process (${part.preProcess}):</label>
+            <input type="number" id="preProcessQty" value="${part.preProcessQuantity || 0}" min="0">
+        `;
+    }
+    if (part.Process1) {
+        modalBody.innerHTML += `
+            <label>Process 1 (${part.Process1}):</label>
+            <input type="number" id="process1Qty" value="${part.process1Quantity || 0}" min="0">
+        `;
+    }
+    if (part.Process2) {
+        modalBody.innerHTML += `
+            <label>Process 2 (${part.Process2}):</label>
+            <input type="number" id="process2Qty" value="${part.process2Quantity || 0}" min="0">
+        `;
+    }
+
+    // Show the modal
+    modal.style.display = 'flex';
+
+    // Handle save action
+    saveButton.onclick = () => savePartQuantities(part);
+}
+
+// Function to save quantities and update the BOM data
+function savePartQuantities(part) {
+    const preProcessQty = document.getElementById('preProcessQty')?.value || part.preProcessQuantity || 0;
+    const process1Qty = document.getElementById('process1Qty')?.value || part.process1Quantity || 0;
+    const process2Qty = document.getElementById('process2Qty')?.value || part.process2Quantity || 0;
+
+    // Update the part's quantities
+    part.preProcessQuantity = parseInt(preProcessQty);
+    part.process1Quantity = parseInt(process1Qty);
+    part.process2Quantity = parseInt(process2Qty);
+
+    // Save updated data to localStorage or server
+    saveBOMDataToLocal(getBOMDataFromLocal());
+
+    // Close the modal
+    closeModal();
+}
+
+// Function to close the modal
+function closeModal() {
+    const modal = document.getElementById('editModal');
+    modal.style.display = 'none';
+}
+
+// Add close event listener
+document.querySelector('.close').addEventListener('click', closeModal);
+
+// Close modal on clicking outside
+window.addEventListener('click', (event) => {
+    const modal = document.getElementById('editModal');
+    if (event.target === modal) {
+        closeModal();
+    }
+});
 
 // Function to determine the current process and remaining quantity
 function determineCurrentProcess(part) {
@@ -480,6 +548,40 @@ function handleQuantityDecrement(event) {
 
     const currentFilter = localStorage.getItem('current_filter') || 'All';
     handleFilterBOM(currentFilter);
+}
+function checkLoginStatus() {
+    // Retrieve the JWT token from localStorage
+    const jwtToken = localStorage.getItem('jwt_token');
+    const teamNumber = localStorage.getItem('team_number');
+
+    // If no token or team number is found, redirect to the login page
+    if (!jwtToken || !teamNumber) {
+        alert('You are not logged in. Redirecting to the login page.');
+        window.location.href = 'index.html'; // Replace with your login page path if different
+    }
+
+    // Optionally: Verify the token with the server
+    // Uncomment the following section if you want server-side token verification
+
+    fetch(`${API_BASE_URL}/api/verify_token`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${jwtToken}`
+        }
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Token is invalid or expired');
+            }
+        })
+        .catch(error => {
+            console.error('Token verification failed:', error);
+            alert('Session expired. Please log in again.');
+            localStorage.clear();
+            window.location.href = 'index.html';
+        });
+
 }
 
 

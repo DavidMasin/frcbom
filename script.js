@@ -311,7 +311,7 @@ document.getElementById('fetchBOMButton')?.addEventListener('click', async () =>
 function displayBOMAsButtons(bomData) {
     const gridContainer = document.getElementById('bomPartsGrid');
     gridContainer.innerHTML = ''; // Clear previous content
-
+    console.log("BOM DATA IN DISPLAY BOM: " + bomData)
     bomData.forEach(part => {
         const currentProcess = determineCurrentProcess(part);
 

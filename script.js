@@ -343,15 +343,16 @@ function displayBOMAsButtons(bomData) {
 // Function to determine the current process and remaining quantity
 function determineCurrentProcess(part) {
     if (part.preProcess && !part.preProcessCompleted) {
-        return { name: part.preProcess, remaining: part.preProcessQuantity || part.Quantity };
+        return {name: part.preProcess, remaining: part.preProcessQuantity || part.Quantity};
     } else if (part.Process1 && !part.process1Completed) {
-        return { name: part.Process1, remaining: part.process1Quantity || part.Quantity };
+        return {name: part.Process1, remaining: part.process1Quantity || part.Quantity};
     } else if (part.Process2 && !part.process2Completed) {
-        return { name: part.Process2, remaining: part.process2Quantity || part.Quantity };
+        return {name: part.Process2, remaining: part.process2Quantity || part.Quantity};
     } else {
-        return { name: 'Completed', remaining: 0 };
+        return {name: 'Completed', remaining: 0};
     }
 }
+
 // Function to display and sort BOM data in the table
 function displayBOM(bomData) {
     const tableBody = document.querySelector('#bomTable tbody');
@@ -507,7 +508,7 @@ function initializeDashboard() {
         });
     });
 
-    const savedFilter = localStorage.getItem('current_filter') || 'All';
+    const savedFilter = localStorage.getItem('current_filter') || 'inhouse';
     handleFilterBOM(savedFilter);
 
     const modal = document.getElementById('settingsModal');

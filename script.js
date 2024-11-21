@@ -31,7 +31,7 @@ async function handleLogin(event) {
 
 function checkProcessProgress(item) {
     const requiredQuantity = item.Quantity;
-
+    console.log("PLACER3: item: " + item)
     // Check Pre-Process Completion
     if (item.preProcess) {
         item.preProcessQuantity = item.preProcessQuantity || 0;
@@ -209,6 +209,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // Function to save BOM data to the server
 async function saveBOMDataToServer(bomData) {
     try {
+        bomData.forEach((item) => {
+            checkProcessProgress(item);
+        });
         const response = await fetch(`${API_BASE_URL}/api/save_bom`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},

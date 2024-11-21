@@ -395,6 +395,7 @@ function openEditModal(part) {
     // Save changes
     saveButton.onclick = () => savePartQuantities(part);
 }
+
 function attachCounterListeners() {
     document.querySelectorAll('.increment').forEach(button => {
         button.addEventListener('click', () => {

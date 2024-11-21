@@ -314,6 +314,7 @@ document.getElementById('fetchBOMButton')?.addEventListener('click', async () =>
 function displayBOMAsButtons(bomData) {
     const gridContainer = document.getElementById('bomPartsGrid');
     gridContainer.innerHTML = ''; // Clear previous content
+    bomData.sort((a, b) => (a["Part Name"] || '').localeCompare(b["Part Name"] || ''));
     bomData.forEach(part => {
         const currentProcess = determineCurrentProcess(part);
 

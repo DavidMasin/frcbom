@@ -400,7 +400,7 @@ function openEditModal(part) {
     const downloadCADButton = document.getElementById('downloadCADButton');
     if (downloadCADButton) {
         downloadCADButton.addEventListener('click', () => {
-            console.log('Downloading CAD for part:', part["Part Name"]);
+            console.log('Downloading CAD for part:', part["Part Name"], " with the id of" + part.id);
             downloadCADFile(part.id).then(r => {});
         });
     }

@@ -31,7 +31,7 @@ async function handleLogin(event) {
 
 function checkProcessProgress(item) {
     const requiredQuantity = item.Quantity;
-    console.log("PLACER3: item: " + item)
+    // console.log("PLACER3: item: " + item)
     // Check Pre-Process Completion
     if (item.preProcess) {
         item.preProcessQuantity = item.preProcessQuantity || 0;
@@ -265,6 +265,7 @@ function saveBOMDataToLocal(bomData) {
     bomDict[teamNumber] = bomData;
     localStorage.setItem('bom_data', JSON.stringify(bomDict));
     console.log('BOM data saved to localStorage for team:', teamNumber);
+    console.log('Updated BOM Data:', getBOMDataFromLocal());
 
     saveBOMDataToServer(bomData).then(r => {
     });
@@ -335,7 +336,7 @@ function displayBOMAsButtons(bomData) {
             <p><strong>Quantity Left:</strong> ${part.Quantity || 'N/A'}</p>
             <p><strong>Current Process:</strong> ${currentProcess.name} (${currentProcess.remaining} left)</p>
         `;
-        console.log("PLACER2: part: " + part)
+        // console.log("PLACER2: part: " + part)
 
         // Add click event listener
         button.addEventListener('click', () => openEditModal(part));
@@ -414,25 +415,43 @@ function attachCounterListeners() {
 
 // Function to save quantities and update the BOM data
 function savePartQuantities(part) {
+    // Fetch updated quantities from the modal
     const preProcessQty = document.getElementById('preProcessQty')?.value || part.preProcessQuantity || 0;
     const process1Qty = document.getElementById('process1Qty')?.value || part.process1Quantity || 0;
     const process2Qty = document.getElementById('process2Qty')?.value || part.process2Quantity || 0;
 
-    // Update the part's quantities
+    // Update the part's properties
     part.preProcessQuantity = parseInt(preProcessQty, 10);
     part.process1Quantity = parseInt(process1Qty, 10);
     part.process2Quantity = parseInt(process2Qty, 10);
 
-    // Save updated data
-    saveBOMDataToLocal(getBOMDataFromLocal());
+    // Retrieve the BOM data from localStorage
+    let bomData = getBOMDataFromLocal();
+    console.log('Pre-Process Qty:', preProcessQty);
+    console.log('Process 1 Qty:', process1Qty);
+    console.log('Process 2 Qty:', process2Qty);
+    console.log('Updated Part:', part);
 
-    // Re-render the BOM grid
+    // Find and update the part in the BOM data
+    const partIndex = bomData.findIndex(item => item["Part Name"] === part["Part Name"]);
+    if (partIndex !== -1) {
+        bomData[partIndex] = part;
+    } else {
+        console.error("Part not found in BOM data:", part);
+        return;
+    }
+
+    // Save the updated BOM data back to localStorage
+    saveBOMDataToLocal(bomData);
+
+    // Re-render the BOM grid to reflect changes
     const currentFilter = localStorage.getItem('current_filter') || 'All';
     handleFilterBOM(currentFilter);
 
     // Close the modal
     closeModal();
 }
+
 
 
 // Function to close the modal
@@ -454,7 +473,7 @@ window.addEventListener('click', (event) => {
 
 // Function to determine the current process and remaining quantity
 function determineCurrentProcess(part) {
-    console.log("PLACER1: part: " + part)
+    // console.log("PLACER1: part: " + part)
     if (part.preProcess && !part.preProcessCompleted) {
         return {name: part.preProcess, remaining: part.preProcessQuantity || part.Quantity};
     } else if (part.Process1 && !part.process1Completed) {

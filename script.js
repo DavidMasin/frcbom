@@ -387,6 +387,7 @@ function savePartQuantities(part) {
     part.process1Quantity = parseInt(process1Qty, 10);
     part.process2Quantity = parseInt(process2Qty, 10);
     console.log(part)
+    console.log(getBOMDataFromLocal())
     // Save updated data to localStorage or server
     saveBOMDataToLocal(getBOMDataFromLocal());
 

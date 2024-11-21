@@ -23,6 +23,9 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # In-memory dictionary to store BOM data per team
 bom_data_dict = {}
 bom_data_file = 'bom_data.json'  # File to persist BOM data
+settings_data_dict = {}
+settings_data_file = 'settings_data.json'
+
 # In-memory storage for BOM data per team
 teams = {}
 latest_bom_data = {}
@@ -127,6 +130,11 @@ def getPartsDict(bom_dict, partNameID, DescriptionID, quantityID, materialID, ma
     return partDict
 
 
+def save_codes():
+    with open(settings_data_file, 'w') as file:
+        json.dump(settings_data_dict, file)
+
+
 @app.route('/api/bom', methods=['POST'])
 def fetch_bom():
     global access_key, secret_key, client
@@ -141,7 +149,8 @@ def fetch_bom():
         return jsonify({"error": "Document URL and Team Number are required"}), 400
     try:
         if access_key != "" and secret_key != "":
-
+            settings_data_dict[team_number] = {"accessKey": access_key, "secretKey": secret_key,"documentURL":document_url}
+            save_codes()
             element = OnshapeElement(document_url)
 
             fixed_url = '/api/v9/assemblies/d/did/w/wid/e/eid/bom'
@@ -181,7 +190,8 @@ def fetch_bom():
             bom_data = []
 
             for part_name, (
-                    description, quantity, material, materialBOM, preProcess, Process1, Process2,part_id) in parts.items():
+                    description, quantity, material, materialBOM, preProcess, Process1, Process2,
+                    part_id) in parts.items():
                 bom_data.append({
                     "Part Name": part_name,
                     "Description": description,
@@ -191,7 +201,7 @@ def fetch_bom():
                     "preProcess": preProcess,
                     "Process1": Process1,
                     "Process2": Process2,
-                    "ID":part_id
+                    "ID": part_id
                 })
             # Store the latest BOM data for the team and emit it to all connected clients
             latest_bom_data[team_number] = bom_data
@@ -215,6 +225,15 @@ def load_bom_data():
         bom_data_dict = {}
 
 
+def load_settings_data():
+    global settings_data_dict
+    try:
+        with open(settings_data_file, 'r') as file:
+            settings_data_dict = json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        settings_data_dict = {}
+
+
 # Helper function to save BOM data to file
 def save_bom_data():
     with open(bom_data_file, 'w') as file:
@@ -223,6 +242,7 @@ def save_bom_data():
 
 # Load BOM data when the server starts
 load_bom_data()
+load_settings_data()
 
 
 # Endpoint to save BOM data for a specific team
@@ -267,6 +287,54 @@ def clear_bom():
     save_bom_data()
 
     return jsonify({"message": "BOM data cleared successfully"}), 200
+
+
+@app.route('/api/download_cad', methods=['POST'])
+def download_cad():
+    data = request.json
+    part_id = data.get('id')
+    team_number = data.get("team_number")
+    if not part_id or not team_number:
+        return jsonify({'message': 'Missing part ID or team number'}), 400
+    document_url = settings_data_dict[team_number]["documentURL"]
+    access_key_data = settings_data_dict[team_number]["accessKey"]
+    secret_key_data = settings_data_dict[team_number]["secretKey"]
+    client_data = Client(
+        configuration={"base_url": base_url, "access_key": access_key_data, "secret_key": secret_key_data})
+    if not document_url or not team_number:
+        return jsonify({"error": "Document URL and Team Number are required"}), 400
+    try:
+        if access_key_data != "" and secret_key_data != "":
+
+            element = OnshapeElement(document_url)
+
+            fixed_url = '/parts/d/did/w/wid/e/eid/partid/pid/parasolid'
+            method = 'GET'
+            did = element.did
+            wid = element.wvmid
+            eid = element.eid
+            params = {}
+            payload = {}
+            headers = {'Accept': 'application/vnd.onshape.v1+json; charset=UTF-8;qs=0.1',
+                       'Content-Type': 'application/json'}
+
+            fixed_url = fixed_url.replace('did', did)
+            fixed_url = fixed_url.replace('wid', wid)
+            fixed_url = fixed_url.replace('eid', eid)
+            fixed_url = fixed_url.replace('pid', part_id)
+            print("Connecting to Onshape's API...")
+            response = client_data.api_client.request(method, url=base_url + fixed_url, query_params=params,
+                                                      headers=headers,
+                                                      body=payload)
+            print("Onshape API Connected.")
+
+            return jsonify({"response": response}), 200
+        else:
+            print("DIDN'T GET ACCESS AND SECRET!!")
+            return
+    except Exception as e:
+        print("Error fetching CAD:", str(e))
+        return jsonify({"bom_data": ()}), 500
 
 
 @socketio.on('connect')

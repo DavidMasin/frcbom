@@ -395,6 +395,9 @@ function openEditModal(part) {
             <button class="increment" data-target="process2Qty">+</button>
         </div>
     `;
+        modalBody.innerHTML += `
+    <button id="downloadCADButton" class="button-primary">Download STEP File</button>
+`;
     }
 
 
@@ -479,6 +482,35 @@ window.addEventListener('click', (event) => {
         closeModal();
     }
 });
+async function downloadCADFile(partId) {
+    const jwtToken = localStorage.getItem('jwt_token');
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/download_cad`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${jwtToken}`,
+            },
+            body: JSON.stringify({ id: partId,team_number:teamNumber }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+             console.error(error.message || 'Failed to download CAD file.');
+        }
+
+        const blob = await response.blob();
+        const downloadLink = document.createElement('a');
+        downloadLink.href = URL.createObjectURL(blob);
+        downloadLink.download = `Part-${partId}.step`;
+        downloadLink.click();
+    } catch (error) {
+        console.error('Error downloading CAD file:', error);
+        alert('Failed to download CAD file. Check the console for details.');
+    }
+}
+document.getElementById('downloadCADButton')?.addEventListener('click', () => downloadCADFile(part.id));
 
 // Function to determine the current process and remaining quantity
 function determineCurrentProcess(part) {

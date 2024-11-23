@@ -91,7 +91,18 @@
     <!-- Include External Libraries and Custom Script -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
     <script src="script.js"></script>
+    <script>
+        const teamNumber = '{{ team_number }}';
+        const filterMachine = '{{ filter_machine }}'; // Might be null if not provided
 
+        if (filterMachine) {
+            console.log(`Filtering BOM for machine: ${filterMachine}`);
+            handleFilterBOM(filterMachine);
+        } else {
+            console.log('Showing full dashboard');
+            handleFilterBOM('All');
+        }
+    </script>
     </body>
 </div>
 

@@ -49,6 +49,19 @@ secret_key = ""
 base_url = 'https://cad.onshape.com'
 client = Client(configuration={"base_url": base_url, "access_key": access_key, "secret_key": secret_key})
 
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+@app.route('/<team_number>')
+def team_dashboard(team_number):
+    # Pass the team number to the template for dynamic rendering
+    return render_template('dashboard.html', team_number=team_number)
+
+@app.route('/<team_number>/<machine>')
+def team_bom_filtered(team_number, machine):
+    # Render the dashboard with a filtered BOM
+    return render_template('dashboard.html', team_number=team_number, filter_machine=machine)
 
 # Register endpoint
 @app.route('/api/register', methods=['POST'])
@@ -339,22 +352,6 @@ def download_cad():
         print("Error fetching CAD:", str(e))
         return jsonify({"bom_data": ()}), 500
 
-@app.route('/hello/')
-@app.route('/hello/<name>')
-def hello(name=None):
-    return render_template('hello.html', person=name)
-
-
-@app.route('/post/<int:id>')
-def show_post(id):
-    # Shows the post with given id.
-    return f'This post has the id {id}'
-
-
-@app.route('/user/<username>')
-def show_user(username):
-    # Greet the user
-    return f'Hello {username} !'
 @socketio.on('connect')
 def handle_connect():
     print('Client connected')

@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://frcbom-production.up.railway.app';
+const API_BASE_URL = 'https://frcbom-production.up.railway.app/';
 let teamNumber = localStorage.getItem('team_number');
 
 

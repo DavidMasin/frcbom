@@ -2,11 +2,12 @@ import json
 
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager, create_access_token
+from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
 from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
 from onshape_client.client import Client
 from onshape_client.onshape_url import OnshapeElement
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///teams.db'
@@ -75,12 +76,20 @@ def register():
     team_number = data['team_number']
     password = data['password']
 
-    if team_number in teams:
+    # Check if team exists in the database
+    existing_team = Team.query.filter_by(team_number=team_number).first()
+    if existing_team:
         return jsonify({"error": "Team already exists"}), 400
 
-    teams[team_number] = {"password": password}
-    return jsonify({"message": "Team registered successfully"}), 200
+    # Hash the password for security
+    hashed_password = generate_password_hash(password)
 
+    # Create a new team and add to the database
+    new_team = Team(team_number=team_number, password=hashed_password)
+    db.session.add(new_team)
+    db.session.commit()
+
+    return jsonify({"message": "Team registered successfully"}), 200
 
 # Login endpoint
 @app.route('/api/login', methods=['POST'])
@@ -89,19 +98,33 @@ def login():
     team_number = data['team_number']
     password = data['password']
 
-    # Check if the team is registered
-    if team_number not in teams:
+    # Retrieve the team from the database
+    team = Team.query.filter_by(team_number=team_number).first()
+
+    if not team:
         return jsonify({"error": "Invalid credentials"}), 401
 
     # Verify the password
-    if teams[team_number]['password'] != password:
+    if not check_password_hash(team.password, password):
         return jsonify({"error": "Invalid credentials"}), 401
 
     # Generate a JWT token
     access_token = create_access_token(identity=team_number)
     return jsonify(access_token=access_token, team_number=team_number), 200
 
+# Endpoint to check if a team exists
+@app.route('/api/team_exists', methods=['GET'])
+def team_exists():
+    team_number = request.args.get('team_number')
+    if not team_number:
+        return jsonify({"error": "Team number is required"}), 400
 
+    # Check if the team exists in the database
+    team = Team.query.filter_by(team_number=team_number).first()
+    if team:
+        return jsonify({"exists": True}), 200
+    else:
+        return jsonify({"exists": False}), 200
 # Health check endpoint
 @app.route('/api/health', methods=['GET'])
 def health_check():
@@ -283,11 +306,17 @@ def save_bom():
 
 # Endpoint to retrieve BOM data for a specific team
 @app.route('/api/get_bom', methods=['GET'])
+@jwt_required()
 def get_bom():
     team_number = request.args.get('team_number')
+    current_user = get_jwt_identity()
 
     if not team_number:
         return jsonify({"error": "Team number is required"}), 400
+
+    # Ensure the user is authorized to access this team's data
+    if team_number != current_user:
+        return jsonify({"error": "Unauthorized access"}), 403
 
     bom_data = bom_data_dict.get(team_number, [])
     return jsonify({"bom_data": bom_data}), 200

@@ -3,9 +3,103 @@ let teamNumber = localStorage.getItem('team_number');
 
 function getTeamNumberFromURL() {
     const path = window.location.pathname;
-    // Assuming the URL is frcbom.com/<teamNumber>
-    const teamNumber = path.split('/')[1]; // Get the first segment after the domain
-    return teamNumber;
+    const pathSegments = path.split('/').filter(segment => segment !== '');
+    if (pathSegments.length > 0) {
+        const teamNumber = pathSegments[0];
+        return teamNumber;
+    } else {
+        return null;
+    }
+}
+async function handlePasswordSubmit() {
+    const password = document.getElementById('passwordPromptInput').value;
+    const teamNumber = localStorage.getItem('team_number');
+
+    if (!password || !teamNumber) {
+        alert('Please enter a password');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/login`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({team_number: teamNumber, password})
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            localStorage.setItem('jwt_token', data.access_token);
+            // Remove the overlay
+            const overlay = document.getElementById('passwordOverlay');
+            overlay.remove();
+            // Remove blur from background
+            document.body.style.filter = 'none';
+            // Proceed to initialize the dashboard
+            fetchBOMDataFromServer(teamNumber);
+        } else {
+            alert('Incorrect password');
+        }
+    } catch (error) {
+        console.error('Login Error:', error);
+        alert('An error occurred while logging in.');
+    }
+}
+function showPasswordPrompt() {
+    // Create the overlay element
+    const overlay = document.createElement('div');
+    overlay.id = 'passwordOverlay';
+    overlay.className = 'modal'; // Use your existing modal styling
+    overlay.style.display = 'flex';
+
+    // Create the modal content
+    const modalContent = document.createElement('div');
+    modalContent.className = 'modal-content';
+
+    // Close button (optional)
+    const closeButton = document.createElement('span');
+    closeButton.className = 'close';
+    closeButton.innerHTML = '&times;';
+    closeButton.onclick = () => {
+        overlay.style.display = 'none';
+        document.body.style.filter = 'none';
+    };
+
+    // Prompt message
+    const promptText = document.createElement('h2');
+    promptText.textContent = 'Please enter your password to access the dashboard';
+
+    // Password input field
+    const passwordInput = document.createElement('input');
+    passwordInput.type = 'password';
+    passwordInput.id = 'passwordPromptInput';
+    passwordInput.placeholder = 'Password';
+    passwordInput.style.width = '80%';
+    passwordInput.style.padding = '10px';
+    passwordInput.style.marginTop = '20px';
+
+    // Submit button
+    const submitButton = document.createElement('button');
+    submitButton.textContent = 'Submit';
+    submitButton.className = 'button-primary';
+    submitButton.style.marginTop = '20px';
+
+    submitButton.addEventListener('click', handlePasswordSubmit);
+
+    // Append elements to modal content
+    modalContent.appendChild(closeButton);
+    modalContent.appendChild(promptText);
+    modalContent.appendChild(passwordInput);
+    modalContent.appendChild(submitButton);
+
+    // Append modal content to overlay
+    overlay.appendChild(modalContent);
+
+    // Append overlay to body
+    document.body.appendChild(overlay);
+
+    // Blur the background content
+    document.body.style.filter = 'blur(5px)';
 }
 // Handle Login
 async function handleLogin(event) {
@@ -247,12 +341,18 @@ async function saveBOMDataToServer(bomData) {
 
 // Function to fetch BOM data from the server
 async function fetchBOMDataFromServer(teamNumber) {
+    const jwtToken = localStorage.getItem('jwt_token');
     try {
-        const response = await fetch(`${API_BASE_URL}api/get_bom?team_number=${teamNumber}`);
+        const response = await fetch(`${API_BASE_URL}/get_bom?team_number=${teamNumber}`, {
+            headers: {
+                'Authorization': `Bearer ${jwtToken}`
+            }
+        });
         const data = await response.json();
         if (response.ok) {
             saveBOMDataToLocal(data.bom_data, teamNumber);
-            handleFilterBOM('InHouse', teamNumber);
+            const savedFilter = localStorage.getItem('current_filter') || 'InHouse';
+            handleFilterBOM(savedFilter, teamNumber);
         } else {
             console.error('Failed to retrieve BOM data from the server:', data.error);
             alert(`Error: ${data.error}`);
@@ -553,55 +653,57 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // Function to initialize the dashboard
-function initializeDashboard() {
-    checkLoginStatus();
-
+async function initializeDashboard() {
     const teamNumber = getTeamNumberFromURL();
+    const jwtToken = localStorage.getItem('jwt_token');
 
     if (!teamNumber) {
-        alert('Invalid team number in URL. Redirecting to the login page.');
+        alert('Invalid team number in URL. Redirecting to the home page.');
         window.location.href = '/';
         return;
     }
 
-    // Store the team number in localStorage if needed
+    const teamExists = await checkTeamExists(teamNumber);
+    if (!teamExists) {
+        alert('Team does not exist. Redirecting to the home page.');
+        window.location.href = '/';
+        return;
+    }
+
     localStorage.setItem('team_number', teamNumber);
 
-    // Update the team number display
     const teamNumberElement = document.getElementById('teamNumber');
     if (teamNumberElement) {
         teamNumberElement.textContent = teamNumber;
     }
 
-    const bomData = getBOMDataFromLocal();
-    console.log("bomData: " + bomData)
-    if (bomData && bomData.length > 0) {
-        const savedFilter = localStorage.getItem('current_filter') || 'InHouse';
-        console.log("savedFilter: " + savedFilter)
-        handleFilterBOM(savedFilter);
+    if (!jwtToken) {
+        // User is not logged in, display password prompt overlay
+        showPasswordPrompt();
     } else {
-        const savedFilter = localStorage.getItem('current_filter') || 'InHouse';
-        fetchBOMDataFromServer(teamNumber).then(r => handleFilterBOM(savedFilter));
-
+        // User is logged in, proceed to initialize dashboard
+        fetchBOMDataFromServer(teamNumber);
     }
 
+    // Attach event listener for logout
     document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
-
-    // Attach event listeners for filter buttons
-    document.querySelectorAll('.filter-button').forEach(button => {
-        button.addEventListener('click', () => {
-            const filter = button.getAttribute('data-filter');
-            handleFilterBOM(filter);
-        });
-    });
+}
 
 
-    const modal = document.getElementById('settingsModal');
-    const settingsButton = document.getElementById('settingsButton');
-    const closeButton = document.querySelector('.close');
-
-    settingsButton?.addEventListener('click', () => modal.style.display = 'flex');
-    closeButton?.addEventListener('click', () => modal.style.display = 'none');
+async function checkTeamExists(teamNumber) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/team_exists?team_number=${teamNumber}`);
+        const data = await response.json();
+        if (response.ok) {
+            return data.exists;
+        } else {
+            console.error('Failed to check if team exists:', data.error);
+            return false;
+        }
+    } catch (error) {
+        console.error('Error checking if team exists:', error);
+        return false;
+    }
 }
 
 

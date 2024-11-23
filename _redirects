@@ -7,7 +7,5 @@
 # Serve index.html for other routes (if needed)
 /*      /index.html   200
 
-# Redirect team number routes to dashboard.html
-/:team_number/:machineName    /dashboard.html   200
 
 /register   /register.html  200

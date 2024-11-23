@@ -560,7 +560,7 @@ function initializeDashboard() {
 
     if (!teamNumber) {
         alert('Invalid team number in URL. Redirecting to the login page.');
-        window.location.href = 'index.html';
+        window.location.href = '/';
         return;
     }
 

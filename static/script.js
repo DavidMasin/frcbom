@@ -641,10 +641,10 @@ function checkLoginStatus() {
     const currentTeamNumber = currentPath[1]; // Extract the team number from the URL
 
     // Redirect if not logged in or if team number mismatch
-    if (!storedTeamNumber || storedTeamNumber !== currentTeamNumber) {
-        alert('You are not logged in. Redirecting to the login page.');
-        window.location.href = '/'; // Redirect to home/login
-    }
+    // if (!storedTeamNumber || storedTeamNumber !== currentTeamNumber) {
+    //     alert('You are not logged in. Redirecting to the login page.');
+    //     window.location.href = '/'; // Redirect to home/login
+    // }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

@@ -692,7 +692,7 @@ async function initializeDashboard() {
 
 async function checkTeamExists(teamNumber) {
     try {
-        const response = await fetch(`${API_BASE_URL}/team_exists?team_number=${teamNumber}`);
+        const response = await fetch(`${API_BASE_URL}team_exists?team_number=${teamNumber}`);
         const data = await response.json();
         if (response.ok) {
             return data.exists;

@@ -1,6 +1,6 @@
 import json
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token
 from flask_socketio import SocketIO
@@ -149,7 +149,8 @@ def fetch_bom():
         return jsonify({"error": "Document URL and Team Number are required"}), 400
     try:
         if access_key != "" and secret_key != "":
-            settings_data_dict[team_number] = {"accessKey": access_key, "secretKey": secret_key,"documentURL":document_url}
+            settings_data_dict[team_number] = {"accessKey": access_key, "secretKey": secret_key,
+                                               "documentURL": document_url}
             save_codes()
             element = OnshapeElement(document_url)
 
@@ -338,7 +339,10 @@ def download_cad():
         print("Error fetching CAD:", str(e))
         return jsonify({"bom_data": ()}), 500
 
-
+@app.route('/hello/')
+@app.route('/hello/<name>')
+def hello(name=None):
+    return render_template('hello.html', person=name)
 @socketio.on('connect')
 def handle_connect():
     print('Client connected')

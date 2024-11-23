@@ -20,6 +20,7 @@ async function handleLogin(event) {
             localStorage.setItem('jwt_token', data.access_token);
             localStorage.setItem('team_number', teamNumber);
             window.location.href = 'dashboard.html';
+            // window.location.href = toString(teamNumber);
         } else {
             document.getElementById('loginMessage').textContent = data.error;
         }

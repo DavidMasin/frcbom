@@ -343,7 +343,7 @@ async function saveBOMDataToServer(bomData) {
 async function fetchBOMDataFromServer(teamNumber) {
     const jwtToken = localStorage.getItem('jwt_token');
     try {
-        const response = await fetch(`${API_BASE_URL}/get_bom?team_number=${teamNumber}`, {
+        const response = await fetch(`${API_BASE_URL}api/get_bom?team_number=${teamNumber}`, {
             headers: {
                 'Authorization': `Bearer ${jwtToken}`
             }

@@ -466,7 +466,7 @@ function savePartQuantities(part) {
     saveBOMDataToLocal(bomData);
 
     // Re-render the BOM grid to reflect changes
-    const currentFilter = localStorage.getItem('current_filter') || 'All';
+    const currentFilter = localStorage.getItem('current_filter') || 'Inhouse';
     handleFilterBOM(currentFilter);
 
     // Close the modal

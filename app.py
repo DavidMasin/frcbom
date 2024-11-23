@@ -14,7 +14,7 @@ app.config['JWT_SECRET_KEY'] = 'ysm201996'  # Update this with a secure key
 
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
-CORS(app, resources={"/*": {"origins": ["https://frcbom.com"]}},
+CORS(app, resources={"/*": {"origins": "*"}},
      supports_credentials=True,
      methods=["GET", "POST", "OPTIONS"],
      allow_headers=["Content-Type", "Authorization", "X-Requested-With"])
@@ -52,18 +52,18 @@ client = Client(configuration={"base_url": base_url, "access_key": access_key, "
 @app.route('/')
 def home():
     print("HOME")
-    return render_template("/templates/index.html")
+    return render_template("index.html")
     # return "HELLO WORLD"
 
 @app.route('/<team_number>')
 def team_dashboard(team_number):
     # Pass the team number to the template for dynamic rendering
-    return render_template('/templates/dashboard.html', team_number=team_number)
+    return render_template('dashboard.html', team_number=team_number)
 
 @app.route('/<team_number>/<machine>')
 def team_bom_filtered(team_number, machine):
     # Render the dashboard with a filtered BOM
-    return render_template('/templates/dashboard.html', team_number=team_number, filter_machine=machine)
+    return render_template('dashboard.html', team_number=team_number, filter_machine=machine)
 
 # Register endpoint
 @app.route('/api/register', methods=['POST'])

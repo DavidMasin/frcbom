@@ -248,7 +248,7 @@ async function saveBOMDataToServer(bomData) {
 // Function to fetch BOM data from the server
 async function fetchBOMDataFromServer(teamNumber) {
     try {
-        const response = await fetch(`${API_BASE_URL}/get_bom?team_number=${teamNumber}`);
+        const response = await fetch(`${API_BASE_URL}api/get_bom?team_number=${teamNumber}`);
         const data = await response.json();
         if (response.ok) {
             saveBOMDataToLocal(data.bom_data, teamNumber);

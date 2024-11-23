@@ -52,7 +52,8 @@ client = Client(configuration={"base_url": base_url, "access_key": access_key, "
 @app.route('/')
 def home():
     print("HOME")
-    return render_template("index.html")
+    # return render_template("index.html")
+    return "HELLO WORLD"
 
 @app.route('/<team_number>')
 def team_dashboard(team_number):

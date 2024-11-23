@@ -343,6 +343,18 @@ def download_cad():
 @app.route('/hello/<name>')
 def hello(name=None):
     return render_template('hello.html', person=name)
+
+
+@app.route('/post/<int:id>')
+def show_post(id):
+    # Shows the post with given id.
+    return f'This post has the id {id}'
+
+
+@app.route('/user/<username>')
+def show_user(username):
+    # Greet the user
+    return f'Hello {username} !'
 @socketio.on('connect')
 def handle_connect():
     print('Client connected')

@@ -5,7 +5,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>FRC BOM Dashboard</title>
-        <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="/static/style.css">
     </head>
     <body>
 
@@ -21,35 +21,35 @@
         <button id="settingsButton" class="button-secondary">Settings</button>
         <div class="filter-buttons grid-layout">
             <button class="filter-button" data-filter="All">
-                <img src="pictures/all.png" alt="All" class="button-icon">
+                <img src="/pictures/all.png" alt="All" class="button-icon">
                 <span>Show All</span>
             </button>
             <button class="filter-button" data-filter="InHouse">
-                <img src="pictures/wrench-tool-in-a-hand-inside-a-house-shape.png" alt="InHouse" class="button-icon">
+                <img src="/pictures/wrench-tool-in-a-hand-inside-a-house-shape.png" alt="InHouse" class="button-icon">
                 <span>Show In-House Parts</span>
             </button>
             <button class="filter-button" data-filter="COTS">
-                <img src="pictures/cots.svg" alt="COTS" class="button-icon">
+                <img src="/pictures/cots.svg" alt="COTS" class="button-icon">
                 <span>Show COTS Parts</span>
             </button>
             <button class="filter-button" data-filter="CNC">
-                <img src="pictures/milling-machine.png" alt="CNC" class="button-icon">
+                <img src="/pictures/milling-machine.png" alt="CNC" class="button-icon">
                 <span>CNC</span>
             </button>
             <button class="filter-button" data-filter="Lathe">
-                <img src="pictures/lathe.png" alt="Lathe" class="button-icon">
+                <img src="/pictures/lathe.png" alt="Lathe" class="button-icon">
                 <span>Lathe</span>
             </button>
             <button class="filter-button" data-filter="3D Printer">
-                <img src="pictures/3d-printer.png" alt="3D Printer" class="button-icon">
+                <img src="/pictures/3d-printer.png" alt="3D Printer" class="button-icon">
                 <span>3D Printer</span>
             </button>
             <button class="filter-button" data-filter="Gerung">
-                <img src="pictures/miter-saw.png" alt="Gerung" class="button-icon">
+                <img src="/pictures/miter-saw.png" alt="Gerung" class="button-icon">
                 <span>Gerung</span>
             </button>
             <button class="filter-button" data-filter="Mill">
-                <img src="pictures/mill.png" alt="Mill" class="button-icon">
+                <img src="/pictures/mill.png" alt="Mill" class="button-icon">
                 <span>Mill</span>
             </button>
         </div>
@@ -90,7 +90,7 @@
     </div>
     <!-- Include External Libraries and Custom Script -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
-    <script src="script.js"></script>
+    <script src="/static/script.js"></script>
     <script>
         const teamNumber = '{{ team_number }}';
         const filterMachine = '{{ filter_machine }}'; // Might be null if not provided

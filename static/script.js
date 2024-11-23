@@ -694,6 +694,7 @@ async function checkTeamExists(teamNumber) {
     try {
         const response = await fetch(`${API_BASE_URL}api/team_exists?team_number=${teamNumber}`);
         const data = await response.json();
+        console.log(data)
         if (response.ok) {
             return data.exists;
         } else {

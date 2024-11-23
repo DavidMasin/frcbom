@@ -1,5 +1,8 @@
+# Redirect team number routes to dashboard.html
+/:team_number    /dashboard.html   200
+
 # Proxy API requests to your Railway back-end
 /api/*  https://frcbom-production.up.railway.app/api/:splat  200
 
-# Serve index.html for client-side routing (if using SPA)
+# Serve index.html for other routes (if needed)
 /*      /index.html   200

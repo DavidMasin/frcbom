@@ -1,7 +1,12 @@
 const API_BASE_URL = 'https://frcbom-production.up.railway.app/';
 let teamNumber = localStorage.getItem('team_number');
 
-
+function getTeamNumberFromURL() {
+    const path = window.location.pathname;
+    // Assuming the URL is frcbom.com/<teamNumber>
+    const teamNumber = path.split('/')[1]; // Get the first segment after the domain
+    return teamNumber;
+}
 // Handle Login
 async function handleLogin(event) {
     event.preventDefault();
@@ -19,7 +24,8 @@ async function handleLogin(event) {
         if (response.ok) {
             localStorage.setItem('jwt_token', data.access_token);
             localStorage.setItem('team_number', teamNumber);
-            window.location.href = 'dashboard.html';
+            window.location.href = `/${teamNumber}`;
+
             // window.location.href = toString(teamNumber);
         } else {
             document.getElementById('loginMessage').textContent = data.error;
@@ -239,15 +245,13 @@ async function saveBOMDataToServer(bomData) {
 }
 
 // Function to fetch BOM data from the server
-async function fetchBOMDataFromServer() {
+async function fetchBOMDataFromServer(teamNumber) {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/get_bom?team_number=${teamNumber}`);
+        const response = await fetch(`${API_BASE_URL}/get_bom?team_number=${teamNumber}`);
         const data = await response.json();
         if (response.ok) {
-            console.log('Loaded BOM data from the server:', data.bom_data);
-            const savedFilter = localStorage.getItem('current_filter') || 'InHouse';
-            saveBOMDataToLocal(data.bom_data)
-            handleFilterBOM(savedFilter)
+            saveBOMDataToLocal(data.bom_data, teamNumber);
+            handleFilterBOM('InHouse', teamNumber);
         } else {
             console.error('Failed to retrieve BOM data from the server:', data.error);
             alert(`Error: ${data.error}`);
@@ -551,10 +555,20 @@ document.addEventListener('DOMContentLoaded', () => {
 function initializeDashboard() {
     checkLoginStatus();
 
-    teamNumber = localStorage.getItem('team_number');
+    const teamNumber = getTeamNumberFromURL();
 
+    if (!teamNumber) {
+        alert('Invalid team number in URL. Redirecting to the login page.');
+        window.location.href = 'index.html';
+        return;
+    }
+
+    // Store the team number in localStorage if needed
+    localStorage.setItem('team_number', teamNumber);
+
+    // Update the team number display
     const teamNumberElement = document.getElementById('teamNumber');
-    if (teamNumberElement && teamNumber) {
+    if (teamNumberElement) {
         teamNumberElement.textContent = teamNumber;
     }
 
@@ -566,7 +580,7 @@ function initializeDashboard() {
         handleFilterBOM(savedFilter);
     } else {
         const savedFilter = localStorage.getItem('current_filter') || 'InHouse';
-        fetchBOMDataFromServer().then(r => handleFilterBOM(savedFilter));
+        fetchBOMDataFromServer(teamNumber).then(r => handleFilterBOM(savedFilter));
 
     }
 

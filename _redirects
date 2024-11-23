@@ -1,5 +1,5 @@
 # Proxy API requests to your Railway back-end
-/api/*  https://your-railway-app-domain.com/api/:splat  200
+/api/*  https://frcbom-production.up.railway.app/api/:splat  200
 
 # Serve index.html for client-side routing (if using SPA)
 /*      /index.html   200

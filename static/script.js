@@ -194,10 +194,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('loginForm')?.addEventListener('submit', handleLogin);
     document.getElementById('registerForm')?.addEventListener('submit', handleRegister);
     document.getElementById('registerButton')?.addEventListener('click', () => {
-        window.location.href = 'register.html';
+        window.location.href = '/register';
     });
     document.getElementById('backToLogin')?.addEventListener('click', () => {
-        window.location.href = 'index.html';
+        window.location.href = '/';
     });
     document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
 
@@ -608,7 +608,7 @@ function initializeDashboard() {
 // Handle Logout
 function handleLogout() {
     localStorage.clear();
-    window.location.href = 'index.html';
+    window.location.href = '/';
 }
 
 document.querySelectorAll('.filter-button').forEach(button => {

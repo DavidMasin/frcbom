@@ -64,7 +64,10 @@ def team_dashboard(team_number):
 def team_bom_filtered(team_number, machine):
     # Render the dashboard with a filtered BOM
     return render_template('dashboard.html', team_number=team_number, filter_machine=machine)
-
+@app.route('/register')
+def team_bom_filtered(team_number, machine):
+    # Render the dashboard with a filtered BOM
+    return render_template('register.html')
 # Register endpoint
 @app.route('/api/register', methods=['POST'])
 def register():

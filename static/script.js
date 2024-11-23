@@ -209,7 +209,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Fetch BOM data from the server on page load (if applicable)
     if (window.location.pathname.includes('dashboard.html')) {
-        fetchBOMDataFromServer();
+        console.log("Im Here")
+        fetchBOMDataFromServer(teamNumber);
     }
 
     // Modal Logic (move inside DOMContentLoaded)

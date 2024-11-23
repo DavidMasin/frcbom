@@ -76,15 +76,15 @@ def register():
     team_number = data['team_number']
     password = data['password']
 
-    # Check if team exists in the database
+    # Check if team exists
     existing_team = Team.query.filter_by(team_number=team_number).first()
     if existing_team:
         return jsonify({"error": "Team already exists"}), 400
 
-    # Hash the password for security
+    # Hash the password
     hashed_password = generate_password_hash(password)
 
-    # Create a new team and add to the database
+    # Create new team
     new_team = Team(team_number=team_number, password=hashed_password)
     db.session.add(new_team)
     db.session.commit()
@@ -116,11 +116,15 @@ def login():
 @app.route('/api/team_exists', methods=['GET'])
 def team_exists():
     team_number = request.args.get('team_number')
+    app.logger.debug(f"Checking if team {team_number} exists.")
+
     if not team_number:
         return jsonify({"error": "Team number is required"}), 400
 
     # Check if the team exists in the database
     team = Team.query.filter_by(team_number=team_number).first()
+    app.logger.debug(f"Team found: {team}")
+
     if team:
         return jsonify({"exists": True}), 200
     else:

@@ -655,6 +655,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Function to initialize the dashboard
 async function initializeDashboard() {
     const teamNumber = getTeamNumberFromURL();
+    console.log("TEAM NUMBER: ", teamNumber)
     const jwtToken = localStorage.getItem('jwt_token');
 
     if (!teamNumber) {

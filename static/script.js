@@ -99,7 +99,7 @@ function showPasswordPrompt() {
     document.body.appendChild(overlay);
 
     // Blur the background content
-    document.body.style.filter = 'blur(5px)';
+    // document.body.style.filter = 'blur(5px)';
 }
 // Handle Login
 async function handleLogin(event) {

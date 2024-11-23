@@ -531,18 +531,20 @@ function determineCurrentProcess(part) {
 }
 
 function checkLoginStatus() {
-    // Retrieve the JWT token from localStorage
-    const jwtToken = localStorage.getItem('jwt_token');
-    const teamNumber = localStorage.getItem('team_number');
+    const storedTeamNumber = localStorage.getItem('team_number');
+    const currentPath = window.location.pathname.split('/');
+    const currentTeamNumber = currentPath[1]; // Extract the team number from the URL
 
-    // If no token or team number is found, redirect to the login page
-    if (!jwtToken || !teamNumber) {
+    // Redirect if not logged in or if team number mismatch
+    if (!storedTeamNumber || storedTeamNumber !== currentTeamNumber) {
         alert('You are not logged in. Redirecting to the login page.');
-        window.location.href = 'index.html'; // Replace with your login page path if different
+        window.location.href = '/'; // Redirect to home/login
     }
-
-
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    checkLoginStatus();
+});
 
 
 // Function to initialize the dashboard

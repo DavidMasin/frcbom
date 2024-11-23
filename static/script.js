@@ -229,7 +229,7 @@ async function saveBOMDataToServer(bomData) {
         bomData.forEach((item) => {
             checkProcessProgress(item);
         });
-        const response = await fetch(`${API_BASE_URL}/api/save_bom`, {
+        const response = await fetch(`${API_BASE_URL}api/save_bom`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({team_number: teamNumber, bom_data: bomData})

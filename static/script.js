@@ -411,6 +411,7 @@ function saveBOMDataToLocal(bomData, system) {
     }
     bomDict[teamNumber][system] = bomData;
     localStorage.setItem('bom_data', JSON.stringify(bomDict));
+    console.log(bomData)
     console.log(`Saved BOM for system '${system}' locally.`);
 }
 

@@ -11,6 +11,7 @@ function getTeamNumberFromURL() {
         return null;
     }
 }
+
 async function handlePasswordSubmit() {
     const password = document.getElementById('passwordPromptInput').value;
     const teamNumber = localStorage.getItem('team_number');
@@ -45,6 +46,7 @@ async function handlePasswordSubmit() {
         alert('An error occurred while logging in.');
     }
 }
+
 function showPasswordPrompt() {
     // Create the overlay element
     const overlay = document.createElement('div');
@@ -101,6 +103,7 @@ function showPasswordPrompt() {
     // Blur the background content
     // document.body.style.filter = 'blur(5px)';
 }
+
 // Handle Login
 async function handleLogin(event) {
     event.preventDefault();
@@ -131,6 +134,7 @@ async function handleLogin(event) {
         document.getElementById('loginMessage').textContent = 'Login failed.';
     }
 }
+
 function getPartStatus(part) {
     if (!part.preProcessQuantity && !part.process1Quantity && !part.process2Quantity) {
         return 'not-started'; // RED
@@ -252,6 +256,7 @@ function handleFilterBOM(filter) {
 
     displayBOMAsButtons(filteredData);
 }
+
 function isPasswordStrong(password) {
     const minLength = 8;
     const hasUpperCase = /[A-Z]/.test(password);
@@ -270,6 +275,7 @@ function showRegisterMessage(message, type) {
     registerMessage.className = `alert alert-${type} mt-3`;
     registerMessage.classList.remove('d-none');
 }
+
 // Handle Registration
 async function handleRegister(event) {
     event.preventDefault();
@@ -311,12 +317,14 @@ async function handleRegister(event) {
         document.getElementById('registerMessage').textContent = 'Registration failed.';
     }
 }
+
 function showLoginMessage(message, type) {
     const loginMessage = document.getElementById('loginMessage');
     loginMessage.textContent = message;
     loginMessage.className = `alert alert-${type} mt-3`;
     loginMessage.classList.remove('d-none');
 }
+
 // Initialize event listeners
 document.addEventListener('DOMContentLoaded', () => {
     console.log("Loading content")
@@ -554,7 +562,8 @@ function openEditModal(part) {
     if (downloadCADButton) {
         downloadCADButton.addEventListener('click', () => {
             console.log('Downloading CAD for part:', part["Part Name"], " with the id of" + part["ID"]);
-            downloadCADFile(part["ID"]).then(r => {});
+            downloadCADFile(part["ID"]).then(r => {
+            });
         });
     }
     // Show the modal
@@ -621,7 +630,6 @@ function savePartQuantities(part) {
 }
 
 
-
 // Function to close the modal
 function closeModal() {
     const modal = document.getElementById('editModal');
@@ -638,6 +646,7 @@ window.addEventListener('click', (event) => {
         closeModal();
     }
 });
+
 async function downloadCADFile(partId) {
     const jwtToken = localStorage.getItem('jwt_token');
 
@@ -648,12 +657,12 @@ async function downloadCADFile(partId) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${jwtToken}`,
             },
-            body: JSON.stringify({ id: partId, team_number: teamNumber }),
+            body: JSON.stringify({id: partId, team_number: teamNumber}),
         });
 
         if (!response.ok) {
             const error = await response.json();
-             console.error(error.message || 'Failed to download CAD file.');
+            console.error(error.message || 'Failed to download CAD file.');
         }
         console.log(response.blob())
         console.log(response.body)

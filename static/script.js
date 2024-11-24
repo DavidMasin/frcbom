@@ -383,7 +383,7 @@ async function fetchBOMDataFromServer(system = 'Main') {
     const teamNumber = localStorage.getItem('team_number');
     try {
         const response = await fetch(`${API_BASE_URL}/api/get_bom?team_number=${teamNumber}&system=${system}`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` }
+            headers: {'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`}
         });
         console.log("System: " + system)
         const data = await response.json();
@@ -398,6 +398,7 @@ async function fetchBOMDataFromServer(system = 'Main') {
         console.error(`Fetch BOM Data Error for system '${system}':`, error);
     }
 }
+
 // Save BOM Data Locally for a System
 function saveBOMDataToLocal(bomData, system) {
     const teamNumber = localStorage.getItem('team_number');
@@ -417,19 +418,6 @@ function getBOMDataFromLocal(system) {
 }
 
 
-
-// Handle System Change and Fetch BOM
-document.getElementById('systemSelect').addEventListener('change', (event) => {
-    const selectedSystem = event.target.value;
-    fetchBOMDataFromServer(selectedSystem); // Fetch BOM for the selected system
-});
-
-
-// Handle System Change and Fetch BOM
-document.getElementById('systemSelect').addEventListener('change', (event) => {
-    const selectedSystem = event.target.value;
-    fetchBOMDataFromServer(selectedSystem); // Fetch BOM for the selected system
-});
 // Display team number
 document.getElementById('teamNumber').textContent = teamNumber;
 
@@ -458,7 +446,7 @@ document.getElementById('fetchBOMButton').addEventListener('click', async () => 
     try {
         const response = await fetch(`${API_BASE_URL}api/bom`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                 document_url: documentUrl,
                 team_number: teamNumber,
@@ -779,11 +767,12 @@ async function initializeDashboard() {
     if (!jwtToken) {
         // User is not logged in, display password prompt overlay
         showPasswordPrompt();
-    } else {
-        // User is logged in, proceed to initialize dashboard
-        console.log("Fetched from INIT DASHBOARD!!")
-        fetchBOMDataFromServer('Main');
     }
+    // else {
+    //     // User is logged in, proceed to initialize dashboard
+    //     console.log("Fetched from INIT DASHBOARD!!")
+    //     fetchBOMDataFromServer('Main');
+    // }
 
     // Attach event listener for logout
     document.getElementById('logoutButton')?.addEventListener('click', handleLogout);

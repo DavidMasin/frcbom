@@ -3,151 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <title>FRC BOM - Simplify Your Robotics Build Process</title>
-    <!-- Bootstrap CSS -->
-    <link
-            rel="stylesheet"
-            href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
-    />
+    <!-- Tailwind CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="static/style.css">
+    <!-- Font Awesome for Icons -->
+    <script src="https://kit.fontawesome.com/b6faa35444.js" crossorigin="anonymous"></script>
+    <!-- Meta Tags for Responsive Design -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
 <!-- Navigation Bar -->
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <a class="navbar-brand" href="#">FRC BOM</a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse"
-            data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
-            aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-        <!-- Add any navigation links if necessary -->
+<nav id="navbar" class="fixed w-full z-10 top-0">
+    <div class="container mx-auto flex items-center justify-between p-4">
+        <a href="#" class="font-bold text-2xl text-white">FRC BOM</a>
+        <div class="hidden md:flex space-x-6">
+            <a href="#features" class="text-white hover:text-blue-300">Features</a>
+            <a href="#how-it-works" class="text-white hover:text-blue-300">How It Works</a>
+            <a href="#signInForm" class="text-white hover:text-blue-300">Sign In</a>
+        </div>
     </div>
 </nav>
 
 <!-- Hero Section -->
-<section class="jumbotron text-center">
-    <div class="container">
-        <h1 class="jumbotron-heading">Simplify Your Robotics Build Process</h1>
-        <p class="lead text-muted">
-            FRC BOM helps your team manage parts, track progress, and collaborate effectively during your robotics build season.
-        </p>
-        <p>
-            <a href="#signInForm" class="btn btn-primary my-2">Sign In</a>
-            <a href="register.html" class="btn btn-secondary my-2">Register</a>
-        </p>
+<section class="hero-section bg-cover bg-center h-screen" style="background-image: url('static/hero-image.jpg');">
+    <div class="bg-gray-900 bg-opacity-50 w-full h-full flex items-center justify-center">
+        <div class="text-center px-4">
+            <h1 class="text-white text-5xl font-bold mb-4">Simplify Your Robotics Build Process</h1>
+            <p class="text-gray-200 text-xl mb-8">Manage parts, track progress, and collaborate effectively during your robotics build season.</p>
+            <a href="#signInForm" class="button-primary">Get Started</a>
+        </div>
     </div>
 </section>
 
 <!-- Features Section -->
-<section class="container">
-    <div class="row">
-        <div class="col-md-4">
-            <h2>Manage Parts</h2>
-            <p>Keep track of all your components with an intuitive interface.</p>
-        </div>
-        <div class="col-md-4">
-            <h2>Track Progress</h2>
-            <p>Monitor the build status of each part in real-time.</p>
-        </div>
-        <div class="col-md-4">
-            <h2>Collaborate</h2>
-            <p>Work together seamlessly with your team members.</p>
+<section id="features" class="py-20 bg-gray-100">
+    <div class="container mx-auto px-6">
+        <h2 class="text-3xl font-bold text-center mb-12">Features</h2>
+        <div class="flex flex-wrap">
+            <div class="w-full md:w-1/3 text-center p-6">
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <i class="fas fa-cogs text-4xl text-blue-500 mb-4"></i>
+                    <h3 class="text-xl font-semibold mb-2">Manage Parts</h3>
+                    <p class="text-gray-600">Keep track of all your components with an intuitive interface.</p>
+                </div>
+            </div>
+            <div class="w-full md:w-1/3 text-center p-6">
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <i class="fas fa-tasks text-4xl text-blue-500 mb-4"></i>
+                    <h3 class="text-xl font-semibold mb-2">Track Progress</h3>
+                    <p class="text-gray-600">Monitor the build status of each part in real-time.</p>
+                </div>
+            </div>
+            <div class="w-full md:w-1/3 text-center p-6">
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <i class="fas fa-users text-4xl text-blue-500 mb-4"></i>
+                    <h3 class="text-xl font-semibold mb-2">Collaborate</h3>
+                    <p class="text-gray-600">Work together seamlessly with your team members.</p>
+                </div>
+            </div>
         </div>
     </div>
 </section>
 
-<!-- How It Works -->
-<section class="container my-5">
-    <h2 class="text-center">How It Works</h2>
-    <p class="text-center">
-        FRC BOM integrates with Onshape to import your Bill of Materials and provides a platform to manage your build process.
-    </p>
-    <div class="row text-center">
-        <div class="col-md-4">
-            <i class="fas fa-file-import fa-3x mb-2"></i>
-            <h4>Import BOM</h4>
-            <p>Connect your Onshape account and import your project BOM.</p>
-        </div>
-        <div class="col-md-4">
-            <i class="fas fa-tasks fa-3x mb-2"></i>
-            <h4>Assign Tasks</h4>
-            <p>Assign parts to team members and set deadlines.</p>
-        </div>
-        <div class="col-md-4">
-            <i class="fas fa-chart-line fa-3x mb-2"></i>
-            <h4>Track Progress</h4>
-            <p>Visualize progress and ensure timely completion.</p>
+<!-- How It Works Section -->
+<section id="how-it-works" class="py-20">
+    <div class="container mx-auto px-6">
+        <h2 class="text-3xl font-bold text-center mb-12">How It Works</h2>
+        <div class="flex flex-wrap">
+            <div class="w-full md:w-1/3 text-center p-6">
+                <div class="p-6">
+                    <i class="fas fa-file-import text-4xl text-blue-500 mb-4"></i>
+                    <h3 class="text-xl font-semibold mb-2">Import BOM</h3>
+                    <p class="text-gray-600">Connect your Onshape account and import your project BOM.</p>
+                </div>
+            </div>
+            <div class="w-full md:w-1/3 text-center p-6">
+                <div class="p-6">
+                    <i class="fas fa-user-cog text-4xl text-blue-500 mb-4"></i>
+                    <h3 class="text-xl font-semibold mb-2">Assign Tasks</h3>
+                    <p class="text-gray-600">Assign parts to team members and set deadlines.</p>
+                </div>
+            </div>
+            <div class="w-full md:w-1/3 text-center p-6">
+                <div class="p-6">
+                    <i class="fas fa-chart-line text-4xl text-blue-500 mb-4"></i>
+                    <h3 class="text-xl font-semibold mb-2">Track Progress</h3>
+                    <p class="text-gray-600">Visualize progress and ensure timely completion.</p>
+                </div>
+            </div>
         </div>
     </div>
 </section>
 
 <!-- Sign In Form Section -->
-<section id="signInForm" class="container my-5">
-    <div class="card mx-auto" style="max-width: 400px;">
-        <div class="card-body">
-            <h2 class="card-title text-center">Sign In</h2>
+<section id="signInForm" class="py-20 bg-gray-100">
+    <div class="container mx-auto px-6">
+        <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8">
+            <h2 class="text-2xl font-bold text-center mb-6">Sign In</h2>
             <form id="loginForm">
-                <div class="form-group">
-                    <label for="loginTeamNumber">Team Number</label>
-                    <input
-                            type="text"
-                            class="form-control"
-                            id="loginTeamNumber"
-                            placeholder="Enter Team Number"
-                            required
-                    />
+                <div class="mb-4">
+                    <label for="loginTeamNumber" class="block text-gray-700">Team Number</label>
+                    <input type="text" id="loginTeamNumber" class="w-full px-3 py-2 border rounded" placeholder="Enter Team Number" required>
                 </div>
-                <div class="form-group">
-                    <label for="loginPassword">Password</label>
-                    <div class="input-group">
-                        <input
-                                type="password"
-                                class="form-control"
-                                id="loginPassword"
-                                placeholder="Enter Password"
-                                required
-                        />
-                        <div class="input-group-append">
-                <span class="input-group-text">
-                  <i class="fa fa-eye-slash" id="togglePassword"></i>
-                </span>
-                        </div>
-                    </div>
+                <div class="mb-4">
+                    <label for="loginPassword" class="block text-gray-700">Password</label>
+                    <input type="password" id="loginPassword" class="w-full px-3 py-2 border rounded" placeholder="Enter Password" required>
                 </div>
-                <button type="submit" class="btn btn-primary btn-block">
-                    Sign In
-                </button>
-                <div id="loginMessage" class="alert alert-danger mt-3 d-none"></div>
+                <button type="submit" class="w-full bg-blue-500 text-white font-bold py-2 rounded hover:bg-blue-600">Sign In</button>
+                <p id="loginMessage" class="text-red-500 mt-4"></p>
             </form>
-            <hr />
-            <p class="text-center">
-                Don't have an account?
-                <a href="register.html">Register here</a>
+            <p class="text-center mt-4">
+                Don't have an account? <a href="register.html" class="text-blue-500 hover:underline">Register here</a>
             </p>
         </div>
     </div>
 </section>
 
 <!-- Footer -->
-<footer class="text-muted text-center py-4">
-    <div class="container">
+<footer class="bg-gray-800 text-gray-400 py-6">
+    <div class="container mx-auto text-center">
         <p>© 2024 FRC BOM. All rights reserved.</p>
     </div>
 </footer>
 
-<!-- Bootstrap JS and dependencies -->
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script
-        src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
-></script>
-<script
-        src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"
-></script>
-<!-- Font Awesome for icons -->
-<script
-        src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/js/all.min.js"
-></script>
+<!-- JavaScript -->
+<!-- Include Font Awesome Icons -->
+<script src="https://kit.fontawesome.com/b6faa35444.js" crossorigin="anonymous"></script>
+<!-- Smooth Scroll -->
+<script>
+    // Navbar change on scroll
+    window.addEventListener('scroll', function() {
+        const navbar = document.getElementById('navbar');
+        if (window.scrollY > 50) {
+            navbar.classList.add('bg-white', 'text-gray-800', 'shadow-md');
+            navbar.classList.remove('bg-transparent', 'text-white');
+        } else {
+            navbar.classList.add('bg-transparent', 'text-white');
+            navbar.classList.remove('bg-white', 'text-gray-800', 'shadow-md');
+        }
+    });
+
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+            e.preventDefault();
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    });
+</script>
+<!-- Include your custom script.js -->
 <script src="static/script.js"></script>
 </body>
 </html>

@@ -37,7 +37,7 @@ async function handlePasswordSubmit() {
             // Remove blur from background
             document.body.style.filter = 'none';
             // Proceed to initialize the dashboard
-            fetchBOMDataFromServer(teamNumber);
+            fetchBOMDataFromServer('Main');
         } else {
             alert('Incorrect password');
         }
@@ -359,7 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch BOM data from the server on page load (if applicable)
     if (window.location.pathname.includes('dashboard.html')) {
         console.log("Im Here")
-        fetchBOMDataFromServer(teamNumber);
+        fetchBOMDataFromServer('Main');
     }
 
     // Modal Logic (move inside DOMContentLoaded)
@@ -374,6 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.getElementById('systemSelect').addEventListener('change', (event) => {
     const selectedSystem = event.target.value;
+    console.log("IM HERE3: " + selectedSystem)
     fetchBOMDataFromServer(selectedSystem); // Fetch BOM for the selected system
 });
 
@@ -780,7 +781,7 @@ async function initializeDashboard() {
         showPasswordPrompt();
     } else {
         // User is logged in, proceed to initialize dashboard
-        fetchBOMDataFromServer(teamNumber);
+        fetchBOMDataFromServer('Main');
     }
 
     // Attach event listener for logout

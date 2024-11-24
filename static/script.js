@@ -124,7 +124,7 @@ async function handleLogin(event) {
 
             // Check if admin
             if (teamNumber === "0000") {
-                window.location.href = '/admin_dashboard.html'; // Redirect to admin dashboard
+                window.location.href = '/admin'; // Redirect to admin dashboard
             } else {
                 window.location.href = '/dashboard.html';
             }

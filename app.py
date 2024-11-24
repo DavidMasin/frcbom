@@ -221,7 +221,7 @@ def fetch_bom():
             fixed_url = fixed_url.replace('did', did).replace('wid', wid).replace('eid', eid)
 
             response = client.api_client.request(
-                method, url=base_url + fixed_url, query_params={}, headers=headers, body={}
+                method, url=base_url + fixed_url, query_params={"indented":False}, headers=headers, body={}
             )
 
             bom_dict = dict(json.loads(response.data))

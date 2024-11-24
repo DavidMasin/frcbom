@@ -62,6 +62,10 @@ def team_dashboard(team_number):
     # Pass the team number to the template for dynamic rendering
     return render_template('dashboard.html', team_number=team_number)
 
+@app.route('/admin')
+def admin():
+    return render_template('admin_dashboard.html')
+
 @app.route('/<team_number>/<machine>')
 def team_bom_filtered(team_number, machine):
     # Render the dashboard with a filtered BOM
@@ -209,7 +213,7 @@ def fetch_bom():
 
             # Onshape API setup
             element = OnshapeElement(document_url)
-            fixed_url = '/api/v9/assemblies/d/did/w/wid/e/eid/bom'
+            fixed_url = '/api/v10/assemblies/d/did/w/wid/e/eid/bom'
             method = 'GET'
             did = element.did
             wid = element.wvmid

@@ -184,9 +184,11 @@ def save_codes():
 def fetch_bom():
     global access_key, secret_key, client
     data = request.json
+
+    # Extract necessary data
     document_url = data.get("document_url")
     team_number = data.get("team_number")
-    system = data.get("system", "Main")  # Default to "Main"
+    system = data.get("system", "Main")  # Default to "Main" if no system is provided
     access_key = data.get("access_key")
     secret_key = data.get("secret_key")
     client = Client(configuration={"base_url": base_url, "access_key": access_key, "secret_key": secret_key})
@@ -196,6 +198,7 @@ def fetch_bom():
 
     try:
         if access_key and secret_key:
+            # Save access and secret keys for the team
             settings_data_dict[team_number] = {
                 "accessKey": access_key,
                 "secretKey": secret_key,
@@ -203,6 +206,7 @@ def fetch_bom():
             }
             save_codes()
 
+            # Onshape API setup
             element = OnshapeElement(document_url)
             fixed_url = '/api/v9/assemblies/d/did/w/wid/e/eid/bom'
             method = 'GET'
@@ -247,11 +251,13 @@ def fetch_bom():
                     "ID": part_id,
                 })
 
+            # Save BOM data for the specific system
             if team_number not in bom_data_dict:
                 bom_data_dict[team_number] = {}
 
             bom_data_dict[team_number][system] = bom_data
             save_bom_data()
+
             return jsonify({"bom_data": bom_data}), 200
         else:
             return jsonify({"error": "Access key or secret key missing"}), 400

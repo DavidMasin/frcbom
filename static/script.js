@@ -384,6 +384,7 @@ async function fetchBOMDataFromServer(system = 'Main') {
         const response = await fetch(`${API_BASE_URL}/api/get_bom?team_number=${teamNumber}&system=${system}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` }
         });
+        console.log("System: " + system)
         const data = await response.json();
         if (response.ok) {
             saveBOMDataToLocal(data.bom_data, system);
@@ -408,12 +409,13 @@ function saveBOMDataToLocal(bomData, system) {
     console.log(`Saved BOM for system '${system}' locally.`);
 }
 
-// Get BOM Data Locally for a System
 function getBOMDataFromLocal(system) {
     const teamNumber = localStorage.getItem('team_number');
     const bomDict = JSON.parse(localStorage.getItem('bom_data')) || {};
     return bomDict[teamNumber]?.[system] || [];
 }
+
+
 
 // Handle System Change and Fetch BOM
 document.getElementById('systemSelect').addEventListener('change', (event) => {
@@ -439,42 +441,47 @@ settingsButton.addEventListener('click', () => modal.style.display = 'flex');
 closeButton.addEventListener('click', () => modal.style.display = 'none');
 
 // Fetch BOM Data and Save to Local Storage
-document.getElementById('fetchBOMButton')?.addEventListener('click', async () => {
+// Function to fetch BOM with system selection
+document.getElementById('fetchBOMButton').addEventListener('click', async () => {
     const documentUrl = document.getElementById('onshapeDocumentUrl').value;
-    const access_key = document.getElementById("accessKey").value;
-    const secret_key = document.getElementById("secretKey").value;
+    const accessKey = document.getElementById('accessKey').value;
+    const secretKey = document.getElementById('secretKey').value;
+    const system = document.getElementById('systemSelect').value; // Get selected system
+    const teamNumber = localStorage.getItem('team_number');
 
-    const token = localStorage.getItem('jwt_token');
-
-    if (!documentUrl) {
-        alert('Please enter a URL.');
+    if (!documentUrl || !teamNumber) {
+        alert('Document URL and Team Number are required.');
         return;
     }
 
     try {
         const response = await fetch(`${API_BASE_URL}api/bom`, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 document_url: documentUrl,
                 team_number: teamNumber,
-                access_key: access_key,
-                secret_key: secret_key
-            })
+                system: system, // Include the selected system
+                access_key: accessKey,
+                secret_key: secretKey,
+            }),
         });
 
         const data = await response.json();
         if (response.ok) {
-            saveBOMDataToLocal(data.bom_data);
-            displayBOMAsButtons(data.bom_data);
+            console.log(`BOM fetched and saved for system '${system}'.`);
+            saveBOMDataToLocal(data.bom_data, system); // Save to local storage
+            displayBOMAsButtons(data.bom_data); // Update the UI
         } else {
+            console.error('Error fetching BOM:', data.error);
             alert(`Error: ${data.error}`);
         }
     } catch (error) {
         console.error('Fetch BOM Error:', error);
-        alert('An error occurred while fetching BOM data.');
+        alert('An error occurred while fetching the BOM.');
     }
 });
+
 
 // Function to display BOM data as buttons
 function displayBOMAsButtons(bomData) {

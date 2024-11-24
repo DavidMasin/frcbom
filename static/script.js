@@ -521,93 +521,170 @@ function displayBOMAsButtons(bomData) {
 function openEditModal(part) {
     const modal = document.getElementById('editModal');
     const modalBody = document.getElementById('modalBody');
-    const saveButton = document.getElementById('saveButton');
 
     // Clear existing content
-    modalBody.innerHTML = '<button id="downloadCADButton" class="button-primary">Download STEP File</button>';
-    // Populate modal with editable fields for the part
-    if (part.preProcess) {
-        modalBody.innerHTML += `
-        <label for="preProcessQty">Pre-Process (${part.preProcess}):</label>
-        <div class="quantity-counter">
-            <button class="decrement" data-target="preProcessQty">-</button>
-            <input type="number" id="preProcessQty" value="${part.preProcessQuantity || 0}" min="0">
-            <button class="increment" data-target="preProcessQty">+</button>
-        </div>
-    `;
-    }
-    if (part.Process1) {
-        modalBody.innerHTML += `
-        <label for="process1Qty">Process 1 (${part.Process1}):</label>
-        <div class="quantity-counter">
-            <button class="decrement" data-target="process1Qty">-</button>
-            <input type="number" id="process1Qty" value="${part.process1Quantity || 0}" min="0">
-            <button class="increment" data-target="process1Qty">+</button>
-        </div>
-    `;
-    }
-    if (part.Process2) {
-        modalBody.innerHTML += `
-        <label for="process2Qty">Process 2 (${part.Process2}):</label>
-        <div class="quantity-counter">
-            <button class="decrement" data-target="process2Qty">-</button>
-            <input type="number" id="process2Qty" value="${part.process2Quantity || 0}" min="0">
-            <button class="increment" data-target="process2Qty">+</button>
-        </div>
-    `;
+    modalBody.innerHTML = '';
 
-    }
-    console.log(modalBody.innerHTML)
-    const downloadCADButton = document.getElementById('downloadCADButton');
-    if (downloadCADButton) {
-        downloadCADButton.addEventListener('click', () => {
-            console.log('Downloading CAD for part:', part["Part Name"], " with the id of" + part["ID"]);
-            downloadCADFile(part["ID"]).then(r => {
-            });
-        });
-    }
-    // Show the modal
-    modal.style.display = 'flex';
-    attachCounterListeners();
+    // Create the download CAD button
+    const downloadCADButton = document.createElement('button');
+    downloadCADButton.id = 'downloadCADButton';
+    downloadCADButton.classList.add('button-primary');
+    downloadCADButton.textContent = 'Download STEP File';
 
-    // Save changes
-    saveButton.onclick = () => savePartQuantities(part);
-}
-
-function attachCounterListeners() {
-    document.querySelectorAll('.increment').forEach(button => {
-        button.addEventListener('click', () => {
-            const target = document.getElementById(button.getAttribute('data-target'));
-            target.value = parseInt(target.value) + 1;
+    // Add event listener for the download button
+    downloadCADButton.addEventListener('click', () => {
+        console.log('Downloading CAD for part:', part["Part Name"], " with the id of " + part["ID"]);
+        downloadCADFile(part["ID"]).then(r => {
+            // Handle the response
         });
     });
 
-    document.querySelectorAll('.decrement').forEach(button => {
-        button.addEventListener('click', () => {
-            const target = document.getElementById(button.getAttribute('data-target'));
-            target.value = Math.max(0, parseInt(target.value) - 1); // Ensure value doesn't go below 0
+    // Append the download button to modalBody
+    modalBody.appendChild(downloadCADButton);
+
+    // Create a form to contain the process inputs
+    const processForm = document.createElement('form');
+    processForm.id = 'processForm';
+
+    // Create an array to hold the processes dynamically
+    let processes = [];
+
+    if (part.preProcess) {
+        processes.push({
+            id: 'preProcess',
+            displayName: 'Pre-Process',
+            name: part.preProcess,
+            quantityMade: part.preProcessQuantity || 0,
+            quantityFieldId: 'preProcessQty',
         });
+    }
+
+    if (part.Process1) {
+        processes.push({
+            id: 'Process1',
+            displayName: 'Process 1',
+            name: part.Process1,
+            quantityMade: part.process1Quantity || 0,
+            quantityFieldId: 'process1Qty',
+        });
+    }
+
+    if (part.Process2) {
+        processes.push({
+            id: 'Process2',
+            displayName: 'Process 2',
+            name: part.Process2,
+            quantityMade: part.process2Quantity || 0,
+            quantityFieldId: 'process2Qty',
+        });
+    }
+
+    // Loop over processes and create input fields
+    processes.forEach(process => {
+        const processItem = document.createElement('div');
+        processItem.classList.add('process-item');
+
+        const label = document.createElement('label');
+        label.classList.add('modal-label');
+        label.setAttribute('for', process.quantityFieldId);
+        label.textContent = `${process.displayName} (${process.name}):`;
+
+        const quantityCounter = document.createElement('div');
+        quantityCounter.classList.add('quantity-counter');
+
+        const decrementButton = document.createElement('button');
+        decrementButton.classList.add('decrement');
+        decrementButton.setAttribute('data-target', process.quantityFieldId);
+        decrementButton.type = 'button';
+        decrementButton.textContent = '-';
+
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.id = process.quantityFieldId;
+        input.value = process.quantityMade;
+        input.min = 0;
+        input.classList.add('modal-input');
+
+        const incrementButton = document.createElement('button');
+        incrementButton.classList.add('increment');
+        incrementButton.setAttribute('data-target', process.quantityFieldId);
+        incrementButton.type = 'button';
+        incrementButton.textContent = '+';
+
+        // Append elements
+        quantityCounter.appendChild(decrementButton);
+        quantityCounter.appendChild(input);
+        quantityCounter.appendChild(incrementButton);
+
+        processItem.appendChild(label);
+        processItem.appendChild(quantityCounter);
+
+        processForm.appendChild(processItem);
+    });
+
+    // Create save button
+    const saveButton = document.createElement('button');
+    saveButton.type = 'button';
+    saveButton.id = 'saveButton';
+    saveButton.classList.add('modal-button');
+    saveButton.textContent = 'Save Changes';
+
+    // Add event listener to saveButton
+    saveButton.addEventListener('click', () => savePartQuantities(part, processes));
+
+    // Append the save button to the form
+    processForm.appendChild(saveButton);
+
+    // Append the form to modalBody
+    modalBody.appendChild(processForm);
+
+    // Attach counter listeners
+    attachCounterListeners();
+
+    // Show the modal
+    modal.style.display = 'flex';
+}
+
+function attachCounterListeners() {
+    // Event delegation for increment and decrement buttons
+    document.getElementById('processForm').addEventListener('click', function(event) {
+        if (event.target.classList.contains('increment')) {
+            const targetId = event.target.getAttribute('data-target');
+            const targetInput = document.getElementById(targetId);
+            targetInput.value = parseInt(targetInput.value) + 1;
+        } else if (event.target.classList.contains('decrement')) {
+            const targetId = event.target.getAttribute('data-target');
+            const targetInput = document.getElementById(targetId);
+            targetInput.value = Math.max(0, parseInt(targetInput.value) - 1);
+        }
     });
 }
 
 // Function to save quantities and update the BOM data
-function savePartQuantities(part) {
+function savePartQuantities(part, processes) {
     // Fetch updated quantities from the modal
-    const preProcessQty = document.getElementById('preProcessQty')?.value || part.preProcessQuantity || 0;
-    const process1Qty = document.getElementById('process1Qty')?.value || part.process1Quantity || 0;
-    const process2Qty = document.getElementById('process2Qty')?.value || part.process2Quantity || 0;
-
-    // Update the part's properties
-    part.preProcessQuantity = parseInt(preProcessQty, 10);
-    part.process1Quantity = parseInt(process1Qty, 10);
-    part.process2Quantity = parseInt(process2Qty, 10);
+    processes.forEach(process => {
+        const qtyInput = document.getElementById(process.quantityFieldId);
+        if (qtyInput) {
+            const quantityMade = parseInt(qtyInput.value, 10) || 0;
+            // Update the part's quantity
+            switch (process.id) {
+                case 'preProcess':
+                    part.preProcessQuantity = quantityMade;
+                    break;
+                case 'Process1':
+                    part.process1Quantity = quantityMade;
+                    break;
+                case 'Process2':
+                    part.process2Quantity = quantityMade;
+                    break;
+                // Add more cases if needed
+            }
+        }
+    });
 
     // Retrieve the BOM data from localStorage
     let bomData = getBOMDataFromLocal();
-    console.log('Pre-Process Qty:', preProcessQty);
-    console.log('Process 1 Qty:', process1Qty);
-    console.log('Process 2 Qty:', process2Qty);
-    console.log('Updated Part:', part);
 
     // Find and update the part in the BOM data
     const partIndex = bomData.findIndex(item => item["Part Name"] === part["Part Name"]);
@@ -628,7 +705,6 @@ function savePartQuantities(part) {
     // Close the modal
     closeModal();
 }
-
 
 // Function to close the modal
 function closeModal() {
@@ -657,15 +733,15 @@ async function downloadCADFile(partId) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${jwtToken}`,
             },
-            body: JSON.stringify({id: partId, team_number: teamNumber}),
+            body: JSON.stringify({ id: partId, team_number: teamNumber }),
         });
 
         if (!response.ok) {
             const error = await response.json();
             console.error(error.message || 'Failed to download CAD file.');
+            return;
         }
-        console.log(response.blob())
-        console.log(response.body)
+
         const blob = await response.blob();
         const downloadLink = document.createElement('a');
         downloadLink.href = URL.createObjectURL(blob);

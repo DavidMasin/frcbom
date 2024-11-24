@@ -79,14 +79,16 @@
         </div>
     </div>
     <!-- Modal for Editing Quantities -->
-    <div id="editModal" class="modal">
+    <!-- Modal Structure -->
+    <div id="progressModal" class="modal">
         <div class="modal-content">
-            <span  id="closeModal" class="close">&times;</span>
-            <h2>Edit Quantities</h2>
-            <div id="modalBody" class="modal-body">
-                <!-- Content will be dynamically populated -->
+            <span class="close-button">&times;</span>
+            <h2 class="modal-title">Update Part Progress</h2>
+            <div class="modal-body">
+                <form id="processForm">
+                    <!-- Dynamic content will be injected here -->
+                </form>
             </div>
-            <button id="saveButton" class="button-primary">Save Changes</button>
         </div>
     </div>
     <!-- Include External Libraries and Custom Script -->

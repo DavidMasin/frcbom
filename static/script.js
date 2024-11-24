@@ -37,7 +37,7 @@ async function handlePasswordSubmit() {
             // Remove blur from background
             document.body.style.filter = 'none';
             // Proceed to initialize the dashboard
-            fetchBOMDataFromServer('Main');
+            initializeDashboard();
         } else {
             alert('Incorrect password');
         }
@@ -781,6 +781,7 @@ async function initializeDashboard() {
         showPasswordPrompt();
     } else {
         // User is logged in, proceed to initialize dashboard
+        console.log("Fetched from INIT DASHBOARD!!")
         fetchBOMDataFromServer('Main');
     }
 

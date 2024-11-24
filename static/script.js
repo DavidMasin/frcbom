@@ -211,6 +211,7 @@ document.querySelectorAll('.filter-button').forEach(button => {
 function handleFilterBOM(filter) {
     const bomData = getBOMDataFromLocal();
     let filteredData;
+    console.log("The bom before filter here: " + bomData)
 
     // Save the current filter to localStorage
     localStorage.setItem('current_filter', filter);

@@ -122,7 +122,7 @@ async function handleLogin(event) {
             localStorage.setItem('jwt_token', data.access_token);
             localStorage.setItem('team_number', teamNumber);
             let selectedSystem = ""
-            if (document.getElementById('systemSelect').value != null) {
+            if (document.getElementById('systemSelect') != null) {
                 selectedSystem = document.getElementById('systemSelect').value;
             } else {
                 selectedSystem = "";

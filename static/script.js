@@ -121,12 +121,12 @@ async function handleLogin(event) {
         if (response.ok) {
             localStorage.setItem('jwt_token', data.access_token);
             localStorage.setItem('team_number', teamNumber);
-
+            const selectedSystem=document.getElementById('systemSelect').value;
             // Check if admin
             if (teamNumber === "0000") {
                 window.location.href = '/admin'; // Redirect to admin dashboard
             } else {
-                window.location.href = '/dashboard.html';
+                window.location.href = `/${teamNumber}/${selectedSystem}`;
             }
         } else {
             document.getElementById('loginMessage').textContent = data.error;

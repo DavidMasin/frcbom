@@ -209,7 +209,16 @@ document.querySelectorAll('.filter-button').forEach(button => {
 
 // Function to handle filtering BOM data
 function handleFilterBOM(filter) {
-    const bomData = getBOMDataFromLocal();
+    let systemSelect
+    if (document.getElementById("systemSelect"))
+    {
+        systemSelect=document.getElementById("systemSelect").value;
+    }
+    else
+    {
+        systemSelect="Main"
+    }
+    const bomData = getBOMDataFromLocal(systemSelect);
     let filteredData;
     console.log("The bom before filter here: " + bomData)
 
@@ -601,7 +610,17 @@ function savePartQuantities(part) {
     part.process2Quantity = parseInt(process2Qty, 10);
 
     // Retrieve the BOM data from localStorage
-    let bomData = getBOMDataFromLocal();
+
+    let systemSelect
+    if (document.getElementById("systemSelect"))
+    {
+        systemSelect=document.getElementById("systemSelect").value;
+    }
+    else
+    {
+        systemSelect="Main"
+    }
+    let bomData = getBOMDataFromLocal(systemSelect);
     console.log('Pre-Process Qty:', preProcessQty);
     console.log('Process 1 Qty:', process1Qty);
     console.log('Process 2 Qty:', process2Qty);

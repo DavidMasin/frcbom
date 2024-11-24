@@ -250,12 +250,41 @@ function handleFilterBOM(filter) {
 
     displayBOMAsButtons(filteredData);
 }
+function isPasswordStrong(password) {
+    const minLength = 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    return (
+        password.length >= minLength && hasUpperCase && hasLowerCase && hasNumbers
+    );
+}
 
+function showRegisterMessage(message, type) {
+    const registerMessage = document.getElementById('registerMessage');
+    registerMessage.textContent = message;
+    registerMessage.className = `alert alert-${type} mt-3`;
+    registerMessage.classList.remove('d-none');
+}
 // Handle Registration
 async function handleRegister(event) {
     event.preventDefault();
     const teamNumber = document.getElementById('registerTeamNumber').value;
     const password = document.getElementById('registerPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    if (password !== confirmPassword) {
+        showRegisterMessage('Passwords do not match.', 'danger');
+        return;
+    }
+
+    if (!isPasswordStrong(password)) {
+        showRegisterMessage(
+            'Password is not strong enough. Please meet the requirements.',
+            'danger'
+        );
+        return;
+    }
 
     try {
         const response = await fetch(`${API_BASE_URL}api/register`, {
@@ -276,7 +305,12 @@ async function handleRegister(event) {
         document.getElementById('registerMessage').textContent = 'Registration failed.';
     }
 }
-
+function showLoginMessage(message, type) {
+    const loginMessage = document.getElementById('loginMessage');
+    loginMessage.textContent = message;
+    loginMessage.className = `alert alert-${type} mt-3`;
+    loginMessage.classList.remove('d-none');
+}
 // Initialize event listeners
 document.addEventListener('DOMContentLoaded', () => {
     console.log("Loading content")
@@ -285,7 +319,15 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("Dashboard initialized");
     }
     // Attach event listeners
-    document.getElementById('loginForm')?.addEventListener('submit', handleLogin);
+    document.getElementById('loginForm').addEventListener('submit', function (e) {
+        const teamNumber = document.getElementById('loginTeamNumber').value.trim();
+        const password = document.getElementById('loginPassword').value.trim();
+
+        if (!teamNumber || !password) {
+            e.preventDefault();
+            showLoginMessage('Please fill in all fields.', 'danger');
+        }
+    });
     document.getElementById('registerForm')?.addEventListener('submit', handleRegister);
     document.getElementById('registerButton')?.addEventListener('click', () => {
         window.location.href = '/register';
@@ -385,7 +427,27 @@ function saveBOMDataToLocal(bomData) {
     saveBOMDataToServer(bomData).then(r => {
     });
 }
+// Toggle Password Visibility on Sign In Page
+document.getElementById('togglePassword').addEventListener('click', function () {
+    const passwordField = document.getElementById('loginPassword');
+    const type =
+        passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+    passwordField.setAttribute('type', type);
+    this.classList.toggle('fa-eye');
+    this.classList.toggle('fa-eye-slash');
+});
 
+// Toggle Password Visibility on Register Page
+document
+    .getElementById('toggleRegisterPassword')
+    .addEventListener('click', function () {
+        const passwordField = document.getElementById('registerPassword');
+        const type =
+            passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordField.setAttribute('type', type);
+        this.classList.toggle('fa-eye');
+        this.classList.toggle('fa-eye-slash');
+    });
 // Function to get BOM data from localStorage
 function getBOMDataFromLocal() {
     const bomDict = JSON.parse(localStorage.getItem('bom_data')) || {};

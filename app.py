@@ -209,7 +209,7 @@ def fetch_bom():
 
             # Onshape API setup
             element = OnshapeElement(document_url)
-            fixed_url = '/api/v9/assemblies/d/did/w/wid/e/eid/bom'
+            fixed_url = '/api/v10/assemblies/d/did/w/wid/e/eid/bom'
             method = 'GET'
             did = element.did
             wid = element.wvmid

@@ -214,12 +214,12 @@ function handleFilterBOM(filter) {
 
     // Save the current filter to localStorage
     localStorage.setItem('current_filter', filter);
-
+    console.log("The filter is: " + filter)
     // Update process completion states
     bomData.forEach((item) => {
         checkProcessProgress(item);
     });
-
+    console.log("The bom after filter here: " +bomData)
     // Normalize the filter string
     const normalizedFilter = filter.trim().toLowerCase();
 

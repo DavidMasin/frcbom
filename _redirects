@@ -7,5 +7,6 @@
 # Serve index.html for other routes (if needed)
 /*      /index.html   200
 
+/:team/:system  /dashboard.html   200
 
 /register   /register.html  200

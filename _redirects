@@ -1,12 +1,14 @@
+# Redirect system-specific routes to dashboard.html
+/:team_number/:system    /dashboard.html   200
+
 # Redirect team number routes to dashboard.html
 /:team_number    /dashboard.html   200
 
 # Proxy API requests to your Railway back-end
 /api/*  https://frcbom-production.up.railway.app/api/:splat  200
 
-# Serve index.html for other routes (if needed)
+# Serve the index.html for all other routes (fallback)
 /*      /index.html   200
 
-/:team/:system  /dashboard.html   200
-
+# Explicit redirect for register
 /register   /register.html  200

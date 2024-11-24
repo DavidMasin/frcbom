@@ -265,6 +265,49 @@ def fetch_bom():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+def is_admin(team_number):
+    return team_number == "0000"
+
+@app.route('/api/admin/get_bom', methods=['GET'])
+@jwt_required()
+def admin_get_bom():
+    current_user = get_jwt_identity()
+
+    # Check if the user is the admin
+    if not is_admin(current_user):
+        return jsonify({"error": "Unauthorized access"}), 403
+
+    team_number = request.args.get('team_number')
+    system = request.args.get('system', 'Main')  # Default to "Main"
+
+    if not team_number:
+        return jsonify({"error": "Team number is required"}), 400
+
+    # Fetch BOM data for the specified team and system
+    team_bom_data = bom_data_dict.get(team_number, {})
+    if system == "Main":
+        # Combine BOMs for all systems
+        combined_bom = []
+        for sys_bom in team_bom_data.values():
+            combined_bom.extend(sys_bom)
+        return jsonify({"bom_data": combined_bom}), 200
+    else:
+        # Fetch BOM for the specific system
+        return jsonify({"bom_data": team_bom_data.get(system, [])}), 200
+
+@app.route('/api/admin/download_bom_dict', methods=['GET'])
+@jwt_required()
+def download_bom_dict():
+    current_user = get_jwt_identity()
+
+    # Check if the user is the admin
+    if not is_admin(current_user):
+        return jsonify({"error": "Unauthorized access"}), 403
+
+    try:
+        return jsonify({"bom_data_dict": bom_data_dict}), 200
+    except Exception as e:
+        return jsonify({"error": f"Failed to download BOM data: {str(e)}"}), 500
 
 
 # Helper function to load BOM data from file
@@ -318,26 +361,26 @@ def save_bom():
 @app.route('/api/get_bom', methods=['GET'])
 @jwt_required()
 def get_bom():
+    current_user = get_jwt_identity()
     team_number = request.args.get('team_number')
     system = request.args.get('system', 'Main')  # Default to "Main"
-    current_user = get_jwt_identity()
 
     if not team_number:
         return jsonify({"error": "Team number is required"}), 400
 
-    if team_number != current_user:
+    # Restrict non-admin users from accessing admin BOM data
+    if team_number == "0000" and not is_admin(current_user):
         return jsonify({"error": "Unauthorized access"}), 403
 
+    # Fetch BOM data
+    team_bom_data = bom_data_dict.get(team_number, {})
     if system == "Main":
-        # Combine all systems
         combined_bom = []
-        team_bom_data = bom_data_dict.get(team_number, {})
         for sys_bom in team_bom_data.values():
             combined_bom.extend(sys_bom)
         return jsonify({"bom_data": combined_bom}), 200
-
-    bom_data = bom_data_dict.get(team_number, {}).get(system, [])
-    return jsonify({"bom_data": bom_data}), 200
+    else:
+        return jsonify({"bom_data": team_bom_data.get(system, [])}), 200
 
 
 # Endpoint to clear BOM data for a specific team (Optional)

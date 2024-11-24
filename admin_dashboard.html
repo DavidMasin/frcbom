@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <h1>Admin Dashboard</h1>
+        <button id="logoutButton" class="button-secondary">Log Out</button>
+    </header>
+
+    <main>
+        <!-- Actions Section -->
+        <section class="admin-actions">
+            <h2>Actions</h2>
+            <div class="actions-grid">
+                <!-- Download BOM Data -->
+                <button id="downloadBOMDictButton" class="button-primary">
+                    Download BOM Data
+                </button>
+
+                <!-- Fetch Team BOM -->
+                <form id="fetchTeamBOMForm" class="action-form">
+                    <h3>Fetch Team BOM</h3>
+                    <input type="text" id="teamNumberInput" placeholder="Enter Team Number" required>
+                    <label for="systemSelect">System:</label>
+                    <select id="systemSelect">
+                        <option value="Main">Main</option>
+                        <option value="System1">System 1</option>
+                        <option value="System2">System 2</option>
+                        <option value="System3">System 3</option>
+                        <option value="System4">System 4</option>
+                        <option value="System5">System 5</option>
+                    </select>
+                    <button type="submit" class="button-primary">Fetch BOM</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Display BOM Data -->
+        <section id="bomDisplaySection" class="bom-display">
+            <h2>BOM Data</h2>
+            <div id="bomPartsGrid" class="grid-layout">
+                <!-- BOM parts will be dynamically populated here -->
+            </div>
+        </section>
+    </main>
+
+    <script src="/static/script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Admin Token
+            const adminToken = localStorage.getItem('jwt_token');
+
+            // Logout functionality
+            document.getElementById('logoutButton').addEventListener('click', () => {
+                localStorage.clear();
+                window.location.href = '/';
+            });
+
+            // Download BOM Dict
+            document.getElementById('downloadBOMDictButton').addEventListener('click', async () => {
+                try {
+                    const response = await fetch('/api/admin/download_bom_dict', {
+                        headers: { 'Authorization': `Bearer ${adminToken}` },
+                    });
+
+                    const data = await response.json();
+                    if (response.ok) {
+                        const blob = new Blob([JSON.stringify(data.bom_data_dict, null, 2)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = 'bom_data_dict.json';
+                        link.click();
+                    } else {
+                        alert(data.error || 'Failed to download BOM data.');
+                    }
+                } catch (error) {
+                    console.error('Error downloading BOM data:', error);
+                    alert('Failed to download BOM data.');
+                }
+            });
+
+            // Fetch Team BOM
+            document.getElementById('fetchTeamBOMForm').addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const teamNumber = document.getElementById('teamNumberInput').value;
+                const system = document.getElementById('systemSelect').value;
+
+                try {
+                    const response = await fetch(`/api/admin/get_bom?team_number=${teamNumber}&system=${system}`, {
+                        headers: { 'Authorization': `Bearer ${adminToken}` },
+                    });
+
+                    const data = await response.json();
+                    if (response.ok) {
+                        displayBOMAsButtons(data.bom_data);
+                    } else {
+                        alert(data.error || 'Failed to fetch BOM.');
+                    }
+                } catch (error) {
+                    console.error('Error fetching BOM:', error);
+                    alert('Failed to fetch BOM.');
+                }
+            });
+
+            // Function to display BOM data
+            function displayBOMAsButtons(bomData) {
+                const gridContainer = document.getElementById('bomPartsGrid');
+                gridContainer.innerHTML = ''; // Clear previous content
+                bomData.sort((a, b) => (a["Part Name"] || '').localeCompare(b["Part Name"] || ''));
+
+                bomData.forEach(part => {
+                    const button = document.createElement('div');
+                    button.classList.add('part-button');
+                    button.innerHTML = `
+                        <h3>${part["Part Name"]}</h3>
+                        <p><strong>Material:</strong> ${part.materialBOM || 'N/A'}</p>
+                        <p><strong>Description:</strong> ${part.Description || 'N/A'}</p>
+                        <p><strong>Quantity:</strong> ${part.Quantity || 'N/A'}</p>
+                    `;
+                    gridContainer.appendChild(button);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

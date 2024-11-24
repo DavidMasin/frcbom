@@ -107,25 +107,27 @@ function showPasswordPrompt() {
 // Handle Login
 async function handleLogin(event) {
     event.preventDefault();
-    console.log('Login form submitted');
-
     const teamNumber = document.getElementById('loginTeamNumber').value;
     const password = document.getElementById('loginPassword').value;
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/login`, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({team_number: teamNumber, password})
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ team_number: teamNumber, password }),
         });
 
         const data = await response.json();
         if (response.ok) {
             localStorage.setItem('jwt_token', data.access_token);
             localStorage.setItem('team_number', teamNumber);
-            window.location.href = `/${teamNumber}`;
 
-            // window.location.href = toString(teamNumber);
+            // Check if admin
+            if (teamNumber === "0000") {
+                window.location.href = '/admin_dashboard.html'; // Redirect to admin dashboard
+            } else {
+                window.location.href = '/dashboard.html';
+            }
         } else {
             document.getElementById('loginMessage').textContent = data.error;
         }
@@ -134,6 +136,7 @@ async function handleLogin(event) {
         document.getElementById('loginMessage').textContent = 'Login failed.';
     }
 }
+
 
 function getPartStatus(part) {
     if (!part.preProcessQuantity && !part.process1Quantity && !part.process2Quantity) {

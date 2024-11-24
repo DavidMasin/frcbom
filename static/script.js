@@ -104,6 +104,8 @@ function showPasswordPrompt() {
 // Handle Login
 async function handleLogin(event) {
     event.preventDefault();
+    console.log('Login form submitted');
+
     const teamNumber = document.getElementById('loginTeamNumber').value;
     const password = document.getElementById('loginPassword').value;
 
@@ -271,6 +273,8 @@ function showRegisterMessage(message, type) {
 // Handle Registration
 async function handleRegister(event) {
     event.preventDefault();
+    console.log('Register form submitted');
+
     const teamNumber = document.getElementById('registerTeamNumber').value;
     const password = document.getElementById('registerPassword').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
@@ -320,17 +324,16 @@ document.addEventListener('DOMContentLoaded', () => {
         initializeDashboard();
         console.log("Dashboard initialized");
     }
-    // Attach event listeners
-    document.getElementById('loginForm').addEventListener('submit', function (e) {
-        const teamNumber = document.getElementById('loginTeamNumber').value.trim();
-        const password = document.getElementById('loginPassword').value.trim();
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
+    }
 
-        if (!teamNumber || !password) {
-            e.preventDefault();
-            showLoginMessage('Please fill in all fields.', 'danger');
-        }
-    });
-    document.getElementById('registerForm')?.addEventListener('submit', handleRegister);
+    const registerForm = document.getElementById('registerForm');
+    if (registerForm) {
+        registerForm.addEventListener('submit', handleRegister);
+    }
+
     document.getElementById('registerButton')?.addEventListener('click', () => {
         window.location.href = '/register';
     });

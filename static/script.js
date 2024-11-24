@@ -255,6 +255,7 @@ function isPasswordStrong(password) {
     const hasUpperCase = /[A-Z]/.test(password);
     const hasLowerCase = /[a-z]/.test(password);
     const hasNumbers = /\d/.test(password);
+    console.log("Checking strength: " + (password.length >= minLength && hasUpperCase && hasLowerCase && hasNumbers))
     return (
         password.length >= minLength && hasUpperCase && hasLowerCase && hasNumbers
     );

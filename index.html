@@ -30,7 +30,8 @@
     <div class="bg-gray-900 bg-opacity-50 w-full h-full flex items-center justify-center">
         <div class="text-center px-4">
             <h1 class="text-white text-5xl font-bold mb-4">Simplify Your Robotics Build Process</h1>
-            <p class="text-gray-200 text-xl mb-8">Manage parts, track progress, and collaborate effectively during your robotics build season.</p>
+            <p class="text-gray-200 text-xl mb-8">Manage parts, track progress, and collaborate effectively during your
+                robotics build season.</p>
             <a href="#signInForm" class="button-primary">Get Started</a>
         </div>
     </div>
@@ -104,13 +105,27 @@
             <form id="loginForm">
                 <div class="mb-4">
                     <label for="loginTeamNumber" class="block text-gray-700">Team Number</label>
-                    <input type="text" id="loginTeamNumber" class="w-full px-3 py-2 border rounded" placeholder="Enter Team Number" required>
+                    <input type="text" id="loginTeamNumber" class="w-full px-3 py-2 border rounded"
+                           placeholder="Enter Team Number" required>
                 </div>
                 <div class="mb-4">
                     <label for="loginPassword" class="block text-gray-700">Password</label>
-                    <input type="password" id="loginPassword" class="w-full px-3 py-2 border rounded" placeholder="Enter Password" required>
+                    <div class="relative">
+                        <input
+                                type="password"
+                                id="loginPassword"
+                                class="w-full px-3 py-2 border rounded"
+                                placeholder="Enter Password"
+                                required
+                        />
+                        <span class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer">
+                        <i class="fas fa-eye-slash" id="togglePassword"></i>
+                        </span>
+                    </div>
                 </div>
-                <button type="submit" class="w-full bg-blue-500 text-white font-bold py-2 rounded hover:bg-blue-600">Sign In</button>
+                <button type="submit" class="w-full bg-blue-500 text-white font-bold py-2 rounded hover:bg-blue-600">
+                    Sign In
+                </button>
                 <p id="loginMessage" class="text-red-500 mt-4"></p>
             </form>
             <p class="text-center mt-4">
@@ -133,7 +148,7 @@
 <!-- Smooth Scroll -->
 <script>
     // Navbar change on scroll
-    window.addEventListener('scroll', function() {
+    window.addEventListener('scroll', function () {
         const navbar = document.getElementById('navbar');
         if (window.scrollY > 50) {
             navbar.classList.add('bg-white', 'text-gray-800', 'shadow-md');
@@ -146,7 +161,7 @@
 
     // Smooth scroll for anchor links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function(e) {
+        anchor.addEventListener('click', function (e) {
             e.preventDefault();
             document.querySelector(this.getAttribute('href')).scrollIntoView({
                 behavior: 'smooth'

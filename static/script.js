@@ -432,27 +432,7 @@ function saveBOMDataToLocal(bomData) {
     saveBOMDataToServer(bomData).then(r => {
     });
 }
-// Toggle Password Visibility on Sign In Page
-document.getElementById('togglePassword').addEventListener('click', function () {
-    const passwordField = document.getElementById('loginPassword');
-    const type =
-        passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
-    passwordField.setAttribute('type', type);
-    this.classList.toggle('fa-eye');
-    this.classList.toggle('fa-eye-slash');
-});
 
-// Toggle Password Visibility on Register Page
-document
-    .getElementById('toggleRegisterPassword')
-    .addEventListener('click', function () {
-        const passwordField = document.getElementById('registerPassword');
-        const type =
-            passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
-        passwordField.setAttribute('type', type);
-        this.classList.toggle('fa-eye');
-        this.classList.toggle('fa-eye-slash');
-    });
 // Function to get BOM data from localStorage
 function getBOMDataFromLocal() {
     const bomDict = JSON.parse(localStorage.getItem('bom_data')) || {};
@@ -715,6 +695,31 @@ function checkLoginStatus() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Toggle Password Visibility on Sign In Page
+    const togglePassword = document.getElementById('togglePassword');
+    if (togglePassword) {
+        togglePassword.addEventListener('click', function () {
+            const passwordField = document.getElementById('loginPassword');
+            const type =
+                passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordField.setAttribute('type', type);
+            this.classList.toggle('fa-eye');
+            this.classList.toggle('fa-eye-slash');
+        });
+    }
+
+// Toggle Password Visibility on Register Page
+    const toggleRegisterPassword = document.getElementById('toggleRegisterPassword');
+    if (toggleRegisterPassword) {
+        toggleRegisterPassword.addEventListener('click', function () {
+            const passwordField = document.getElementById('registerPassword');
+            const type =
+                passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordField.setAttribute('type', type);
+            this.classList.toggle('fa-eye');
+            this.classList.toggle('fa-eye-slash');
+        });
+    }
     checkLoginStatus();
 });
 

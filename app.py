@@ -38,6 +38,7 @@ class Team(db.Model):
     password = db.Column(db.String(200), nullable=False)
 
 
+
 # Create tables within the application context
 with app.app_context():
     db.create_all()

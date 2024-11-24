@@ -758,7 +758,7 @@ async function initializeDashboard() {
     }
 
     localStorage.setItem('team_number', teamNumber);
-    const system=document.getElementById('systemSelect').value;
+    const system = document.getElementById('systemSelect').value;
     const teamNumberElement = document.getElementById('teamNumber');
     if (teamNumberElement) {
         teamNumberElement.textContent = teamNumber;
@@ -767,8 +767,7 @@ async function initializeDashboard() {
     if (!jwtToken) {
         // User is not logged in, display password prompt overlay
         showPasswordPrompt();
-    }
-    else {
+    } else {
         // User is logged in, proceed to initialize dashboard
         console.log("Fetched from INIT DASHBOARD!!")
         fetchBOMDataFromServer(system);

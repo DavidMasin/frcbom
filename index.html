@@ -36,7 +36,8 @@
     <div class="bg-gray-900 bg-opacity-50 w-full h-full flex items-center justify-center">
         <div class="text-center px-4">
             <h1 class="text-white text-5xl md:text-6xl font-bold mb-4">Simplify Your Robotics Build Process</h1>
-            <p class="text-gray-200 text-xl md:text-2xl mb-8">Manage parts, track progress, and collaborate effectively during your robotics build season.</p>
+            <p class="text-gray-200 text-xl md:text-2xl mb-8">Manage parts, track progress, and collaborate effectively
+                during your robotics build season.</p>
             <a href="#signInForm" class="button-primary">Get Started</a>
         </div>
     </div>
@@ -160,7 +161,7 @@
 <!-- Smooth Scroll and Navbar Scroll Effect -->
 <script>
     // Navbar change on scroll
-    window.addEventListener('scroll', function() {
+    window.addEventListener('scroll', function () {
         const navbar = document.getElementById('navbar');
         if (window.scrollY > 50) {
             navbar.classList.add('bg-white', 'text-gray-800', 'shadow-md');
@@ -183,7 +184,7 @@
 
     // Smooth scroll for anchor links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function(e) {
+        anchor.addEventListener('click', function (e) {
             e.preventDefault();
             document.querySelector(this.getAttribute('href')).scrollIntoView({
                 behavior: 'smooth'

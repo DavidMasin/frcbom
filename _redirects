@@ -12,3 +12,4 @@
 
 # Explicit redirect for register
 /register   /register.html  200
+

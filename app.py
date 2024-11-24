@@ -184,41 +184,42 @@ def save_codes():
 def fetch_bom():
     global access_key, secret_key, client
     data = request.json
-    print(data)
     document_url = data.get("document_url")
     team_number = data.get("team_number")
+    system = data.get("system", "Main")  # Default to "Main"
     access_key = data.get("access_key")
     secret_key = data.get("secret_key")
     client = Client(configuration={"base_url": base_url, "access_key": access_key, "secret_key": secret_key})
+
     if not document_url or not team_number:
         return jsonify({"error": "Document URL and Team Number are required"}), 400
-    try:
-        if access_key != "" and secret_key != "":
-            settings_data_dict[team_number] = {"accessKey": access_key, "secretKey": secret_key,
-                                               "documentURL": document_url}
-            save_codes()
-            element = OnshapeElement(document_url)
 
+    try:
+        if access_key and secret_key:
+            settings_data_dict[team_number] = {
+                "accessKey": access_key,
+                "secretKey": secret_key,
+                "documentURL": document_url,
+            }
+            save_codes()
+
+            element = OnshapeElement(document_url)
             fixed_url = '/api/v9/assemblies/d/did/w/wid/e/eid/bom'
             method = 'GET'
             did = element.did
             wid = element.wvmid
             eid = element.eid
-            params = {}
-            payload = {}
-            headers = {'Accept': 'application/vnd.onshape.v1+json; charset=UTF-8;qs=0.1',
-                       'Content-Type': 'application/json'}
+            headers = {
+                'Accept': 'application/vnd.onshape.v1+json; charset=UTF-8;qs=0.1',
+                'Content-Type': 'application/json',
+            }
+            fixed_url = fixed_url.replace('did', did).replace('wid', wid).replace('eid', eid)
 
-            fixed_url = fixed_url.replace('did', did)
-            fixed_url = fixed_url.replace('wid', wid)
-            fixed_url = fixed_url.replace('eid', eid)
-            print("Connecting to Onshape's API...")
-            response = client.api_client.request(method, url=base_url + fixed_url, query_params=params, headers=headers,
-                                                 body=payload)
-            print("Onshape API Connected.")
+            response = client.api_client.request(
+                method, url=base_url + fixed_url, query_params={}, headers=headers, body={}
+            )
 
             bom_dict = dict(json.loads(response.data))
-            # Extract BOM data
             part_nameID = findIDs(bom_dict, "Name")
             part_quantity = findIDs(bom_dict, "Quantity")
             part_materialID = findIDs(bom_dict, "Material")
@@ -227,17 +228,13 @@ def fetch_bom():
             process1ID = findIDs(bom_dict, "Process 1")
             process2ID = findIDs(bom_dict, "Process 2")
             DescriptionID = findIDs(bom_dict, "Description")
-            print("Trying to get Parts...")
-            parts = getPartsDict(bom_dict, part_nameID, DescriptionID, part_quantity, part_materialID,
-                                 part_materialBomID,
-                                 part_preProcessID, process1ID, process2ID)
-            print("Got parts!")
-            # Prepare the response data
-            bom_data = []
+            parts = getPartsDict(
+                bom_dict, part_nameID, DescriptionID, part_quantity, part_materialID,
+                part_materialBomID, part_preProcessID, process1ID, process2ID
+            )
 
-            for part_name, (
-                    description, quantity, material, materialBOM, preProcess, Process1, Process2,
-                    part_id) in parts.items():
+            bom_data = []
+            for part_name, (description, quantity, material, materialBOM, preProcess, Process1, Process2, part_id) in parts.items():
                 bom_data.append({
                     "Part Name": part_name,
                     "Description": description,
@@ -247,18 +244,20 @@ def fetch_bom():
                     "preProcess": preProcess,
                     "Process1": Process1,
                     "Process2": Process2,
-                    "ID": part_id
+                    "ID": part_id,
                 })
-            # Store the latest BOM data for the team and emit it to all connected clients
-            latest_bom_data[team_number] = bom_data
-            socketio.emit('update_bom', {'team_number': team_number, 'bom_data': bom_data})
+
+            if team_number not in bom_data_dict:
+                bom_data_dict[team_number] = {}
+
+            bom_data_dict[team_number][system] = bom_data
+            save_bom_data()
             return jsonify({"bom_data": bom_data}), 200
         else:
-            print("DIDNT GET ACCESS AND SECRET!!")
-            return
+            return jsonify({"error": "Access key or secret key missing"}), 400
+
     except Exception as e:
-        print("Error fetching BOM:", str(e))
-        return jsonify({"bom_data": ()}), 500
+        return jsonify({"error": str(e)}), 500
 
 
 # Helper function to load BOM data from file
@@ -313,16 +312,24 @@ def save_bom():
 @jwt_required()
 def get_bom():
     team_number = request.args.get('team_number')
+    system = request.args.get('system', 'Main')  # Default to "Main"
     current_user = get_jwt_identity()
 
     if not team_number:
         return jsonify({"error": "Team number is required"}), 400
 
-    # Ensure the user is authorized to access this team's data
     if team_number != current_user:
         return jsonify({"error": "Unauthorized access"}), 403
 
-    bom_data = bom_data_dict.get(team_number, [])
+    if system == "Main":
+        # Combine all systems
+        combined_bom = []
+        team_bom_data = bom_data_dict.get(team_number, {})
+        for sys_bom in team_bom_data.values():
+            combined_bom.extend(sys_bom)
+        return jsonify({"bom_data": combined_bom}), 200
+
+    bom_data = bom_data_dict.get(team_number, {}).get(system, [])
     return jsonify({"bom_data": bom_data}), 200
 
 

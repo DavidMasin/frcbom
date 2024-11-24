@@ -372,51 +372,61 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-// Function to save BOM data to the server
-async function saveBOMDataToServer(bomData) {
-    try {
-        bomData.forEach((item) => {
-            checkProcessProgress(item);
-        });
-        const response = await fetch(`${API_BASE_URL}api/save_bom`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({team_number: teamNumber, bom_data: bomData})
-        });
+document.getElementById('systemSelect').addEventListener('change', (event) => {
+    const selectedSystem = event.target.value;
+    fetchBOMDataFromServer(selectedSystem); // Fetch BOM for the selected system
+});
 
-        if (response.ok) {
-            console.log('BOM data saved to the server successfully.');
-        } else {
-            console.error('Failed to save BOM data to the server.');
-        }
-    } catch (error) {
-        console.error('Save BOM Data Error:', error);
-    }
-}
-
-// Function to fetch BOM data from the server
-async function fetchBOMDataFromServer(teamNumber) {
-    const jwtToken = localStorage.getItem('jwt_token');
+// Fetch BOM Data and Save to Local Storage
+async function fetchBOMDataFromServer(system = 'Main') {
+    const teamNumber = localStorage.getItem('team_number');
     try {
-        const response = await fetch(`${API_BASE_URL}api/get_bom?team_number=${teamNumber}`, {
-            headers: {
-                'Authorization': `Bearer ${jwtToken}`
-            }
+        const response = await fetch(`${API_BASE_URL}/api/get_bom?team_number=${teamNumber}&system=${system}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` }
         });
         const data = await response.json();
         if (response.ok) {
-            saveBOMDataToLocal(data.bom_data, teamNumber);
-            const savedFilter = localStorage.getItem('current_filter') || 'InHouse';
-            handleFilterBOM(savedFilter, teamNumber);
+            saveBOMDataToLocal(data.bom_data, system);
+            displayBOMAsButtons(data.bom_data);
         } else {
-            console.error('Failed to retrieve BOM data from the server:', data.error);
+            console.error(`Failed to retrieve BOM for system '${system}':`, data.error);
             alert(`Error: ${data.error}`);
         }
     } catch (error) {
-        console.error('Fetch BOM Data Error:', error);
+        console.error(`Fetch BOM Data Error for system '${system}':`, error);
     }
 }
+// Save BOM Data Locally for a System
+function saveBOMDataToLocal(bomData, system) {
+    const teamNumber = localStorage.getItem('team_number');
+    const bomDict = JSON.parse(localStorage.getItem('bom_data')) || {};
+    if (!bomDict[teamNumber]) {
+        bomDict[teamNumber] = {};
+    }
+    bomDict[teamNumber][system] = bomData;
+    localStorage.setItem('bom_data', JSON.stringify(bomDict));
+    console.log(`Saved BOM for system '${system}' locally.`);
+}
 
+// Get BOM Data Locally for a System
+function getBOMDataFromLocal(system) {
+    const teamNumber = localStorage.getItem('team_number');
+    const bomDict = JSON.parse(localStorage.getItem('bom_data')) || {};
+    return bomDict[teamNumber]?.[system] || [];
+}
+
+// Handle System Change and Fetch BOM
+document.getElementById('systemSelect').addEventListener('change', (event) => {
+    const selectedSystem = event.target.value;
+    fetchBOMDataFromServer(selectedSystem); // Fetch BOM for the selected system
+});
+
+
+// Handle System Change and Fetch BOM
+document.getElementById('systemSelect').addEventListener('change', (event) => {
+    const selectedSystem = event.target.value;
+    fetchBOMDataFromServer(selectedSystem); // Fetch BOM for the selected system
+});
 // Display team number
 document.getElementById('teamNumber').textContent = teamNumber;
 
@@ -427,25 +437,6 @@ const closeButton = document.querySelector('.close');
 
 settingsButton.addEventListener('click', () => modal.style.display = 'flex');
 closeButton.addEventListener('click', () => modal.style.display = 'none');
-
-
-// Function to save BOM data to localStorage
-function saveBOMDataToLocal(bomData) {
-    const bomDict = JSON.parse(localStorage.getItem('bom_data')) || {};
-    bomDict[teamNumber] = bomData;
-    localStorage.setItem('bom_data', JSON.stringify(bomDict));
-    console.log('BOM data saved to localStorage for team:', teamNumber);
-    console.log('Updated BOM Data:', getBOMDataFromLocal());
-
-    saveBOMDataToServer(bomData).then(r => {
-    });
-}
-
-// Function to get BOM data from localStorage
-function getBOMDataFromLocal() {
-    const bomDict = JSON.parse(localStorage.getItem('bom_data')) || {};
-    return bomDict[teamNumber] || [];
-}
 
 // Fetch BOM Data and Save to Local Storage
 document.getElementById('fetchBOMButton')?.addEventListener('click', async () => {
@@ -489,6 +480,7 @@ document.getElementById('fetchBOMButton')?.addEventListener('click', async () =>
 function displayBOMAsButtons(bomData) {
     const gridContainer = document.getElementById('bomPartsGrid');
     gridContainer.innerHTML = ''; // Clear previous content
+
     bomData.sort((a, b) => (a["Part Name"] || '').localeCompare(b["Part Name"] || ''));
 
     bomData.forEach(part => {
@@ -704,6 +696,23 @@ function checkLoginStatus() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const systemSelect = document.getElementById('systemSelect');
+    const teamNumber = localStorage.getItem('team_number'); // Get the team number from localStorage
+
+    // Update the URL when a system is selected
+    systemSelect.addEventListener('change', () => {
+        const selectedSystem = systemSelect.value;
+        if (teamNumber && selectedSystem) {
+            // Redirect to the system-specific URL
+            window.location.href = `/${teamNumber}/${selectedSystem}`;
+        }
+    });
+
+    // Set the dropdown to the current system from the URL
+    const currentSystem = window.location.pathname.split('/')[2]; // Get system from URL
+    if (currentSystem) {
+        systemSelect.value = currentSystem;
+    }
     // Toggle Password Visibility on Sign In Page
     const togglePassword = document.getElementById('togglePassword');
     if (togglePassword) {

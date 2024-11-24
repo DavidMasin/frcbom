@@ -583,3 +583,32 @@ section {
         height: 40px;
     }
 }
+/* System Selector */
+.system-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-right: 20px; /* Add space between selector and filter buttons */
+}
+
+.system-label {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.system-dropdown {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    background-color: #f8f9fa;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+}
+
+.system-dropdown:focus {
+    border-color: #1D4ED8;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}

@@ -293,6 +293,7 @@ footer p {
         padding: 2rem 0;
     }
 }
+
 /* General Body Styling */
 body {
     margin: 0;
@@ -356,13 +357,16 @@ section {
 
 /* Dashboard Controls Section */
 .dashboard-controls {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* Align items to the left */
+    flex-wrap: wrap; /* Wrap buttons to the next line if needed */
+    gap: 20px; /* Space between buttons */
     margin-bottom: 20px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 20px;
-    justify-items: center;
+    padding: 0 20px; /* Add padding to align content */
 }
 
+/* Filter Button Styles */
 .filter-button {
     background-color: #1D4ED8;
     color: white;
@@ -379,18 +383,58 @@ section {
     transition: transform 0.3s ease, background-color 0.3s ease;
     text-align: center;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    min-width: 120px; /* Ensure consistent button width */
 }
 
 .filter-button img {
-    width: 50px; /* Increased size */
-    height: 50px; /* Consistent size */
-    margin-bottom: 10px;
+    width: 50px; /* Consistent image size */
+    height: 50px;
+    margin-bottom: 5px;
 }
 
 .filter-button:hover {
     background-color: #2563EB;
     transform: translateY(-5px);
 }
+
+/* Settings Button */
+#settingsButton {
+    background-color: #6C757D;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 15px 20px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-left: auto; /* Push the settings button to the right */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+#settingsButton:hover {
+    background-color: #5A6268;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .dashboard-controls {
+        flex-wrap: wrap; /* Ensure buttons wrap to the next line */
+        justify-content: center; /* Center align on smaller screens */
+    }
+
+    .filter-button img {
+        width: 40px;
+        height: 40px;
+    }
+
+    #settingsButton {
+        margin-left: 0;
+        width: 100%; /* Full-width button for smaller screens */
+        text-align: center;
+    }
+}
+
 
 /* BOM Parts Grid Section */
 #bomPartsGrid {

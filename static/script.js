@@ -263,6 +263,7 @@ function isPasswordStrong(password) {
 function showRegisterMessage(message, type) {
     const registerMessage = document.getElementById('registerMessage');
     registerMessage.textContent = message;
+    console.log("Showing message: " + message)
     registerMessage.className = `alert alert-${type} mt-3`;
     registerMessage.classList.remove('d-none');
 }
@@ -292,7 +293,7 @@ async function handleRegister(event) {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({team_number: teamNumber, password})
         });
-
+        console.log("Registered team!")
         const data = await response.json();
         if (response.ok) {
             document.getElementById('registerMessage').textContent = 'Registration successful!';

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Sign In</title>
+    <title>FRC BOM - Simplify Your Robotics Build Process</title>
     <!-- Bootstrap CSS -->
     <link
             rel="stylesheet"
@@ -12,7 +12,78 @@
     <link rel="stylesheet" href="static/style.css">
 </head>
 <body>
-<div class="container mt-5">
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="#">FRC BOM</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
+            aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <!-- Add any navigation links if necessary -->
+    </div>
+</nav>
+
+<!-- Hero Section -->
+<section class="jumbotron text-center">
+    <div class="container">
+        <h1 class="jumbotron-heading">Simplify Your Robotics Build Process</h1>
+        <p class="lead text-muted">
+            FRC BOM helps your team manage parts, track progress, and collaborate effectively during your robotics build season.
+        </p>
+        <p>
+            <a href="#signInForm" class="btn btn-primary my-2">Sign In</a>
+            <a href="register.html" class="btn btn-secondary my-2">Register</a>
+        </p>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="container">
+    <div class="row">
+        <div class="col-md-4">
+            <h2>Manage Parts</h2>
+            <p>Keep track of all your components with an intuitive interface.</p>
+        </div>
+        <div class="col-md-4">
+            <h2>Track Progress</h2>
+            <p>Monitor the build status of each part in real-time.</p>
+        </div>
+        <div class="col-md-4">
+            <h2>Collaborate</h2>
+            <p>Work together seamlessly with your team members.</p>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works -->
+<section class="container my-5">
+    <h2 class="text-center">How It Works</h2>
+    <p class="text-center">
+        FRC BOM integrates with Onshape to import your Bill of Materials and provides a platform to manage your build process.
+    </p>
+    <div class="row text-center">
+        <div class="col-md-4">
+            <i class="fas fa-file-import fa-3x mb-2"></i>
+            <h4>Import BOM</h4>
+            <p>Connect your Onshape account and import your project BOM.</p>
+        </div>
+        <div class="col-md-4">
+            <i class="fas fa-tasks fa-3x mb-2"></i>
+            <h4>Assign Tasks</h4>
+            <p>Assign parts to team members and set deadlines.</p>
+        </div>
+        <div class="col-md-4">
+            <i class="fas fa-chart-line fa-3x mb-2"></i>
+            <h4>Track Progress</h4>
+            <p>Visualize progress and ensure timely completion.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Sign In Form Section -->
+<section id="signInForm" class="container my-5">
     <div class="card mx-auto" style="max-width: 400px;">
         <div class="card-body">
             <h2 class="card-title text-center">Sign In</h2>
@@ -56,7 +127,15 @@
             </p>
         </div>
     </div>
-</div>
+</section>
+
+<!-- Footer -->
+<footer class="text-muted text-center py-4">
+    <div class="container">
+        <p>© 2023 FRC BOM. All rights reserved.</p>
+    </div>
+</footer>
+
 <!-- Bootstrap JS and dependencies -->
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 <script

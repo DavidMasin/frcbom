@@ -758,7 +758,7 @@ async function initializeDashboard() {
     }
 
     localStorage.setItem('team_number', teamNumber);
-
+    const system=document.getElementById('systemSelect').value;
     const teamNumberElement = document.getElementById('teamNumber');
     if (teamNumberElement) {
         teamNumberElement.textContent = teamNumber;
@@ -768,11 +768,11 @@ async function initializeDashboard() {
         // User is not logged in, display password prompt overlay
         showPasswordPrompt();
     }
-    // else {
-    //     // User is logged in, proceed to initialize dashboard
-    //     console.log("Fetched from INIT DASHBOARD!!")
-    //     fetchBOMDataFromServer('Main');
-    // }
+    else {
+        // User is logged in, proceed to initialize dashboard
+        console.log("Fetched from INIT DASHBOARD!!")
+        fetchBOMDataFromServer(system);
+    }
 
     // Attach event listener for logout
     document.getElementById('logoutButton')?.addEventListener('click', handleLogout);

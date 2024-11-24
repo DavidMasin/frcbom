@@ -357,13 +357,15 @@ section {
 
 /* Dashboard Controls Section */
 .dashboard-controls {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start; /* Align items to the left */
-    flex-wrap: wrap; /* Wrap buttons to the next line if needed */
+    display: flex; /* Use flexbox for horizontal layout */
+    align-items: center; /* Vertically align buttons */
+    justify-content: flex-start; /* Align buttons to the left */
+    flex-wrap: wrap; /* Wrap to the next line if necessary */
     gap: 20px; /* Space between buttons */
+    padding: 10px 20px; /* Padding for spacing within the section */
     margin-bottom: 20px;
-    padding: 0 20px; /* Add padding to align content */
+    background-color: #f8f9fa; /* Optional: light background for better distinction */
+    border-radius: 8px; /* Optional: rounded corners */
 }
 
 /* Filter Button Styles */
@@ -384,10 +386,11 @@ section {
     text-align: center;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     min-width: 120px; /* Ensure consistent button width */
+    max-width: 150px; /* Limit button width for a balanced layout */
 }
 
 .filter-button img {
-    width: 50px; /* Consistent image size */
+    width: 50px; /* Ensure consistent image size */
     height: 50px;
     margin-bottom: 5px;
 }
@@ -408,7 +411,7 @@ section {
     font-weight: bold;
     cursor: pointer;
     transition: background-color 0.3s ease;
-    margin-left: auto; /* Push the settings button to the right */
+    margin-left: auto; /* Push the settings button to the far right */
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
@@ -419,18 +422,16 @@ section {
 /* Responsive Adjustments */
 @media (max-width: 768px) {
     .dashboard-controls {
-        flex-wrap: wrap; /* Ensure buttons wrap to the next line */
-        justify-content: center; /* Center align on smaller screens */
+        justify-content: center; /* Center buttons on smaller screens */
     }
 
-    .filter-button img {
-        width: 40px;
-        height: 40px;
+    .filter-button {
+        flex: 1 1 calc(33.333% - 20px); /* Allow buttons to adjust width responsively */
     }
 
     #settingsButton {
         margin-left: 0;
-        width: 100%; /* Full-width button for smaller screens */
+        flex: 1 1 100%; /* Full-width button for smaller screens */
         text-align: center;
     }
 }

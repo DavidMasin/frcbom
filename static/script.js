@@ -628,7 +628,7 @@ function savePartQuantities(part) {
     }
 
     // Save the updated BOM data back to localStorage
-    saveBOMDataToLocal(bomData);
+    saveBOMDataToLocal(bomData,systemSelect);
 
     // Re-render the BOM grid to reflect changes
     const currentFilter = localStorage.getItem('current_filter') || 'InHouse';

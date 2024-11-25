@@ -386,11 +386,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 document.getElementById('systemSelect').addEventListener('change', (event) => {
-    const selectedSystem = event.target.value;
+    let selectedSystem = event.target.value;
     console.log("IM HERE3: " + selectedSystem)
     if (teamNumber && selectedSystem) {
         // Redirect to the system-specific URL
         window.location.href = `/${teamNumber}/${selectedSystem}`;
+    }
+    const currentSystem = window.location.pathname.split('/')[2]; // Get system from URL
+    if (currentSystem) {
+        selectedSystem = currentSystem;
     }
     fetchBOMDataFromServer(selectedSystem); // Fetch BOM for the selected system
 

@@ -656,6 +656,7 @@ window.addEventListener('click', (event) => {
     }
 });
 
+
 async function downloadCADFile(partId) {
     const jwtToken = localStorage.getItem('jwt_token');
 
@@ -712,6 +713,47 @@ function checkLoginStatus() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+
+    // Handle BOM Data Upload
+    document.getElementById('uploadBOMDictForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const fileInput = document.getElementById('bomDictFileInput');
+        const file = fileInput.files[0];
+
+        if (!file) {
+            alert('Please select a file.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            try {
+                const bomDataDict = JSON.parse(e.target.result);
+                const adminToken = localStorage.getItem('jwt_token');
+
+                const response = await fetch('/api/admin/upload_bom_dict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`,
+                    },
+                    body: JSON.stringify({ bom_data_dict: bomDataDict }),
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert('BOM data uploaded successfully.');
+                } else {
+                    alert(data.error || 'Failed to upload BOM data.');
+                }
+            } catch (error) {
+                console.error('Error uploading BOM data:', error);
+                alert('Failed to upload BOM data. Ensure the file is a valid JSON.');
+            }
+        };
+        reader.readAsText(file);
+    });
+
     const systemSelect = document.getElementById('systemSelect');
     const teamNumber = localStorage.getItem('team_number'); // Get the team number from localStorage
 

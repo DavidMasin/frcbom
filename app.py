@@ -313,6 +313,31 @@ def admin_get_bom():
         # Fetch BOM for the specific system
         return jsonify({"bom_data": team_bom_data.get(system, [])}), 200
 
+@app.route('/api/admin/upload_bom_dict', methods=['POST'])
+@jwt_required()
+def upload_bom_dict():
+    current_user = get_jwt_identity()
+
+    # Check if the user is the admin
+    if not is_admin(current_user):
+        return jsonify({"error": "Unauthorized access"}), 403
+
+    data = request.get_json()
+    bom_data_dict_new = data.get('bom_data_dict')
+
+    if not bom_data_dict_new:
+        return jsonify({"error": "No BOM data provided."}), 400
+
+    # Optionally validate the bom_data_dict_new structure
+    if not isinstance(bom_data_dict_new, dict):
+        return jsonify({"error": "Invalid BOM data format."}), 400
+
+    # Update the in-memory bom_data_dict and save to file
+    global bom_data_dict
+    bom_data_dict = bom_data_dict_new
+    save_bom_data()
+
+    return jsonify({"message": "BOM data uploaded successfully."}), 200
 
 @app.route('/api/admin/download_bom_dict', methods=['GET'])
 @jwt_required()

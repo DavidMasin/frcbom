@@ -210,17 +210,13 @@ document.querySelectorAll('.filter-button').forEach(button => {
 // Function to handle filtering BOM data
 function handleFilterBOM(filter) {
     let systemSelect
-    if (document.getElementById("systemSelect"))
-    {
-        systemSelect=document.getElementById("systemSelect").value;
-    }
-    else
-    {
-        systemSelect="Main"
+    if (document.getElementById("systemSelect")) {
+        systemSelect = document.getElementById("systemSelect").value;
+    } else {
+        systemSelect = "Main"
     }
     const bomData = getBOMDataFromLocal(systemSelect);
     let filteredData;
-    console.log("The bom before filter here: " + bomData)
 
     // Save the current filter to localStorage
     localStorage.setItem('current_filter', filter);
@@ -229,7 +225,6 @@ function handleFilterBOM(filter) {
     bomData.forEach((item) => {
         checkProcessProgress(item);
     });
-    console.log("The bom after filter here: " +bomData)
     // Normalize the filter string
     const normalizedFilter = filter.trim().toLowerCase();
 
@@ -612,13 +607,10 @@ function savePartQuantities(part) {
     // Retrieve the BOM data from localStorage
 
     let systemSelect
-    if (document.getElementById("systemSelect"))
-    {
-        systemSelect=document.getElementById("systemSelect").value;
-    }
-    else
-    {
-        systemSelect="Main"
+    if (document.getElementById("systemSelect")) {
+        systemSelect = document.getElementById("systemSelect").value;
+    } else {
+        systemSelect = "Main"
     }
     let bomData = getBOMDataFromLocal(systemSelect);
     console.log('Pre-Process Qty:', preProcessQty);
@@ -639,7 +631,7 @@ function savePartQuantities(part) {
     saveBOMDataToLocal(bomData);
 
     // Re-render the BOM grid to reflect changes
-    const currentFilter = localStorage.getItem('current_filter') || 'Inhouse';
+    const currentFilter = localStorage.getItem('current_filter') || 'InHouse';
     handleFilterBOM(currentFilter);
 
     // Close the modal

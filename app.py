@@ -476,8 +476,9 @@ def download_cad():
             fixed_url = fixed_url.replace('eid', eid)
             fixed_url = fixed_url.replace('pid', part_id)
             print("Connecting to Onshape's API...")
-            print("URL: " , base_url , fixed_url)
-            response = client_data.api_client.request(method, url=base_url + fixed_url, query_params=params,
+            url = base_url + fixed_url
+            print("URL: " , url)
+            response = client_data.api_client.request(method, url=url, query_params=params,
                                                       headers=headers,
                                                       body=payload)
             print("Onshape API Connected.")

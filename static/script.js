@@ -129,7 +129,7 @@ async function handleLogin(event) {
             }
             // Check if admin
             if (teamNumber === "0000") {
-                window.location.href = '/admin'; // Redirect to admin dashboard
+                window.location.href = '/admin_dashboard.html'; // Redirect to admin dashboard
             } else {
                 window.location.href = `/${teamNumber}/${selectedSystem}`;
             }
@@ -820,9 +820,15 @@ async function initializeDashboard() {
         window.location.href = '/';
         return;
     }
-
+    let system
     localStorage.setItem('team_number', teamNumber);
-    const system = document.getElementById('systemSelect').value;
+    if (document.getElementById('systemSelect'))
+    {
+        system = document.getElementById('systemSelect').value;
+    }
+    else {
+        system = "Main"
+    }
     const teamNumberElement = document.getElementById('teamNumber');
     if (teamNumberElement) {
         teamNumberElement.textContent = teamNumber;

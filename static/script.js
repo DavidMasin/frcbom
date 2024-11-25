@@ -388,11 +388,12 @@ document.addEventListener('DOMContentLoaded', () => {
 document.getElementById('systemSelect').addEventListener('change', (event) => {
     const selectedSystem = event.target.value;
     console.log("IM HERE3: " + selectedSystem)
-    fetchBOMDataFromServer(selectedSystem); // Fetch BOM for the selected system
     if (teamNumber && selectedSystem) {
         // Redirect to the system-specific URL
         window.location.href = `/${teamNumber}/${selectedSystem}`;
     }
+    fetchBOMDataFromServer(selectedSystem); // Fetch BOM for the selected system
+
 });
 
 // Fetch BOM Data and Save to Local Storage

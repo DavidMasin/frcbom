@@ -485,7 +485,7 @@ def download_cad():
                                                       body=payload)
             print("Onshape API Connected.")
             print("Response: ",response)
-            return response, 200
+            return jsonify({"response":response.data}), 200
         else:
             print("DIDN'T GET ACCESS AND SECRET!!")
             return

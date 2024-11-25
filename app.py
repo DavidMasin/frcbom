@@ -64,9 +64,7 @@ def team_dashboard(team_number):
     return render_template('dashboard.html', team_number=team_number)
 
 
-@app.route('/admin')
-def admin():
-    return render_template('admin_dashboard.html')
+
 
 @app.route('/<team_number>/<machine>')
 def team_bom_filtered(team_number, machine):
@@ -478,6 +476,7 @@ def download_cad():
             fixed_url = fixed_url.replace('eid', eid)
             fixed_url = fixed_url.replace('pid', part_id)
             print("Connecting to Onshape's API...")
+            print("URL: " , base_url , fixed_url)
             response = client_data.api_client.request(method, url=base_url + fixed_url, query_params=params,
                                                       headers=headers,
                                                       body=payload)

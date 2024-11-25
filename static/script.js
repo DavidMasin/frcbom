@@ -675,10 +675,14 @@ async function downloadCADFile(partId) {
             console.error( 'Failed to download CAD file.');
         }
         const blob = await response.blob();
+        console.log("Created Blob!")
         const downloadLink = document.createElement('a');
         downloadLink.href = URL.createObjectURL(blob);
-        downloadLink.download = `Part-${partId}.step`;
+        console.log("Created URL!!")
+        downloadLink.download = `Part-${partId}.x_t`;
+        console.log("Downloaded")
         downloadLink.click();
+        console.log("Clicked")
     } catch (error) {
         console.error('Error downloading CAD file:', error);
         alert('Failed to download CAD file. Check the console for details.');

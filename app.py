@@ -323,7 +323,7 @@ def upload_bom_dict():
     data = request.get_json()
     print("Data from Upload: ", data)
     bom_data_dict_new = data.get('bom_data_dict')
-
+    print(data)
     if not bom_data_dict_new:
         return jsonify({"error": "No BOM data provided."}), 400
 

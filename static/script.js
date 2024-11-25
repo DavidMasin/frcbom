@@ -406,6 +406,7 @@ async function fetchBOMDataFromServer(system = 'Main') {
     const currentSystem = window.location.pathname.split('/')[2]; // Get system from URL
     if (currentSystem) {
         system = currentSystem;
+        document.getElementById("systemSelect").setAttribute(system,system)
     }
     const teamNumber = localStorage.getItem('team_number');
     try {

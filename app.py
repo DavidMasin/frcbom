@@ -444,6 +444,7 @@ def clear_bom():
 @app.route('/api/download_cad', methods=['POST'])
 def download_cad():
     data = request.json
+    print(request)
     part_id = data.get('id')
     team_number = data.get("team_number")
     if not part_id or not team_number:
@@ -484,7 +485,7 @@ def download_cad():
                                                       body=payload)
             print("Onshape API Connected.")
 
-            return jsonify({"response": response}), 200
+            return jsonify({"response": "im here and not response"}), 200
         else:
             print("DIDN'T GET ACCESS AND SECRET!!")
             return

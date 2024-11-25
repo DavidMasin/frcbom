@@ -389,6 +389,10 @@ document.getElementById('systemSelect').addEventListener('change', (event) => {
     const selectedSystem = event.target.value;
     console.log("IM HERE3: " + selectedSystem)
     fetchBOMDataFromServer(selectedSystem); // Fetch BOM for the selected system
+    if (teamNumber && selectedSystem) {
+        // Redirect to the system-specific URL
+        window.location.href = `/${teamNumber}/${selectedSystem}`;
+    }
 });
 
 // Fetch BOM Data and Save to Local Storage
@@ -761,15 +765,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const systemSelect = document.getElementById('systemSelect');
     const teamNumber = localStorage.getItem('team_number'); // Get the team number from localStorage
 
-    // Update the URL when a system is selected
-    systemSelect.addEventListener('change', () => {
-        const selectedSystem = systemSelect.value;
-        console.log("CHANGED SYSTEM, Redirecting... ",teamNumber,selectedSystem)
-        if (teamNumber && selectedSystem) {
-            // Redirect to the system-specific URL
-            window.location.href = `/${teamNumber}/${selectedSystem}`;
-        }
-    });
+
 
     // Set the dropdown to the current system from the URL
     const currentSystem = window.location.pathname.split('/')[2]; // Get system from URL

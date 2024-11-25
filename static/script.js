@@ -678,7 +678,7 @@ async function downloadCADFile(partId) {
         console.log("Created Blob!")
         const downloadLink = document.createElement('a');
         downloadLink.href = URL.createObjectURL(blob);
-        console.log("Created URL!!")
+        console.log("Created URL!! and it is: " + downloadLink)
         // downloadLink.download = `Part-${partId}.x_t`;
         // console.log("Downloaded")
         downloadLink.click();

@@ -315,7 +315,7 @@ def admin_get_bom():
 @jwt_required()
 def upload_bom_dict():
     current_user = get_jwt_identity()
-
+    print("Hi there")
     # Check if the user is the admin
     if not is_admin(current_user):
         return jsonify({"error": "Unauthorized access"}), 403

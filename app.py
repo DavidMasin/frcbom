@@ -321,6 +321,7 @@ def upload_bom_dict():
         return jsonify({"error": "Unauthorized access"}), 403
 
     data = request.get_json()
+    print("Data from Upload: ", data)
     bom_data_dict_new = data.get('bom_data_dict')
 
     if not bom_data_dict_new:

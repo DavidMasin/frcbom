@@ -669,10 +669,10 @@ async function downloadCADFile(partId) {
             },
             body: JSON.stringify({id: partId, team_number: teamNumber}),
         });
-
+        console.log(response)
         if (!response.ok) {
-            const error = await response.json();
-            console.error(error.message || 'Failed to download CAD file.');
+            // const error = await response.json();
+            console.error( 'Failed to download CAD file.');
         }
         const blob = await response.blob();
         const downloadLink = document.createElement('a');
@@ -715,6 +715,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Handle BOM Data Upload
     document.getElementById('uploadBOMDictForm').addEventListener('submit', async (event) => {
+        console.log("BOM UPLOAD LISTER!!")
         event.preventDefault();
         const fileInput = document.getElementById('bomDictFileInput');
         const file = fileInput.files[0];

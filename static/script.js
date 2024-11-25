@@ -631,7 +631,7 @@ function savePartQuantities(part) {
     saveBOMDataToLocal(bomData);
 
     // Re-render the BOM grid to reflect changes
-    const currentFilter = localStorage.getItem('current_filter') || 'InHouse';
+    let currentFilter = localStorage.getItem('current_filter') || 'InHouse';
     handleFilterBOM(currentFilter);
 
     // Close the modal
@@ -764,6 +764,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Update the URL when a system is selected
     systemSelect.addEventListener('change', () => {
         const selectedSystem = systemSelect.value;
+        console.log("CHANGED SYSTEM, Redirecting... ",teamNumber,selectedSystem)
         if (teamNumber && selectedSystem) {
             // Redirect to the system-specific URL
             window.location.href = `/${teamNumber}/${selectedSystem}`;

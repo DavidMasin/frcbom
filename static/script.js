@@ -129,7 +129,7 @@ async function handleLogin(event) {
             }
             // Check if admin
             if (teamNumber === "0000") {
-                window.location.href = '/admin_dashboard.html'; // Redirect to admin dashboard
+                window.location.href = '/admin'; // Redirect to admin dashboard
             } else {
                 window.location.href = `/${teamNumber}/${selectedSystem}`;
             }
@@ -386,28 +386,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 document.getElementById('systemSelect').addEventListener('change', (event) => {
-
-    let selectedSystem = event.target.value;
+    const selectedSystem = event.target.value;
     console.log("IM HERE3: " + selectedSystem)
-    if (teamNumber && selectedSystem) {
-        // Redirect to the system-specific URL
-        window.location.href = `/${teamNumber}/${selectedSystem}`;
-    }
-    const currentSystem = window.location.pathname.split('/')[2]; // Get system from URL
-    if (currentSystem) {
-        selectedSystem = currentSystem;
-    }
     fetchBOMDataFromServer(selectedSystem); // Fetch BOM for the selected system
-
 });
 
 // Fetch BOM Data and Save to Local Storage
 async function fetchBOMDataFromServer(system = 'Main') {
-    const currentSystem = window.location.pathname.split('/')[2]; // Get system from URL
-    if (currentSystem) {
-        system = currentSystem;
-        document.getElementById("systemSelect").setAttribute(system,system)
-    }
     const teamNumber = localStorage.getItem('team_number');
     try {
         const response = await fetch(`${API_BASE_URL}/api/get_bom?team_number=${teamNumber}&system=${system}`, {
@@ -646,7 +631,7 @@ function savePartQuantities(part) {
     saveBOMDataToLocal(bomData);
 
     // Re-render the BOM grid to reflect changes
-    let currentFilter = localStorage.getItem('current_filter') || 'InHouse';
+    const currentFilter = localStorage.getItem('current_filter') || 'InHouse';
     handleFilterBOM(currentFilter);
 
     // Close the modal
@@ -671,12 +656,11 @@ window.addEventListener('click', (event) => {
     }
 });
 
-
 async function downloadCADFile(partId) {
     const jwtToken = localStorage.getItem('jwt_token');
 
     try {
-        const response = await fetch(`${API_BASE_URL}api/download_cad`, {
+        const response = await fetch(`${API_BASE_URL}/api/download_cad`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -684,20 +668,18 @@ async function downloadCADFile(partId) {
             },
             body: JSON.stringify({id: partId, team_number: teamNumber}),
         });
-        console.log(response)
+
         if (!response.ok) {
-            // const error = await response.json();
-            console.error( 'Failed to download CAD file.');
+            const error = await response.json();
+            console.error(error.message || 'Failed to download CAD file.');
         }
+        console.log(response.blob())
+        console.log(response.body)
         const blob = await response.blob();
-        console.log("Created Blob!")
         const downloadLink = document.createElement('a');
         downloadLink.href = URL.createObjectURL(blob);
-        console.log("Created URL!! and it is: " + downloadLink.href)
-        downloadLink.download = `Part-${partId}.x_t`;
-        console.log("Downloaded")
+        downloadLink.download = `Part-${partId}.step`;
         downloadLink.click();
-        console.log("Clicked")
     } catch (error) {
         console.error('Error downloading CAD file:', error);
         alert('Failed to download CAD file. Check the console for details.');
@@ -731,52 +713,17 @@ function checkLoginStatus() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-
-    // Handle BOM Data Upload
-    document.getElementById('uploadBOMDictForm').addEventListener('submit', async (event) => {
-        console.log("BOM UPLOAD LISTER!!")
-        event.preventDefault();
-        const fileInput = document.getElementById('bomDictFileInput');
-        const file = fileInput.files[0];
-
-        if (!file) {
-            alert('Please select a file.');
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = async function(e) {
-            try {
-                const bomDataDict = JSON.parse(e.target.result);
-                const adminToken = localStorage.getItem('jwt_token');
-
-                const response = await fetch(`${API_BASE_URL}api/admin/upload_bom_dict`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${adminToken}`,
-                    },
-                    body: JSON.stringify({ bom_data_dict: bomDataDict }),
-                });
-
-                const data = await response.json();
-                if (response.ok) {
-                    alert('BOM data uploaded successfully.');
-                } else {
-                    alert(data.error || 'Failed to upload BOM data.');
-                }
-            } catch (error) {
-                console.error('Error uploading BOM data:', error);
-                alert('Failed to upload BOM data. Ensure the file is a valid JSON.');
-            }
-        };
-        reader.readAsText(file);
-    });
-
     const systemSelect = document.getElementById('systemSelect');
     const teamNumber = localStorage.getItem('team_number'); // Get the team number from localStorage
 
-
+    // Update the URL when a system is selected
+    systemSelect.addEventListener('change', () => {
+        const selectedSystem = systemSelect.value;
+        if (teamNumber && selectedSystem) {
+            // Redirect to the system-specific URL
+            window.location.href = `/${teamNumber}/${selectedSystem}`;
+        }
+    });
 
     // Set the dropdown to the current system from the URL
     const currentSystem = window.location.pathname.split('/')[2]; // Get system from URL
@@ -830,15 +777,9 @@ async function initializeDashboard() {
         window.location.href = '/';
         return;
     }
-    let system
+
     localStorage.setItem('team_number', teamNumber);
-    if (document.getElementById('systemSelect'))
-    {
-        system = document.getElementById('systemSelect').value;
-    }
-    else {
-        system = "Main"
-    }
+    const system = document.getElementById('systemSelect').value;
     const teamNumberElement = document.getElementById('teamNumber');
     if (teamNumberElement) {
         teamNumberElement.textContent = teamNumber;

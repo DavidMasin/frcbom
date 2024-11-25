@@ -386,6 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 document.getElementById('systemSelect').addEventListener('change', (event) => {
+
     let selectedSystem = event.target.value;
     console.log("IM HERE3: " + selectedSystem)
     if (teamNumber && selectedSystem) {
@@ -402,6 +403,10 @@ document.getElementById('systemSelect').addEventListener('change', (event) => {
 
 // Fetch BOM Data and Save to Local Storage
 async function fetchBOMDataFromServer(system = 'Main') {
+    const currentSystem = window.location.pathname.split('/')[2]; // Get system from URL
+    if (currentSystem) {
+        system = currentSystem;
+    }
     const teamNumber = localStorage.getItem('team_number');
     try {
         const response = await fetch(`${API_BASE_URL}/api/get_bom?team_number=${teamNumber}&system=${system}`, {

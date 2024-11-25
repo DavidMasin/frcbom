@@ -461,7 +461,7 @@ def download_cad():
 
             element = OnshapeElement(document_url)
 
-            fixed_url = '/parts/d/did/w/wid/e/eid/partid/pid/parasolid'
+            fixed_url = '/api/v10/parts/d/did/w/wid/e/eid/partid/pid/parasolid'
             method = 'GET'
             did = element.did
             wid = element.wvmid

@@ -661,7 +661,7 @@ async function downloadCADFile(partId) {
     const jwtToken = localStorage.getItem('jwt_token');
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/download_cad`, {
+        const response = await fetch(`${API_BASE_URL}api/download_cad`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -733,7 +733,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const bomDataDict = JSON.parse(e.target.result);
                 const adminToken = localStorage.getItem('jwt_token');
 
-                const response = await fetch('/api/admin/upload_bom_dict', {
+                const response = await fetch(`${API_BASE_URL}api/admin/upload_bom_dict`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

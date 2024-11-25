@@ -38,7 +38,6 @@ class Team(db.Model):
     password = db.Column(db.String(200), nullable=False)
 
 
-
 # Create tables within the application context
 with app.app_context():
     db.create_all()
@@ -51,16 +50,19 @@ secret_key = ""
 base_url = 'https://cad.onshape.com'
 client = Client(configuration={"base_url": base_url, "access_key": access_key, "secret_key": secret_key})
 
+
 @app.route('/')
 def home():
     print("HOME")
     return render_template("index.html")
     # return "HELLO WORLD"
 
+
 @app.route('/<team_number>')
 def team_dashboard(team_number):
     # Pass the team number to the template for dynamic rendering
     return render_template('dashboard.html', team_number=team_number)
+
 
 @app.route('/admin')
 def admin():
@@ -70,10 +72,14 @@ def admin():
 def team_bom_filtered(team_number, machine):
     # Render the dashboard with a filtered BOM
     return render_template('dashboard.html', team_number=team_number, filter_machine=machine)
+
+
 @app.route('/register')
 def register_function(team_number, machine):
     # Render the dashboard with a filtered BOM
     return render_template('register.html')
+
+
 # Register endpoint
 @app.route('/api/register', methods=['POST'])
 def register():
@@ -96,6 +102,7 @@ def register():
 
     return jsonify({"message": "Team registered successfully"}), 200
 
+
 # Login endpoint
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -117,6 +124,7 @@ def login():
     access_token = create_access_token(identity=team_number)
     return jsonify(access_token=access_token, team_number=team_number), 200
 
+
 # Endpoint to check if a team exists
 @app.route('/api/team_exists', methods=['GET'])
 def team_exists():
@@ -134,6 +142,8 @@ def team_exists():
         return jsonify({"exists": True}), 200
     else:
         return jsonify({"exists": False}), 200
+
+
 # Health check endpoint
 @app.route('/api/health', methods=['GET'])
 def health_check():
@@ -225,7 +235,7 @@ def fetch_bom():
             fixed_url = fixed_url.replace('did', did).replace('wid', wid).replace('eid', eid)
 
             response = client.api_client.request(
-                method, url=base_url + fixed_url, query_params={"indented":False}, headers=headers, body={}
+                method, url=base_url + fixed_url, query_params={"indented": False}, headers=headers, body={}
             )
 
             bom_dict = dict(json.loads(response.data))
@@ -243,7 +253,8 @@ def fetch_bom():
             )
 
             bom_data = []
-            for part_name, (description, quantity, material, materialBOM, preProcess, Process1, Process2, part_id) in parts.items():
+            for part_name, (
+            description, quantity, material, materialBOM, preProcess, Process1, Process2, part_id) in parts.items():
                 bom_data.append({
                     "Part Name": part_name,
                     "Description": description,
@@ -269,8 +280,11 @@ def fetch_bom():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
 def is_admin(team_number):
     return team_number == "0000"
+
 
 @app.route('/api/admin/get_bom', methods=['GET'])
 @jwt_required()
@@ -298,6 +312,7 @@ def admin_get_bom():
     else:
         # Fetch BOM for the specific system
         return jsonify({"bom_data": team_bom_data.get(system, [])}), 200
+
 
 @app.route('/api/admin/download_bom_dict', methods=['GET'])
 @jwt_required()
@@ -450,6 +465,7 @@ def download_cad():
     except Exception as e:
         print("Error fetching CAD:", str(e))
         return jsonify({"bom_data": ()}), 500
+
 
 @socketio.on('connect')
 def handle_connect():

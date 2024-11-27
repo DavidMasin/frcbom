@@ -64,8 +64,6 @@ def team_dashboard(team_number):
     return render_template('dashboard.html', team_number=team_number)
 
 
-
-
 @app.route('/<team_number>/<machine>')
 def team_bom_filtered(team_number, machine):
     # Render the dashboard with a filtered BOM
@@ -198,9 +196,9 @@ def fetch_bom():
     global access_key, secret_key, client
     data = request.json
 
-    # Extract necessary data
     document_url = data.get("document_url")
     team_number = data.get("team_number")
+    robot = data.get("robot", "Robot1")  # Default to "Robot1" if not provided
     system = data.get("system", "Main")  # Default to "Main" if no system is provided
     access_key = data.get("access_key")
     secret_key = data.get("secret_key")
@@ -252,7 +250,8 @@ def fetch_bom():
 
             bom_data = []
             for part_name, (
-            description, quantity, material, materialBOM, preProcess, Process1, Process2, part_id) in parts.items():
+                    description, quantity, material, materialBOM, preProcess, Process1, Process2,
+                    part_id) in parts.items():
                 bom_data.append({
                     "Part Name": part_name,
                     "Description": description,
@@ -265,11 +264,15 @@ def fetch_bom():
                     "ID": part_id,
                 })
 
-            # Save BOM data for the specific system
-            if team_number not in bom_data_dict:
-                bom_data_dict[team_number] = {}
+                # Save BOM data for the specific system
+                # Save BOM data under the correct team, robot, and system
+                if team_number not in bom_data_dict:
+                    bom_data_dict[team_number] = {}
 
-            bom_data_dict[team_number][system] = bom_data
+                if robot not in bom_data_dict[team_number]:
+                    bom_data_dict[team_number][robot] = {}
+
+                bom_data_dict[team_number][robot][system] = bom_data
             save_bom_data()
 
             return jsonify({"bom_data": bom_data}), 200
@@ -279,6 +282,42 @@ def fetch_bom():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+@app.route('/api/new_robot', methods=['POST'])
+@jwt_required()
+def new_robot():
+    data = request.json
+    team_number = data.get("team_number")
+    robot_name = data.get("robot_name")
+
+    if not team_number or not robot_name:
+        return jsonify({"error": "Team number and robot name are required"}), 400
+
+    # Ensure the team exists
+    if team_number not in bom_data_dict:
+        return jsonify({"error": "Team not found"}), 404
+
+    # Ensure the robot name is unique
+    if robot_name in bom_data_dict[team_number]:
+        return jsonify({"error": "Robot name already exists"}), 400
+
+    # Create the new robot
+    bom_data_dict[team_number][robot_name] = {"Main": [], "System1": [], "System2": []}
+    save_bom_data()
+
+    return jsonify({"message": f"Robot {robot_name} created successfully"}), 200
+
+@app.route('/api/get_robots', methods=['GET'])
+@jwt_required()
+def get_robots():
+    team_number = request.args.get('team_number')
+
+    if not team_number:
+        return jsonify({"error": "Team number is required"}), 400
+
+    # Fetch robots for the team
+    robots = list(bom_data_dict.get(team_number, {}).keys())
+    return jsonify({"robots": robots}), 200
 
 def is_admin(team_number):
     return team_number == "0000"
@@ -311,6 +350,7 @@ def admin_get_bom():
         # Fetch BOM for the specific system
         return jsonify({"bom_data": team_bom_data.get(system, [])}), 200
 
+
 @app.route('/api/admin/upload_bom_dict', methods=['POST'])
 @jwt_required()
 def upload_bom_dict():
@@ -337,6 +377,7 @@ def upload_bom_dict():
     save_bom_data()
 
     return jsonify({"message": "BOM data uploaded successfully."}), 200
+
 
 @app.route('/api/admin/download_bom_dict', methods=['GET'])
 @jwt_required()
@@ -479,13 +520,13 @@ def download_cad():
             fixed_url = fixed_url.replace('pid', part_id)
             print("Connecting to Onshape's API...")
             url = base_url + fixed_url
-            print("URL: " , url)
+            print("URL: ", url)
             response = client_data.api_client.request(method, url=url, query_params=params,
                                                       headers=headers,
                                                       body=payload)
             print("Onshape API Connected.")
-            print("Response: ",response)
-            return jsonify({"response":response.data}), 200
+            print("Response: ", response)
+            return jsonify({"response": response.data}), 200
         else:
             print("DIDN'T GET ACCESS AND SECRET!!")
             return

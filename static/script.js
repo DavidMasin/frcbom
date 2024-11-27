@@ -831,3 +831,79 @@ document.querySelectorAll('.filter-button').forEach(button => {
         button.style.backgroundColor = '#007BFF'; // Revert back
     });
 });
+
+document.getElementById('newRobotButton').addEventListener('click', () => {
+    const teamNumber = localStorage.getItem('team_number');
+    const robotName = prompt('Enter a name for the new robot (e.g., Robot2):');
+
+    if (!robotName) {
+        alert('Robot name is required.');
+        return;
+    }
+
+    const token = localStorage.getItem('jwt_token');
+
+    fetch(`${API_BASE_URL}api/new_robot`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ team_number: teamNumber, robot_name: robotName }),
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (response.ok) {
+                alert(data.message);
+                loadRobotSelector(); // Reload the robot selector
+            } else {
+                alert(data.error || 'Failed to create a new robot.');
+            }
+        })
+        .catch((error) => {
+            console.error('Error creating new robot:', error);
+            alert('Failed to create a new robot.');
+        });
+});
+
+function loadRobotSelector() {
+    const teamNumber = localStorage.getItem('team_number');
+    const token = localStorage.getItem('jwt_token');
+
+    fetch(`${API_BASE_URL}api/get_robots?team_number=${teamNumber}`, {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (response.ok) {
+                const robotSelector = document.getElementById('robotSelector');
+                robotSelector.innerHTML = ''; // Clear existing options
+
+                const select = document.createElement('select');
+                select.id = 'robotSelect';
+                data.robots.forEach((robot) => {
+                    const option = document.createElement('option');
+                    option.value = robot;
+                    option.textContent = robot;
+                    select.appendChild(option);
+                });
+
+                // Add change listener to update the current robot
+                select.addEventListener('change', () => {
+                    const selectedRobot = select.value;
+                    localStorage.setItem('current_robot', selectedRobot);
+                    alert(`Switched to ${selectedRobot}`);
+                    // Optionally reload the BOM data here
+                });
+
+                robotSelector.appendChild(select);
+            } else {
+                alert(data.error || 'Failed to load robots.');
+            }
+        })
+        .catch((error) => {
+            console.error('Error loading robots:', error);
+        });
+}

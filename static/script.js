@@ -835,7 +835,6 @@ document.querySelectorAll('.filter-button').forEach(button => {
 document.getElementById('newRobotButton').addEventListener('click', () => {
     const teamNumber = localStorage.getItem('team_number');
     const robotName = prompt('Enter a name for the new robot (e.g., Robot2):');
-
     if (!robotName) {
         alert('Robot name is required.');
         return;
@@ -851,9 +850,12 @@ document.getElementById('newRobotButton').addEventListener('click', () => {
         },
         body: JSON.stringify({ team_number: teamNumber, robot_name: robotName }),
     })
-        .then((response) => response.json())
-        .then((data) => {
-            if (response.ok) {
+        .then((response) => {
+            // Save response for both the status and the data
+            return response.json().then((data) => ({ status: response.ok, data }));
+        })
+        .then(({ status, data }) => {
+            if (status) {
                 alert(data.message);
                 loadRobotSelector(); // Reload the robot selector
             } else {
@@ -866,6 +868,7 @@ document.getElementById('newRobotButton').addEventListener('click', () => {
         });
 });
 
+
 function loadRobotSelector() {
     const teamNumber = localStorage.getItem('team_number');
     const token = localStorage.getItem('jwt_token');
@@ -875,9 +878,12 @@ function loadRobotSelector() {
             'Authorization': `Bearer ${token}`,
         },
     })
-        .then((response) => response.json())
-        .then((data) => {
-            if (response.ok) {
+        .then((response) => {
+            // Preserve both the status and data
+            return response.json().then((data) => ({ status: response.ok, data }));
+        })
+        .then(({ status, data }) => {
+            if (status) {
                 const robotSelector = document.getElementById('robotSelector');
                 robotSelector.innerHTML = ''; // Clear existing options
 
@@ -905,5 +911,6 @@ function loadRobotSelector() {
         })
         .catch((error) => {
             console.error('Error loading robots:', error);
+            alert('An error occurred while loading robots.');
         });
 }

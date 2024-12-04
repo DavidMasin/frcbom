@@ -640,7 +640,7 @@ function savePartQuantities(part) {
     }
 
     // Save the updated BOM data back to localStorage
-    saveBOMDataToLocal(bomData, systemSelect);
+    saveBOMDataToLocal(bomData,robot_name, systemSelect);
 
     // Re-render the BOM grid to reflect changes
     const currentFilter = localStorage.getItem('current_filter') || 'InHouse';

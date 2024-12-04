@@ -295,7 +295,7 @@ def new_robot():
 
     # Ensure the team exists
     if team_number not in bom_data_dict:
-        return jsonify({"error": "Team not found"}), 404
+        bom_data_dict[team_number]={}
 
     # Ensure the robot name is unique
     if robot_name in bom_data_dict[team_number]:

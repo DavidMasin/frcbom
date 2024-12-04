@@ -215,14 +215,16 @@ document.querySelectorAll('.filter-button').forEach(button => {
 
 // Function to handle filtering BOM data
 function handleFilterBOM(filter) {
+    const robotName = localStorage.getItem('robot_name'); // Or however you store/retrieve it
     let systemSelect
     if (document.getElementById("systemSelect")) {
         systemSelect = document.getElementById("systemSelect").value;
     } else {
         systemSelect = "Main"
     }
-    const bomData = getBOMDataFromLocal(systemSelect);
+    const bomData = getBOMDataFromLocal(robotName,systemSelect);
     let filteredData;
+    console.log("BOM DATA3: ",bomData)
 
     // Save the current filter to localStorage
     localStorage.setItem('current_filter', filter);
@@ -429,11 +431,12 @@ function saveBOMDataToLocal(bomData, robotName, system) {
 }
 
 
-function getBOMDataFromLocal(system) {
+function getBOMDataFromLocal(robotName, system) {
     const teamNumber = localStorage.getItem('team_number');
     const bomDict = JSON.parse(localStorage.getItem('bom_data')) || {};
-    return bomDict[teamNumber]?.[system] || [];
+    return bomDict[teamNumber]?.[robotName]?.[system] || [];
 }
+
 
 
 // Display team number
@@ -621,7 +624,7 @@ function savePartQuantities(part) {
     } else {
         systemSelect = "Main"
     }
-    let bomData = getBOMDataFromLocal(systemSelect);
+    let bomData = getBOMDataFromLocal(robot_name,systemSelect);
     console.log('Pre-Process Qty:', preProcessQty);
     console.log('Process 1 Qty:', process1Qty);
     console.log('Process 2 Qty:', process2Qty);

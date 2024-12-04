@@ -1,7 +1,11 @@
-# Redirect system-specific routes to dashboard.html
-/:team_number/:system    /dashboard.html   200
+# Redirect system-specific routes with robot name to dashboard.html
+/:team_number/:robot_name/:system    /dashboard.html   200
 
-# Redirect team number routes to dashboard.html
+# Redirect team number and robot name routes to dashboard.html
+/:team_number/:robot_name    /dashboard.html   200
+
+# Redirect team number routes to dashboard.html (for compatibility)
+# Optionally, you can redirect to a robot selection page
 /:team_number    /dashboard.html   200
 
 # Proxy API requests to your Railway back-end
@@ -14,4 +18,3 @@
 
 # Explicit redirect for register
 /register   /register.html  200
-

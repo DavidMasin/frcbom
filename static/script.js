@@ -234,6 +234,7 @@ function handleFilterBOM(filter) {
     // Normalize the filter string
     const normalizedFilter = filter.trim().toLowerCase();
     console.log("normalizedFilter: ",normalizedFilter)
+    console.log("BOM DATA2: ",bomData)
     // Apply filtering based on the selected filter
     switch (normalizedFilter) {
         case 'all':

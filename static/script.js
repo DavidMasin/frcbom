@@ -233,7 +233,7 @@ function handleFilterBOM(filter) {
     });
     // Normalize the filter string
     const normalizedFilter = filter.trim().toLowerCase();
-
+    console.log("normalizedFilter: ",normalizedFilter)
     // Apply filtering based on the selected filter
     switch (normalizedFilter) {
         case 'all':

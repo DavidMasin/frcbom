@@ -890,7 +890,7 @@ function showRobotSelectionDashboard(robots) {
         promptNewRobotCreation(localStorage.getItem('team_number'));
     });
 
-    document.getElementById('dashboardContent').style.display = 'none';
+    // document.getElementById('dashboardContent').style.display = 'none';
     robotSelectionSection.style.display = 'block';
 }
 

@@ -863,7 +863,7 @@ async function initializeDashboard() {
         } else {
             localStorage.setItem('robot_name', robotName);
             document.getElementById('teamNumber').textContent = teamNumber;
-            document.getElementById('robotName').textContent = robotName;
+            // document.getElementById('robotName').textContent = robotName;
             await fetchBOMDataFromServer(robotName, system);
         }
     }

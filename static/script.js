@@ -135,7 +135,7 @@ async function handleLogin(event) {
             }
             // Check if admin
             if (teamNumber === "0000") {
-                window.location.href = '/admin'; // Redirect to admin dashboard
+                window.location.href = '/admin_dashboard.html'; // Redirect to admin dashboard
             } else {
                 window.location.href = `/${teamNumber}/${selectedSystem}`;
             }
@@ -240,6 +240,7 @@ function handleFilterBOM(filter) {
             filteredData = bomData;
             break;
         case 'cots':
+            console.log("IN COTS")
             filteredData = bomData.filter(item =>
                 !item.preProcess && !item.Process1 && !item.Process2
             );
@@ -453,6 +454,7 @@ document.getElementById('fetchBOMButton').addEventListener('click', async () => 
     const secretKey = document.getElementById('secretKey').value;
     const system = document.getElementById('systemSelect').value; // Get selected system
     const teamNumber = localStorage.getItem('team_number');
+    const robot_name = localStorage.getItem('robot_name');
 
     if (!documentUrl || !teamNumber) {
         alert('Document URL and Team Number are required.');
@@ -475,7 +477,7 @@ document.getElementById('fetchBOMButton').addEventListener('click', async () => 
         const data = await response.json();
         if (response.ok) {
             console.log(`BOM fetched and saved for system '${system}'.`);
-            saveBOMDataToLocal(data.bom_data, system); // Save to local storage
+            saveBOMDataToLocal(data.bom_data,robot_name, system); // Save to local storage
             displayBOMAsButtons(data.bom_data); // Update the UI
         } else {
             console.error('Error fetching BOM:', data.error);
@@ -600,7 +602,11 @@ function savePartQuantities(part) {
     const preProcessQty = document.getElementById('preProcessQty')?.value || part.preProcessQuantity || 0;
     const process1Qty = document.getElementById('process1Qty')?.value || part.process1Quantity || 0;
     const process2Qty = document.getElementById('process2Qty')?.value || part.process2Quantity || 0;
-
+    const robot_name = localStorage.getItem('robot_name');
+    if (! robot_name)
+    {
+        console.log("NO ROBOT IN SAVE PART QTY")
+    }
     // Update the part's properties
     part.preProcessQuantity = parseInt(preProcessQty, 10);
     part.process1Quantity = parseInt(process1Qty, 10);

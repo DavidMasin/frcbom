@@ -56,7 +56,7 @@
 
     <script src="/static/script.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', (input, init) => {
             // Admin Token
             const adminToken = localStorage.getItem('jwt_token');
 
@@ -67,10 +67,11 @@
             });
 
             // Download BOM Dict
-            document.getElementById('downloadBOMDictButton').addEventListener('click', async () => {
+            document.getElementById('downloadBOMDictButton').addEventListener('click', async (input, init) => {
                 try {
-                    const response = await fetch('/api/admin/download_bom_dict', {
-                        headers: { 'Authorization': `Bearer ${adminToken}` },
+                    const response = await fetch(API_BASE_URL, 'api/admin/download_bom_dict', {
+
+                        headers: {'Authorization': `Bearer ${adminToken}`},
                     });
 
                     const data = await response.json();
@@ -97,9 +98,9 @@
                 const system = document.getElementById('systemSelect').value;
 
                 try {
-                    const response = await fetch(`/api/admin/get_bom?team_number=${teamNumber}&system=${system}`, {
+                    const response = await fetch(API_BASE_URL, `api/admin/get_bom?team_number=${teamNumber}&system=${system}`, {
                         headers: { 'Authorization': `Bearer ${adminToken}` },
-                    });
+                    });``
 
                     const data = await response.json();
                     if (response.ok) {

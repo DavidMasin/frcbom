@@ -494,7 +494,7 @@ document.getElementById('fetchBOMButton').addEventListener('click', async () => 
 function displayBOMAsButtons(bomData) {
     const gridContainer = document.getElementById('bomPartsGrid');
     gridContainer.innerHTML = ''; // Clear previous content
-
+    console.log("BOMDATA1: ",bomData)
     bomData.sort((a, b) => (a["Part Name"] || '').localeCompare(b["Part Name"] || ''));
 
     bomData.forEach(part => {

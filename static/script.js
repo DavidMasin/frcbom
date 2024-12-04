@@ -54,60 +54,114 @@ async function handlePasswordSubmit() {
 }
 
 function showPasswordPrompt() {
-    // Create the overlay element
-    const overlay = document.createElement('div');
-    overlay.id = 'passwordOverlay';
-    overlay.className = 'modal'; // Use your existing modal styling
-    overlay.style.display = 'flex';
+    return new Promise((resolve, reject) => {
+        // Create the overlay element
+        const overlay = document.createElement('div');
+        overlay.id = 'passwordOverlay';
+        overlay.className = 'modal'; // Use your existing modal styling
+        overlay.style.display = 'flex';
 
-    // Create the modal content
-    const modalContent = document.createElement('div');
-    modalContent.className = 'modal-content';
+        // Create the modal content
+        const modalContent = document.createElement('div');
+        modalContent.className = 'modal-content';
 
-    // Close button (optional)
-    const closeButton = document.createElement('span');
-    closeButton.className = 'close';
-    closeButton.innerHTML = '&times;';
-    closeButton.onclick = () => {
-        overlay.style.display = 'none';
-        document.body.style.filter = 'none';
-    };
+        // Close button (optional)
+        const closeButton = document.createElement('span');
+        closeButton.className = 'close';
+        closeButton.innerHTML = '&times;';
+        closeButton.onclick = () => {
+            overlay.style.display = 'none';
+            document.body.style.filter = 'none';
+        };
 
-    // Prompt message
-    const promptText = document.createElement('h2');
-    promptText.textContent = 'Please enter your password to access the dashboard';
+        // Prompt message
+        const promptText = document.createElement('h2');
+        promptText.textContent = 'Please enter your password to access the dashboard';
 
-    // Password input field
-    const passwordInput = document.createElement('input');
-    passwordInput.type = 'password';
-    passwordInput.id = 'passwordPromptInput';
-    passwordInput.placeholder = 'Password';
-    passwordInput.style.width = '80%';
-    passwordInput.style.padding = '10px';
-    passwordInput.style.marginTop = '20px';
+        // Password input field
+        const passwordInput = document.createElement('input');
+        passwordInput.type = 'password';
+        passwordInput.id = 'passwordPromptInput';
+        passwordInput.placeholder = 'Password';
+        passwordInput.style.width = '80%';
+        passwordInput.style.padding = '10px';
+        passwordInput.style.marginTop = '20px';
 
-    // Submit button
-    const submitButton = document.createElement('button');
-    submitButton.textContent = 'Submit';
-    submitButton.className = 'button-primary';
-    submitButton.style.marginTop = '20px';
+        // Submit button
+        const submitButton = document.createElement('button');
+        submitButton.textContent = 'Submit';
+        submitButton.className = 'button-primary';
+        submitButton.style.marginTop = '20px';
 
-    submitButton.addEventListener('click', handlePasswordSubmit);
+        submitButton.addEventListener('click', handlePasswordSubmit);
 
-    // Append elements to modal content
-    modalContent.appendChild(closeButton);
-    modalContent.appendChild(promptText);
-    modalContent.appendChild(passwordInput);
-    modalContent.appendChild(submitButton);
+        // Append elements to modal content
+        modalContent.appendChild(closeButton);
+        modalContent.appendChild(promptText);
+        modalContent.appendChild(passwordInput);
+        modalContent.appendChild(submitButton);
 
-    // Append modal content to overlay
-    overlay.appendChild(modalContent);
+        // Append modal content to overlay
+        overlay.appendChild(modalContent);
 
-    // Append overlay to body
-    document.body.appendChild(overlay);
+        // Append overlay to body
+        document.body.appendChild(overlay);
 
-    // Blur the background content
-    // document.body.style.filter = 'blur(5px)';
+        // Blur the background content
+        // document.body.style.filter = 'blur(5px)';
+
+        async function handlePasswordSubmit() {
+            const password = document.getElementById('passwordPromptInput').value;
+            const teamNumber = localStorage.getItem('team_number');
+
+            if (!password || !teamNumber) {
+                alert('Please enter a password');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}api/login`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({team_number: teamNumber, password})
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    localStorage.setItem('jwt_token', data.access_token);
+                    // Remove the overlay
+                    const overlay = document.getElementById('passwordOverlay');
+                    overlay.remove();
+                    // Remove blur from background
+                    document.body.style.filter = 'none';
+                    resolve(); // Resolve the Promise
+                } else {
+                    alert('Incorrect password');
+                    reject(); // Reject the Promise
+                }
+            } catch (error) {
+                console.error('Login Error:', error);
+                alert('An error occurred while logging in.');
+                reject(); // Reject the Promise
+            }
+        }
+
+        // ... existing code to create the modal ...
+
+        // Attach event listener to the submit button
+        submitButton.addEventListener('click', handlePasswordSubmit);
+
+        // Append elements and show the modal
+        // ... existing code ...
+
+        // Close button handler to reject the Promise
+        closeButton.onclick = () => {
+            overlay.style.display = 'none';
+            document.body.style.filter = 'none';
+            reject(); // Reject the Promise
+        };
+    });
+
 }
 
 // Handle Login
@@ -390,9 +444,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.getElementById('systemSelect').addEventListener('change', (event) => {
     const selectedSystem = event.target.value;
-    console.log("IM HERE3: " + selectedSystem)
-    fetchBOMDataFromServer(selectedSystem); // Fetch BOM for the selected system
+    const teamNumber = localStorage.getItem('team_number');
+    const robotName = localStorage.getItem('robot_name');
+    if (teamNumber && robotName && selectedSystem) {
+        window.location.href = `/${teamNumber}/${robotName}/${selectedSystem}`;
+    }
 });
+
 
 // Fetch BOM Data and Save to Local Storage
 async function fetchBOMDataFromServer(robotName, system = 'Main') {
@@ -758,8 +816,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Function to initialize the dashboard
 async function initializeDashboard() {
-    const {teamNumber, robotName, system} = parseURL();
-    const jwtToken = localStorage.getItem('jwt_token');
+    const { teamNumber, robotName, system } = parseURL();
+    let jwtToken = localStorage.getItem('jwt_token');
 
     if (!teamNumber) {
         alert('Invalid team number in URL. Redirecting to the home page.');
@@ -776,37 +834,85 @@ async function initializeDashboard() {
 
     localStorage.setItem('team_number', teamNumber);
 
+    if (!jwtToken) {
+        await showPasswordPrompt();
+        jwtToken = localStorage.getItem('jwt_token');
+        if (!jwtToken) {
+            alert('You must be logged in to access the dashboard.');
+            window.location.href = '/';
+            return;
+        }
+    }
+
+    const robots = await getTeamRobots(teamNumber);
+
     if (!robotName) {
-        const hasRobots = await checkTeamHasRobots(teamNumber);
-        if (!hasRobots) {
-            promptNewRobotCreation(teamNumber);
+        if (robots.length > 0) {
+            showRobotSelectionDashboard(robots);
         } else {
-            const robots = await getTeamRobots(teamNumber);
-            if (robots.length > 0) {
-                window.location.href = `/${teamNumber}/${robots[0]}/${system}`;
-                return;
-            } else {
-                promptNewRobotCreation(teamNumber);
-            }
+            promptNewRobotCreation(teamNumber);
         }
     } else {
-        localStorage.setItem('robot_name', robotName);
-    }
-
-    const teamNumberElement = document.getElementById('teamNumber');
-    if (teamNumberElement) {
-        teamNumberElement.textContent = teamNumber;
-    }
-
-    if (!jwtToken) {
-        showPasswordPrompt();
-    } else {
-        fetchBOMDataFromServer(robotName, system);
+        if (!robots.includes(robotName)) {
+            const createRobot = confirm(`Robot ${robotName} does not exist. Would you like to create it?`);
+            if (createRobot) {
+                createNewRobot(teamNumber, robotName);
+            } else {
+                window.location.href = `/${teamNumber}`;
+            }
+        } else {
+            localStorage.setItem('robot_name', robotName);
+            document.getElementById('teamNumber').textContent = teamNumber;
+            document.getElementById('robotName').textContent = robotName;
+            await fetchBOMDataFromServer(robotName, system);
+        }
     }
 
     document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
 }
+function showRobotSelectionDashboard(robots) {
+    const robotSelectionSection = document.getElementById('robotSelection');
+    const robotList = document.getElementById('robotList');
+    robotList.innerHTML = '';
 
+    robots.forEach(robot => {
+        const robotButton = document.createElement('button');
+        robotButton.className = 'robot-button';
+        robotButton.textContent = robot;
+        robotButton.addEventListener('click', () => {
+            const teamNumber = localStorage.getItem('team_number');
+            window.location.href = `/${teamNumber}/${robot}/Main`;
+        });
+        robotList.appendChild(robotButton);
+    });
+
+    document.getElementById('createRobotButton').addEventListener('click', () => {
+        promptNewRobotCreation(localStorage.getItem('team_number'));
+    });
+
+    document.getElementById('dashboardContent').style.display = 'none';
+    robotSelectionSection.style.display = 'block';
+}
+
+
+async function getTeamRobots(teamNumber) {
+    const token = localStorage.getItem('jwt_token');
+    try {
+        const response = await fetch(`${API_BASE_URL}api/get_robots?team_number=${teamNumber}`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+        });
+        const data = await response.json();
+        if (response.ok) {
+            return data.robots;
+        } else {
+            console.error('Failed to get robots:', data.error);
+            return [];
+        }
+    } catch (error) {
+        console.error('Error getting robots:', error);
+        return [];
+    }
+}
 
 async function checkTeamHasRobots(teamNumber) {
     const token = localStorage.getItem('jwt_token');
@@ -828,13 +934,23 @@ async function checkTeamHasRobots(teamNumber) {
 }
 
 function promptNewRobotCreation(teamNumber) {
-    const robotName = prompt('You do not have any robots. Please enter a name for your first robot:');
+    const robotName = prompt('Please enter a name for your new robot:');
     if (!robotName) {
         alert('Robot name is required to proceed.');
         return;
     }
-
+    createNewRobot(teamNumber, robotName);
+}
+function createNewRobot(teamNumber, robotName) {
     const token = localStorage.getItem('jwt_token');
+
+    if (!token) {
+        // User is not logged in, show login prompt
+        showPasswordPrompt().then(() => {
+            createNewRobot(teamNumber, robotName);
+        });
+        return;
+    }
 
     fetch(`${API_BASE_URL}api/new_robot`, {
         method: 'POST',
@@ -842,10 +958,10 @@ function promptNewRobotCreation(teamNumber) {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({team_number: teamNumber, robot_name: robotName}),
+        body: JSON.stringify({ team_number: teamNumber, robot_name: robotName }),
     })
-        .then((response) => response.json().then((data) => ({status: response.ok, data})))
-        .then(({status, data}) => {
+        .then((response) => response.json().then((data) => ({ status: response.ok, data })))
+        .then(({ status, data }) => {
             if (status) {
                 alert(data.message);
                 window.location.href = `/${teamNumber}/${robotName}/Main`;
@@ -858,6 +974,7 @@ function promptNewRobotCreation(teamNumber) {
             alert('Failed to create a new robot.');
         });
 }
+
 
 async function checkTeamExists(teamNumber) {
     try {

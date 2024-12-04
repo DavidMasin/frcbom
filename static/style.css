@@ -613,3 +613,26 @@ section {
     outline: none;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
 }
+
+.robot-selection {
+    text-align: center;
+    margin-top: 50px;
+}
+
+.robot-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.robot-button {
+    margin: 10px;
+    padding: 15px 30px;
+    font-size: 1.2em;
+    cursor: pointer;
+}
+
+.button-primary {
+    margin-top: 20px;
+}

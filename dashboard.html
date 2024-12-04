@@ -15,14 +15,15 @@
         <h1>FRC BOM Dashboard</h1>
         <h2>Welcome, Team <span id="teamNumber"></span></h2>
         <button id="logoutButton" class="button-primary">Log Out</button>
-        <div class="robot-actions">
-            <button id="newRobotButton" class="button-secondary">New Robot</button>
-            <div id="robotSelector">
-                <!-- Dynamically populated robot selector -->
-            </div>
-        </div>
     </header>
-
+    <!-- Robot Selection Section -->
+    <section id="robotSelection" class="robot-selection" style="display: none;">
+        <h2>Select a Robot</h2>
+        <div id="robotList" class="robot-list">
+            <!-- Robots will be listed here -->
+        </div>
+        <button id="createRobotButton" class="button-primary">Create New Robot</button>
+    </section>
     <!-- Dashboard Controls Section -->
     <section class="dashboard-controls">
         <!-- System Selection -->

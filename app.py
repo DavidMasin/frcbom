@@ -58,16 +58,16 @@ def home():
     # return "HELLO WORLD"
 
 
-@app.route('/<team_number>')
-def team_dashboard(team_number):
-    # Pass the team number to the template for dynamic rendering
-    return render_template('dashboard.html', team_number=team_number)
+@app.route('/<team_number>/<robot_name>')
+def team_dashboard(team_number, robot_name):
+    # Pass the team number and robot name to the template for dynamic rendering
+    return render_template('dashboard.html', team_number=team_number, robot_name=robot_name)
 
-
-@app.route('/<team_number>/<machine>')
-def team_bom_filtered(team_number, machine):
+@app.route('/<team_number>/<robot_name>/<system>')
+def team_bom_filtered(team_number, robot_name, system):
     # Render the dashboard with a filtered BOM
-    return render_template('dashboard.html', team_number=team_number, filter_machine=machine)
+    return render_template('dashboard.html', team_number=team_number, robot_name=robot_name, filter_system=system)
+
 
 
 @app.route('/register')
@@ -447,24 +447,22 @@ def save_bom():
 def get_bom():
     current_user = get_jwt_identity()
     team_number = request.args.get('team_number')
-    system = request.args.get('system', 'Main')  # Default to "Main"
+    robot = request.args.get('robot')
+    system = request.args.get('system', 'Main')
 
-    if not team_number:
-        return jsonify({"error": "Team number is required"}), 400
+    if not team_number or not robot:
+        return jsonify({"error": "Team number and robot name are required"}), 400
 
-    # Restrict non-admin users from accessing admin BOM data
-    if team_number == "0000" and not is_admin(current_user):
-        return jsonify({"error": "Unauthorized access"}), 403
-
-    # Fetch BOM data
+        # Fetch BOM data
     team_bom_data = bom_data_dict.get(team_number, {})
+    robot_bom_data = team_bom_data.get(robot, {})
     if system == "Main":
         combined_bom = []
-        for sys_bom in team_bom_data.values():
+        for sys_bom in robot_bom_data.values():
             combined_bom.extend(sys_bom)
         return jsonify({"bom_data": combined_bom}), 200
     else:
-        return jsonify({"bom_data": team_bom_data.get(system, [])}), 200
+        return jsonify({"bom_data": robot_bom_data.get(system, [])}), 200
 
 
 # Endpoint to clear BOM data for a specific team (Optional)

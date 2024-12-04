@@ -1,16 +1,22 @@
 const API_BASE_URL = 'https://frcbom-production.up.railway.app/';
 let teamNumber = localStorage.getItem('team_number');
 
-function getTeamNumberFromURL() {
+function parseURL() {
     const path = window.location.pathname;
     const pathSegments = path.split('/').filter(segment => segment !== '');
-    if (pathSegments.length > 0) {
-        const teamNumber = pathSegments[0];
-        return teamNumber;
+    const params = {};
+    if (pathSegments.length >= 2) {
+        params.teamNumber = pathSegments[0];
+        params.robotName = pathSegments[1];
+        params.system = pathSegments[2] || 'Main';
     } else {
-        return null;
+        params.teamNumber = pathSegments[0];
+        params.robotName = null;
+        params.system = 'Main';
     }
+    return params;
 }
+
 
 async function handlePasswordSubmit() {
     const password = document.getElementById('passwordPromptInput').value;
@@ -331,18 +337,11 @@ async function handleRegister(event) {
     }
 }
 
-function showLoginMessage(message, type) {
-    const loginMessage = document.getElementById('loginMessage');
-    loginMessage.textContent = message;
-    loginMessage.className = `alert alert-${type} mt-3`;
-    loginMessage.classList.remove('d-none');
-}
-
 // Initialize event listeners
 document.addEventListener('DOMContentLoaded', () => {
     console.log("Loading content")
     if (document.getElementById('dashboard')) {
-        initializeDashboard();
+        initializeDashboard().then(() => {});
         console.log("Dashboard initialized");
     }
     const loginForm = document.getElementById('loginForm');
@@ -372,7 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch BOM data from the server on page load (if applicable)
     if (window.location.pathname.includes('dashboard.html')) {
         console.log("Im Here")
-        fetchBOMDataFromServer('Main');
+        fetchBOMDataFromServer('Main').then(() => {});
     }
 
     // Modal Logic (move inside DOMContentLoaded)
@@ -392,38 +391,41 @@ document.getElementById('systemSelect').addEventListener('change', (event) => {
 });
 
 // Fetch BOM Data and Save to Local Storage
-async function fetchBOMDataFromServer(system = 'Main') {
+async function fetchBOMDataFromServer(robotName, system = 'Main') {
     const teamNumber = localStorage.getItem('team_number');
     try {
-        const response = await fetch(`${API_BASE_URL}/api/get_bom?team_number=${teamNumber}&system=${system}`, {
+        const response = await fetch(`${API_BASE_URL}/api/get_bom?team_number=${teamNumber}&robot=${robotName}&system=${system}`, {
             headers: {'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`}
         });
-        console.log("System: " + system)
         const data = await response.json();
         if (response.ok) {
-            saveBOMDataToLocal(data.bom_data, system);
+            saveBOMDataToLocal(data.bom_data, robotName, system);
             displayBOMAsButtons(data.bom_data);
         } else {
-            console.error(`Failed to retrieve BOM for system '${system}':`, data.error);
+            console.error(`Failed to retrieve BOM for robot '${robotName}' and system '${system}':`, data.error);
             alert(`Error: ${data.error}`);
         }
     } catch (error) {
-        console.error(`Fetch BOM Data Error for system '${system}':`, error);
+        console.error(`Fetch BOM Data Error for robot '${robotName}' and system '${system}':`, error);
     }
 }
 
+
 // Save BOM Data Locally for a System
-function saveBOMDataToLocal(bomData, system) {
+function saveBOMDataToLocal(bomData, robotName, system) {
     const teamNumber = localStorage.getItem('team_number');
     const bomDict = JSON.parse(localStorage.getItem('bom_data')) || {};
     if (!bomDict[teamNumber]) {
         bomDict[teamNumber] = {};
     }
-    bomDict[teamNumber][system] = bomData;
+    if (!bomDict[teamNumber][robotName]) {
+        bomDict[teamNumber][robotName] = {};
+    }
+    bomDict[teamNumber][robotName][system] = bomData;
     localStorage.setItem('bom_data', JSON.stringify(bomDict));
-    console.log(bomData)
-    console.log(`Saved BOM for system '${system}' locally.`);
+    console.log(`Saved BOM for robot '${robotName}' and system '${system}' locally.`);
 }
+
 
 function getBOMDataFromLocal(system) {
     const teamNumber = localStorage.getItem('team_number');
@@ -628,7 +630,7 @@ function savePartQuantities(part) {
     }
 
     // Save the updated BOM data back to localStorage
-    saveBOMDataToLocal(bomData,systemSelect);
+    saveBOMDataToLocal(bomData, systemSelect);
 
     // Re-render the BOM grid to reflect changes
     const currentFilter = localStorage.getItem('current_filter') || 'InHouse';
@@ -700,33 +702,19 @@ function determineCurrentProcess(part) {
     }
 }
 
-function checkLoginStatus() {
-    const storedTeamNumber = localStorage.getItem('team_number');
-    const currentPath = window.location.pathname.split('/');
-    const currentTeamNumber = currentPath[1]; // Extract the team number from the URL
-
-    // Redirect if not logged in or if team number mismatch
-    // if (!storedTeamNumber || storedTeamNumber !== currentTeamNumber) {
-    //     alert('You are not logged in. Redirecting to the login page.');
-    //     window.location.href = '/'; // Redirect to home/login
-    // }
-}
 
 document.addEventListener('DOMContentLoaded', () => {
     const systemSelect = document.getElementById('systemSelect');
-    const teamNumber = localStorage.getItem('team_number'); // Get the team number from localStorage
+    const {teamNumber, robotName} = parseURL();
 
-    // Update the URL when a system is selected
     systemSelect.addEventListener('change', () => {
         const selectedSystem = systemSelect.value;
-        if (teamNumber && selectedSystem) {
-            // Redirect to the system-specific URL
-            window.location.href = `/${teamNumber}/${selectedSystem}`;
+        if (teamNumber && robotName && selectedSystem) {
+            window.location.href = `/${teamNumber}/${robotName}/${selectedSystem}`;
         }
     });
 
-    // Set the dropdown to the current system from the URL
-    const currentSystem = window.location.pathname.split('/')[2]; // Get system from URL
+    const currentSystem = parseURL().system;
     if (currentSystem) {
         systemSelect.value = currentSystem;
     }
@@ -755,14 +743,12 @@ document.addEventListener('DOMContentLoaded', () => {
             this.classList.toggle('fa-eye-slash');
         });
     }
-    checkLoginStatus();
 });
 
 
 // Function to initialize the dashboard
 async function initializeDashboard() {
-    const teamNumber = getTeamNumberFromURL();
-    console.log("TEAM NUMBER: ", teamNumber)
+    const {teamNumber, robotName, system} = parseURL();
     const jwtToken = localStorage.getItem('jwt_token');
 
     if (!teamNumber) {
@@ -779,25 +765,89 @@ async function initializeDashboard() {
     }
 
     localStorage.setItem('team_number', teamNumber);
-    const system = document.getElementById('systemSelect').value;
+
+    if (!robotName) {
+        const hasRobots = await checkTeamHasRobots(teamNumber);
+        if (!hasRobots) {
+            promptNewRobotCreation(teamNumber);
+        } else {
+            const robots = await getTeamRobots(teamNumber);
+            if (robots.length > 0) {
+                window.location.href = `/${teamNumber}/${robots[0]}/${system}`;
+                return;
+            } else {
+                promptNewRobotCreation(teamNumber);
+            }
+        }
+    } else {
+        localStorage.setItem('robot_name', robotName);
+    }
+
     const teamNumberElement = document.getElementById('teamNumber');
     if (teamNumberElement) {
         teamNumberElement.textContent = teamNumber;
     }
 
     if (!jwtToken) {
-        // User is not logged in, display password prompt overlay
         showPasswordPrompt();
     } else {
-        // User is logged in, proceed to initialize dashboard
-        console.log("Fetched from INIT DASHBOARD!!")
-        fetchBOMDataFromServer(system);
+        fetchBOMDataFromServer(robotName, system);
     }
 
-    // Attach event listener for logout
     document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
 }
 
+
+async function checkTeamHasRobots(teamNumber) {
+    const token = localStorage.getItem('jwt_token');
+    try {
+        const response = await fetch(`${API_BASE_URL}api/get_robots?team_number=${teamNumber}`, {
+            headers: {'Authorization': `Bearer ${token}`},
+        });
+        const data = await response.json();
+        if (response.ok) {
+            return data.robots.length > 0;
+        } else {
+            console.error('Failed to check robots:', data.error);
+            return false;
+        }
+    } catch (error) {
+        console.error('Error checking robots:', error);
+        return false;
+    }
+}
+
+function promptNewRobotCreation(teamNumber) {
+    const robotName = prompt('You do not have any robots. Please enter a name for your first robot:');
+    if (!robotName) {
+        alert('Robot name is required to proceed.');
+        return;
+    }
+
+    const token = localStorage.getItem('jwt_token');
+
+    fetch(`${API_BASE_URL}api/new_robot`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({team_number: teamNumber, robot_name: robotName}),
+    })
+        .then((response) => response.json().then((data) => ({status: response.ok, data})))
+        .then(({status, data}) => {
+            if (status) {
+                alert(data.message);
+                window.location.href = `/${teamNumber}/${robotName}/Main`;
+            } else {
+                alert(data.error || 'Failed to create a new robot.');
+            }
+        })
+        .catch((error) => {
+            console.error('Error creating new robot:', error);
+            alert('Failed to create a new robot.');
+        });
+}
 
 async function checkTeamExists(teamNumber) {
     try {
@@ -848,13 +898,13 @@ document.getElementById('newRobotButton').addEventListener('click', () => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ team_number: teamNumber, robot_name: robotName }),
+        body: JSON.stringify({team_number: teamNumber, robot_name: robotName}),
     })
         .then((response) => {
             // Save response for both the status and the data
-            return response.json().then((data) => ({ status: response.ok, data }));
+            return response.json().then((data) => ({status: response.ok, data}));
         })
-        .then(({ status, data }) => {
+        .then(({status, data}) => {
             if (status) {
                 alert(data.message);
                 loadRobotSelector(); // Reload the robot selector
@@ -880,9 +930,9 @@ function loadRobotSelector() {
     })
         .then((response) => {
             // Preserve both the status and data
-            return response.json().then((data) => ({ status: response.ok, data }));
+            return response.json().then((data) => ({status: response.ok, data}));
         })
-        .then(({ status, data }) => {
+        .then(({status, data}) => {
             if (status) {
                 const robotSelector = document.getElementById('robotSelector');
                 robotSelector.innerHTML = ''; // Clear existing options

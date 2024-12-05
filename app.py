@@ -1,6 +1,6 @@
 import json
-
-from flask import Flask, request, jsonify, render_template
+import os
+from flask import Flask, request, jsonify, render_template, send_file
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
 from flask_socketio import SocketIO
@@ -396,7 +396,7 @@ def download_bom_data():
         return send_file(
             bom_data_file,
             as_attachment=True,
-            attachment_filename='bom_data.json',
+            download_name='bom_data.json',
             mimetype='application/json'
         )
     except Exception as e:
@@ -420,7 +420,7 @@ def download_settings_data():
         return send_file(
             settings_data_file,
             as_attachment=True,
-            attachment_filename='settings_data.json',
+            download_name='settings_data.json',
             mimetype='application/json'
         )
     except Exception as e:

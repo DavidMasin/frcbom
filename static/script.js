@@ -622,7 +622,7 @@ async function downloadBOMDataFile() {
 
 async function downloadSettingsDataFile() {
     const token = localStorage.getItem('jwt_token');
-
+    console.log("IM HEREEEEEE")
     try {
         const response = await fetch(`${API_BASE_URL}api/download_settings_data`, {
             method: 'GET',

@@ -847,20 +847,45 @@ function determineCurrentProcess(part) {
 document.addEventListener('DOMContentLoaded', () => {
     const systemSelect = document.getElementById('systemSelect');
     const {teamNumber, robotName} = parseURL();
-
+    // Ensure the element exists before starting the interval
+    if (systemSelect) {
+        // Log the value of the dropdown every second
+        setInterval(() => {
+            console.log("Current system selected1:", systemSelect.value);
+        }, 1000); // 1000ms = 1 second
+    } else {
+        console.error("systemSelect element not found1.");
+    }
     systemSelect.addEventListener('change', () => {
         const selectedSystem = systemSelect.value;
         if (teamNumber && robotName && selectedSystem) {
             window.location.href = `/${teamNumber}/${robotName}/${selectedSystem}`;
         }
     });
-
+    // Ensure the element exists before starting the interval
+    if (systemSelect) {
+        // Log the value of the dropdown every second
+        setInterval(() => {
+            console.log("Current system selected2:", systemSelect.value);
+        }, 1000); // 1000ms = 1 second
+    } else {
+        console.error("systemSelect element not found2.");
+    }
     const currentSystem = parseURL().system;
     console.log(parseURL())
     console.log(currentSystem)
     if (currentSystem) {
         console.log("UPDATTTEDDD SYSTEM TO: ",systemSelect.value)
         systemSelect.value = currentSystem;
+    }
+    // Ensure the element exists before starting the interval
+    if (systemSelect) {
+        // Log the value of the dropdown every second
+        setInterval(() => {
+            console.log("Current system selected3:", systemSelect.value);
+        }, 1000); // 1000ms = 1 second
+    } else {
+        console.error("systemSelect element not found3.");
     }
     // Toggle Password Visibility on Sign In Page
     const togglePassword = document.getElementById('togglePassword');

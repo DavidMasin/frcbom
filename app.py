@@ -377,7 +377,7 @@ def download_settings_dict():
     # Check if the user is the admin
     if not is_admin(current_user):
         return jsonify({"error": "Unauthorized access"}), 403
-
+    print(settings_data_dict)
     try:
         return jsonify({"settings_data_dict": settings_data_dict}), 200
     except Exception as e:

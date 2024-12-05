@@ -459,7 +459,7 @@ document.getElementById('systemSelect').addEventListener('change', (event) => {
 
 
 // Fetch BOM Data and Save to Local Storage
-async function fetchBOMDataFromServer(robotName, system = 'Main') {
+async function fetchBOMDataFromServer(robotName, system = 'System5') {
     const teamNumber = localStorage.getItem('team_number');
     try {
         const response = await fetch(`${API_BASE_URL}/api/get_bom?team_number=${teamNumber}&robot=${robotName}&system=${system}`, {
@@ -516,7 +516,8 @@ document.getElementById('fetchBOMButton').addEventListener('click', async () => 
     const documentUrl = document.getElementById('onshapeDocumentUrl').value;
     const accessKey = document.getElementById('accessKey').value;
     const secretKey = document.getElementById('secretKey').value;
-    const system = document.getElementById('systemSelect').value; // Get selected system
+    // const system = document.getElementById('systemSelect').value; // Get selected system
+    const system = "System2"; // Get selected system
     const teamNumber = localStorage.getItem('team_number');
     const robot_name = localStorage.getItem('robot_name');
 
@@ -748,8 +749,12 @@ function savePartQuantities(part) {
     let systemSelect
     if (document.getElementById("systemSelect")) {
         systemSelect = document.getElementById("systemSelect").value;
+        console.log("Debug system3 ", systemSelect)
+
     } else {
         systemSelect = "Main"
+        console.log("Debug system4 ", systemSelect)
+
     }
     let bomData = getBOMDataFromLocal(robot_name, systemSelect);
     console.log('Pre-Process Qty:', preProcessQty);

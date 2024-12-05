@@ -16,6 +16,7 @@ function parseURL() {
         params.system = 'System4';
     }
     console.log("Params: ",params)
+    document.getElementById("systemSelect").textContent=params.system;
     return params;
 }
 

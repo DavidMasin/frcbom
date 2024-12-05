@@ -269,7 +269,7 @@ document.querySelectorAll('.filter-button').forEach(button => {
 
 // Function to handle filtering BOM data
 function handleFilterBOM(filter) {
-    const robotName = localStorage.getItem('robot_name'); // Or however you store/retrieve it
+    const robotName = localStorage.getItem('robot_name');
     let systemSelect
     if (document.getElementById("systemSelect")) {
         systemSelect = document.getElementById("systemSelect").value;

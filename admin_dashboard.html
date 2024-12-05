@@ -70,10 +70,9 @@
             document.getElementById('downloadBOMDictButton').addEventListener('click', async (input, init) => {
                 try {
                     const response = await fetch(API_BASE_URL, 'api/admin/download_bom_dict', {
-
                         headers: {'Authorization': `Bearer ${adminToken}`},
                     });
-
+                    console.log("BOM DICT JSON: ",response.json())
                     const data = await response.json();
                     if (response.ok) {
                         const blob = new Blob([JSON.stringify(data.bom_data_dict, null, 2)], { type: 'application/json' });

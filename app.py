@@ -417,12 +417,13 @@ def download_settings_data():
         return jsonify({"error": "Settings data file not found"}), 404
 
     try:
-        return send_file(
-            settings_data_file,
-            as_attachment=True,
-            download_name='settings_data.json',
-            mimetype='application/json'
-        )
+        return jsonify(settings_data_dict),200
+        # return send_file(
+        #     settings_data_file,
+        #     as_attachment=True,
+        #     download_name='settings_data.json',
+        #     mimetype='application/json'
+        # )
     except Exception as e:
         return jsonify({"error": f"Failed to download settings data: {str(e)}"}), 500
 

@@ -76,15 +76,16 @@
         // Event listener for downloading bom_data.json
         document.getElementById('downloadBOMDataFileButton').addEventListener('click', downloadBOMDataFile);
 
-        // Event listener for downloading settings_data.json
         document.getElementById('downloadSettingsDataFileButton').addEventListener('click', downloadSettingsDataFile);
 
         async function downloadBOMDataFile() {
+            const token = localStorage.getItem('jwt_token');
+
             try {
                 const response = await fetch(`${API_BASE_URL}api/download_bom_data`, {
                     method: 'GET',
                     headers: {
-                        'Authorization': `Bearer ${adminToken}`,
+                        'Authorization': `Bearer ${token}`,
                     },
                 });
 
@@ -108,11 +109,13 @@
         }
 
         async function downloadSettingsDataFile() {
+            const token = localStorage.getItem('jwt_token');
+
             try {
                 const response = await fetch(`${API_BASE_URL}api/download_settings_data`, {
                     method: 'GET',
                     headers: {
-                        'Authorization': `Bearer ${adminToken}`,
+                        'Authorization': `Bearer ${token}`,
                     },
                 });
 
@@ -134,6 +137,7 @@
                 alert('An error occurred while downloading the settings data file.');
             }
         }
+
 
         // Fetch Team BOM
         document.getElementById('fetchTeamBOMForm').addEventListener('submit', async (event) => {

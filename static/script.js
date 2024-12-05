@@ -5,7 +5,7 @@ function parseURL() {
     const path = window.location.pathname;
     const pathSegments = path.split('/').filter(segment => segment !== '');
     const params = {};
-    console.log("Params: ",params)
+
     if (pathSegments.length >= 2) {
         params.teamNumber = pathSegments[0];
         params.robotName = pathSegments[1];
@@ -13,8 +13,9 @@ function parseURL() {
     } else {
         params.teamNumber = pathSegments[0];
         params.robotName = null;
-        params.system = 'Main';
+        params.system = 'System4';
     }
+    console.log("Params: ",params)
     return params;
 }
 

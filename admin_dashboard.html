@@ -18,9 +18,8 @@
             <h2>Actions</h2>
             <div class="actions-grid">
                 <!-- Download BOM Data -->
-                <button id="downloadBOMDictButton" class="button-primary">
-                    Download BOM Data
-                </button>
+                <button id="downloadAllDataButton" class="button-primary">Download All Data</button>
+
                 <!-- Upload BOM Data -->
                 <form id="uploadBOMDictForm" class="action-form">
                     <h3>Upload BOM Data</h3>
@@ -67,28 +66,42 @@
             });
 
             // Download BOM Dict
-            document.getElementById('downloadBOMDictButton').addEventListener('click', async (input, init) => {
+            document.getElementById('downloadDataButton').addEventListener('click', downloadData);
+
+            async function downloadData() {
+                const teamNumber = localStorage.getItem('team_number');
+                const token = localStorage.getItem('jwt_token');
+                const isAdmin = teamNumber === '0000';  // Adjust if necessary
+
                 try {
-                    const response = await fetch(API_BASE_URL, 'api/admin/download_bom_dict', {
-                        headers: {'Authorization': `Bearer ${adminToken}`},
+                    const response = await fetch(`${API_BASE_URL}api/download_all_data?team_number=${teamNumber}`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                        },
                     });
-                    console.log("BOM DICT JSON: ",response.json())
-                    const data = await response.json();
-                    if (response.ok) {
-                        const blob = new Blob([JSON.stringify(data.bom_data_dict, null, 2)], { type: 'application/json' });
-                        const url = URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.download = 'bom_data_dict.json';
-                        link.click();
-                    } else {
-                        alert(data.error || 'Failed to download BOM data.');
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        alert(`Error: ${errorData.error}`);
+                        return;
                     }
+
+                    const data = await response.json();
+                    const dataStr = JSON.stringify(data, null, 2);
+                    const blob = new Blob([dataStr], { type: 'application/json' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = isAdmin ? 'all_data.json' : `team_${teamNumber}_data.json`;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
                 } catch (error) {
-                    console.error('Error downloading BOM data:', error);
-                    alert('Failed to download BOM data.');
+                    console.error('Error downloading data:', error);
+                    alert('An error occurred while downloading the data.');
                 }
-            });
+            }
+
 
             // Fetch Team BOM
             document.getElementById('fetchTeamBOMForm').addEventListener('submit', async (event) => {

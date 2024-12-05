@@ -584,6 +584,7 @@ function displayBOMAsButtons(bomData) {
         gridContainer.appendChild(button);
     });
 }
+document.getElementById('downloadAllDataButton').addEventListener('click', downloadData);
 
 // Function to open the modal with part details
 function openEditModal(part) {

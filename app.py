@@ -378,7 +378,27 @@ def upload_bom_dict():
 
     return jsonify({"message": "BOM data uploaded successfully."}), 200
 
+@app.route('/api/download_all_data', methods=['GET'])
+@jwt_required()
+def download_all_data():
+    current_user = get_jwt_identity()
+    team_number = request.args.get('team_number')
 
+    # Check if the user is authorized to download the data
+    if not is_admin(current_user) and current_user != team_number:
+        return jsonify({"error": "Unauthorized access"}), 403
+
+    # Fetch the data
+    # If the user is admin, they can download all data
+    if is_admin(current_user):
+        data_to_download = bom_data_dict  # This contains data for all teams
+    else:
+        data_to_download = {team_number: bom_data_dict.get(team_number, {})}
+
+    # Return the data as a JSON response
+    response = jsonify(data_to_download)
+    response.headers['Content-Disposition'] = 'attachment; filename=data.json'
+    return response
 @app.route('/api/admin/download_bom_dict', methods=['GET'])
 @jwt_required()
 def download_bom_dict():

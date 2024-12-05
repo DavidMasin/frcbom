@@ -13,7 +13,7 @@ function parseURL() {
     } else {
         params.teamNumber = pathSegments[0];
         params.robotName = null;
-        params.system = 'System4';
+        params.system = 'Main';
     }
     console.log("Params: ",params)
     return params;
@@ -459,7 +459,7 @@ document.getElementById('systemSelect').addEventListener('change', (event) => {
 
 
 // Fetch BOM Data and Save to Local Storage
-async function fetchBOMDataFromServer(robotName, system = 'System5') {
+async function fetchBOMDataFromServer(robotName, system = 'Main') {
     const teamNumber = localStorage.getItem('team_number');
     try {
         const response = await fetch(`${API_BASE_URL}/api/get_bom?team_number=${teamNumber}&robot=${robotName}&system=${system}`, {
@@ -516,8 +516,7 @@ document.getElementById('fetchBOMButton').addEventListener('click', async () => 
     const documentUrl = document.getElementById('onshapeDocumentUrl').value;
     const accessKey = document.getElementById('accessKey').value;
     const secretKey = document.getElementById('secretKey').value;
-    // const system = document.getElementById('systemSelect').value; // Get selected system
-    const system = "System2"; // Get selected system
+    const system = document.getElementById('systemSelect').value; // Get selected system
     const teamNumber = localStorage.getItem('team_number');
     const robot_name = localStorage.getItem('robot_name');
 
@@ -857,7 +856,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const currentSystem = parseURL().system;
+    console.log(parseURL())
+    console.log(currentSystem)
     if (currentSystem) {
+        console.log("UPDATTTEDDD SYSTEM TO: ",systemSelect.value)
         systemSelect.value = currentSystem;
     }
     // Toggle Password Visibility on Sign In Page

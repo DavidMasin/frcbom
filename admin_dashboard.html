@@ -98,6 +98,7 @@
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
+                console.log("BLOB is: ",blob)
                 a.href = url;
                 a.download = 'bom_data.json';
                 a.click();

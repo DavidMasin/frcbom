@@ -350,6 +350,20 @@ def admin_get_bom():
         # Fetch BOM for the specific system
         return jsonify({"bom_data": team_bom_data.get(system, [])}), 200
 
+@app.route('/api/admin/download_bom_dict', methods=['GET'])
+@jwt_required()
+def download_bom_dict():
+    current_user = get_jwt_identity()
+
+    # Check if the user is the admin
+    if not is_admin(current_user):
+        return jsonify({"error": "Unauthorized access"}), 403
+
+    try:
+        return jsonify({"bom_data_dict": bom_data_dict}), 200
+    except Exception as e:
+        return jsonify({"error": f"Failed to download BOM data: {str(e)}"}), 500
+
 
 @app.route('/api/admin/upload_bom_dict', methods=['POST'])
 @jwt_required()

@@ -389,6 +389,7 @@ def download_bom_dict():
         return jsonify({"error": "Unauthorized access"}), 403
 
     try:
+        print(bom_data_dict)
         return jsonify({"bom_data_dict": bom_data_dict}), 200
     except Exception as e:
         return jsonify({"error": f"Failed to download BOM data: {str(e)}"}), 500

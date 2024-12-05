@@ -1044,41 +1044,41 @@ document.querySelectorAll('.filter-button').forEach(button => {
     });
 });
 
-document.getElementById('newRobotButton').addEventListener('click', () => {
-    const teamNumber = localStorage.getItem('team_number');
-    const robotName = prompt('Enter a name for the new robot (e.g., Robot2):');
-    if (!robotName) {
-        alert('Robot name is required.');
-        return;
-    }
-
-    const token = localStorage.getItem('jwt_token');
-
-    fetch(`${API_BASE_URL}api/new_robot`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({team_number: teamNumber, robot_name: robotName}),
-    })
-        .then((response) => {
-            // Save response for both the status and the data
-            return response.json().then((data) => ({status: response.ok, data}));
-        })
-        .then(({status, data}) => {
-            if (status) {
-                alert(data.message);
-                loadRobotSelector(); // Reload the robot selector
-            } else {
-                alert(data.error || 'Failed to create a new robot.');
-            }
-        })
-        .catch((error) => {
-            console.error('Error creating new robot:', error);
-            alert('Failed to create a new robot.');
-        });
-});
+// document.getElementById('newRobotButton').addEventListener('click', () => {
+//     const teamNumber = localStorage.getItem('team_number');
+//     const robotName = prompt('Enter a name for the new robot (e.g., Robot2):');
+//     if (!robotName) {
+//         alert('Robot name is required.');
+//         return;
+//     }
+//
+//     const token = localStorage.getItem('jwt_token');
+//
+//     fetch(`${API_BASE_URL}api/new_robot`, {
+//         method: 'POST',
+//         headers: {
+//             'Content-Type': 'application/json',
+//             'Authorization': `Bearer ${token}`,
+//         },
+//         body: JSON.stringify({team_number: teamNumber, robot_name: robotName}),
+//     })
+//         .then((response) => {
+//             // Save response for both the status and the data
+//             return response.json().then((data) => ({status: response.ok, data}));
+//         })
+//         .then(({status, data}) => {
+//             if (status) {
+//                 alert(data.message);
+//                 loadRobotSelector(); // Reload the robot selector
+//             } else {
+//                 alert(data.error || 'Failed to create a new robot.');
+//             }
+//         })
+//         .catch((error) => {
+//             console.error('Error creating new robot:', error);
+//             alert('Failed to create a new robot.');
+//         });
+// });
 
 
 function loadRobotSelector() {

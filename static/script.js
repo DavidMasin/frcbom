@@ -398,6 +398,45 @@ async function handleRegister(event) {
         document.getElementById('registerMessage').textContent = 'Registration failed.';
     }
 }
+document.addEventListener('DOMContentLoaded', () => {
+    const uploadForm = document.getElementById('uploadBOMDataForm');
+    const fileInput = document.getElementById('bomDataFileInput');
+
+    uploadForm.addEventListener('submit', async (event) => {
+        event.preventDefault(); // Prevent form submission
+        const file = fileInput.files[0];
+
+        if (!file) {
+            alert('Please select a file to upload.');
+            return;
+        }
+
+        try {
+            const fileContent = await file.text(); // Read the file content
+            const token = localStorage.getItem('jwt_token');
+
+            const response = await fetch(`${API_BASE_URL}api/admin/upload_bom_dict`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({ bom_data_dict: JSON.parse(fileContent) }),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert('BOM data uploaded successfully!');
+            } else {
+                alert(`Error: ${result.error || 'Failed to upload BOM data.'}`);
+            }
+        } catch (error) {
+            console.error('Error uploading BOM data:', error);
+            alert('An error occurred while uploading the BOM data.');
+        }
+    });
+});
 
 // Initialize event listeners
 document.addEventListener('DOMContentLoaded', () => {

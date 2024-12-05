@@ -388,28 +388,28 @@ def download_settings_dict():
 @jwt_required()
 def upload_bom_dict():
     current_user = get_jwt_identity()
-    print("Hi there")
-    # Check if the user is the admin
+
+    # Check if the user is an admin
     if not is_admin(current_user):
         return jsonify({"error": "Unauthorized access"}), 403
 
     data = request.get_json()
-    print("Data from Upload: ", data)
-    bom_data_dict_new = data.get('bom_data_dict')
-    print(data)
-    if not bom_data_dict_new:
+    bom_data_dict = data.get('bom_data_dict')
+
+    if not bom_data_dict:
         return jsonify({"error": "No BOM data provided."}), 400
 
-    # Optionally validate the bom_data_dict_new structure
-    if not isinstance(bom_data_dict_new, dict):
+    # Validate the BOM data format
+    if not isinstance(bom_data_dict, dict):
         return jsonify({"error": "Invalid BOM data format."}), 400
 
-    # Update the in-memory bom_data_dict and save to file
+    # Update the in-memory BOM data and save it to file
     global bom_data_dict
-    bom_data_dict = bom_data_dict_new
+    bom_data_dict.update(bom_data_dict)
     save_bom_data()
 
     return jsonify({"message": "BOM data uploaded successfully."}), 200
+
 
 
 # Endpoint to download bom_data.json

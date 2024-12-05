@@ -64,7 +64,7 @@
         // Download BOM Dict
         document.getElementById('downloadBOMDictButton').addEventListener('click', async () => {
             try {
-                const response = await fetch('/api/admin/download_bom_dict', {
+                const response = await fetch(`${API_BASE_URL}api/admin/download_bom_dict`, {
                     headers: { 'Authorization': `Bearer ${adminToken}` },
                 });
 
@@ -92,7 +92,7 @@
             const system = document.getElementById('systemSelect').value;
 
             try {
-                const response = await fetch(`/api/admin/get_bom?team_number=${teamNumber}&system=${system}`, {
+                const response = await fetch(`${API_BASE_URL}api/admin/get_bom?team_number=${teamNumber}&system=${system}`, {
                     headers: { 'Authorization': `Bearer ${adminToken}` },
                 });
 

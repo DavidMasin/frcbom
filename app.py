@@ -378,41 +378,53 @@ def upload_bom_dict():
 
     return jsonify({"message": "BOM data uploaded successfully."}), 200
 
-@app.route('/api/download_all_data', methods=['GET'])
+# Endpoint to download bom_data.json
+@app.route('/api/download_bom_data', methods=['GET'])
 @jwt_required()
-def download_all_data():
-    current_user = get_jwt_identity()
-    team_number = request.args.get('team_number')
-
-    # Check if the user is authorized to download the data
-    if not is_admin(current_user) and current_user != team_number:
-        return jsonify({"error": "Unauthorized access"}), 403
-
-    # Fetch the data
-    # If the user is admin, they can download all data
-    if is_admin(current_user):
-        data_to_download = bom_data_dict  # This contains data for all teams
-    else:
-        data_to_download = {team_number: bom_data_dict.get(team_number, {})}
-
-    # Return the data as a JSON response
-    response = jsonify(data_to_download)
-    response.headers['Content-Disposition'] = 'attachment; filename=data.json'
-    return response
-@app.route('/api/admin/download_bom_dict', methods=['GET'])
-@jwt_required()
-def download_bom_dict():
+def download_bom_data():
     current_user = get_jwt_identity()
 
     # Check if the user is the admin
     if not is_admin(current_user):
         return jsonify({"error": "Unauthorized access"}), 403
 
+    # Ensure the file exists
+    if not os.path.exists(bom_data_file):
+        return jsonify({"error": "BOM data file not found"}), 404
+
     try:
-        print(bom_data_dict)
-        return jsonify({"bom_data_dict": bom_data_dict}), 200
+        return send_file(
+            bom_data_file,
+            as_attachment=True,
+            attachment_filename='bom_data.json',
+            mimetype='application/json'
+        )
     except Exception as e:
         return jsonify({"error": f"Failed to download BOM data: {str(e)}"}), 500
+
+# Endpoint to download settings_data.json
+@app.route('/api/download_settings_data', methods=['GET'])
+@jwt_required()
+def download_settings_data():
+    current_user = get_jwt_identity()
+
+    # Check if the user is the admin
+    if not is_admin(current_user):
+        return jsonify({"error": "Unauthorized access"}), 403
+
+    # Ensure the file exists
+    if not os.path.exists(settings_data_file):
+        return jsonify({"error": "Settings data file not found"}), 404
+
+    try:
+        return send_file(
+            settings_data_file,
+            as_attachment=True,
+            attachment_filename='settings_data.json',
+            mimetype='application/json'
+        )
+    except Exception as e:
+        return jsonify({"error": f"Failed to download settings data: {str(e)}"}), 500
 
 
 # Helper function to load BOM data from file

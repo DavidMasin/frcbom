@@ -584,14 +584,17 @@ function displayBOMAsButtons(bomData) {
         gridContainer.appendChild(button);
     });
 }
-document.getElementById('downloadAllDataButton').addEventListener('click', downloadData);
-async function downloadData() {
-    const teamNumber = localStorage.getItem('team_number');
+// Event listener for downloading bom_data.json
+document.getElementById('downloadBOMDataFileButton').addEventListener('click', downloadBOMDataFile);
+
+// Event listener for downloading settings_data.json
+document.getElementById('downloadSettingsDataFileButton').addEventListener('click', downloadSettingsDataFile);
+
+async function downloadBOMDataFile() {
     const token = localStorage.getItem('jwt_token');
-    const isAdmin = teamNumber === '0000';  // Adjust if necessary
 
     try {
-        const response = await fetch(`${API_BASE_URL}api/download_all_data?team_number=${teamNumber}`, {
+        const response = await fetch(`${API_BASE_URL}api/download_bom_data`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -604,20 +607,51 @@ async function downloadData() {
             return;
         }
 
-        const data = await response.json();
-        const dataStr = JSON.stringify(data, null, 2);
-        const blob = new Blob([dataStr], { type: 'application/json' });
+        // The response is a file, so we need to handle it as a blob
+        const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = isAdmin ? 'all_data.json' : `team_${teamNumber}_data.json`;
+        a.download = 'bom_data.json';
         a.click();
         window.URL.revokeObjectURL(url);
     } catch (error) {
-        console.error('Error downloading data:', error);
-        alert('An error occurred while downloading the data.');
+        console.error('Error downloading BOM data file:', error);
+        alert('An error occurred while downloading the BOM data file.');
     }
 }
+
+async function downloadSettingsDataFile() {
+    const token = localStorage.getItem('jwt_token');
+
+    try {
+        const response = await fetch(`${API_BASE_URL}api/download_settings_data`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            alert(`Error: ${errorData.error}`);
+            return;
+        }
+
+        // The response is a file, so we need to handle it as a blob
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'settings_data.json';
+        a.click();
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('Error downloading settings data file:', error);
+        alert('An error occurred while downloading the settings data file.');
+    }
+}
+
 // Function to open the modal with part details
 function openEditModal(part) {
     const modal = document.getElementById('editModal');

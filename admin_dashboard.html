@@ -93,7 +93,7 @@
                 const data = await response.json();
                 console.log(data)
                 if (response.ok) {
-                    const blob = new Blob([JSON.stringify(data.settings_data, null, 2)], {type: 'application/json'});
+                    const blob = new Blob([JSON.stringify(data.settings_data_dict, null, 2)], {type: 'application/json'});
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement('a');
                     link.href = url;

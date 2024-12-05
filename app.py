@@ -1,5 +1,6 @@
 import json
 import os
+
 from flask import Flask, request, jsonify, render_template, send_file
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
@@ -63,11 +64,11 @@ def team_dashboard(team_number, robot_name):
     # Pass the team number and robot name to the template for dynamic rendering
     return render_template('dashboard.html', team_number=team_number, robot_name=robot_name)
 
+
 @app.route('/<team_number>/<robot_name>/<system>')
 def team_bom_filtered(team_number, robot_name, system):
     # Render the dashboard with a filtered BOM
     return render_template('dashboard.html', team_number=team_number, robot_name=robot_name, filter_system=system)
-
 
 
 @app.route('/register')
@@ -295,7 +296,7 @@ def new_robot():
 
     # Ensure the team exists
     if team_number not in bom_data_dict:
-        bom_data_dict[team_number]={}
+        bom_data_dict[team_number] = {}
 
     # Ensure the robot name is unique
     if robot_name in bom_data_dict[team_number]:
@@ -306,6 +307,7 @@ def new_robot():
     save_bom_data()
 
     return jsonify({"message": f"Robot {robot_name} created successfully"}), 200
+
 
 @app.route('/api/get_robots', methods=['GET'])
 @jwt_required()
@@ -318,6 +320,7 @@ def get_robots():
     # Fetch robots for the team
     robots = list(bom_data_dict.get(team_number, {}).keys())
     return jsonify({"robots": robots}), 200
+
 
 def is_admin(team_number):
     return team_number == "0000"
@@ -350,6 +353,7 @@ def admin_get_bom():
         # Fetch BOM for the specific system
         return jsonify({"bom_data": team_bom_data.get(system, [])}), 200
 
+
 @app.route('/api/admin/download_bom_dict', methods=['GET'])
 @jwt_required()
 def download_bom_dict():
@@ -363,6 +367,21 @@ def download_bom_dict():
         return jsonify({"bom_data_dict": bom_data_dict}), 200
     except Exception as e:
         return jsonify({"error": f"Failed to download BOM data: {str(e)}"}), 500
+
+
+@app.route('/api/admin/download_settings_dict', methods=['GET'])
+@jwt_required()
+def download_settings_dict():
+    current_user = get_jwt_identity()
+
+    # Check if the user is the admin
+    if not is_admin(current_user):
+        return jsonify({"error": "Unauthorized access"}), 403
+
+    try:
+        return jsonify({"settings_data_dict": settings_data_dict}), 200
+    except Exception as e:
+        return jsonify({"error": f"Failed to download Settings data: {str(e)}"}), 500
 
 
 @app.route('/api/admin/upload_bom_dict', methods=['POST'])
@@ -392,6 +411,7 @@ def upload_bom_dict():
 
     return jsonify({"message": "BOM data uploaded successfully."}), 200
 
+
 # Endpoint to download bom_data.json
 @app.route('/api/download_bom_data', methods=['GET'])
 @jwt_required()
@@ -416,6 +436,7 @@ def download_bom_data():
     except Exception as e:
         return jsonify({"error": f"Failed to download BOM data: {str(e)}"}), 500
 
+
 # Endpoint to download settings_data.json
 @app.route('/api/download_settings_data', methods=['GET'])
 @jwt_required()
@@ -431,7 +452,7 @@ def download_settings_data():
         return jsonify({"error": "Settings data file not found"}), 404
 
     try:
-        return jsonify(settings_data_dict),200
+        return jsonify(settings_data_dict), 200
         # return send_file(
         #     settings_data_file,
         #     as_attachment=True,

@@ -18,9 +18,8 @@
         <h2>Actions</h2>
         <div class="actions-grid">
             <!-- Download BOM Data -->
-            <button id="downloadBOMDictButton" class="button-primary">
-                Download BOM Data
-            </button>
+            <button id="downloadBOMDictButton" class="button-primary">Download BOM Data</button>
+            <button id="downloadSETTINGSDictButton" class="button-primary">Download Settings Data</button>
 
             <!-- Fetch Team BOM -->
             <form id="fetchTeamBOMForm" class="action-form">
@@ -65,12 +64,12 @@
         document.getElementById('downloadBOMDictButton').addEventListener('click', async () => {
             try {
                 const response = await fetch(`${API_BASE_URL}api/admin/download_bom_dict`, {
-                    headers: { 'Authorization': `Bearer ${adminToken}` },
+                    headers: {'Authorization': `Bearer ${adminToken}`},
                 });
 
                 const data = await response.json();
                 if (response.ok) {
-                    const blob = new Blob([JSON.stringify(data.bom_data_dict, null, 2)], { type: 'application/json' });
+                    const blob = new Blob([JSON.stringify(data.bom_data_dict, null, 2)], {type: 'application/json'});
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement('a');
                     link.href = url;
@@ -85,15 +84,38 @@
             }
         });
 
+        document.getElementById('downloadSETTINGSDictButton').addEventListener('click', async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}api/admin/download_settings_dict`, {
+                    headers: {'Authorization': `Bearer ${adminToken}`},
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    const blob = new Blob([JSON.stringify(data.settings_data, null, 2)], {type: 'application/json'});
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'settings_data.json';
+                    link.click();
+                } else {
+                    alert(data.error || 'Failed to download Settings data.');
+                }
+            } catch (error) {
+                console.error('Error downloading Settings data:', error);
+                alert('Failed to download Settings data.');
+            }
+        });
+
         // Fetch Team BOM
         document.getElementById('fetchTeamBOMForm').addEventListener('submit', async (event) => {
             event.preventDefault();
             const teamNumber = document.getElementById('teamNumberInput').value;
             const system = document.getElementById('systemSelect').value;
-
+            const robot_name = localStorage.getItem("robot_name");
             try {
-                const response = await fetch(`${API_BASE_URL}api/admin/get_bom?team_number=${teamNumber}&system=${system}`, {
-                    headers: { 'Authorization': `Bearer ${adminToken}` },
+                const response = await fetch(`${API_BASE_URL}api/admin/get_bom?team_number=${teamNumber}&robot_name=${robot_name}&system=${system}`, {
+                    headers: {'Authorization': `Bearer ${adminToken}`},
                 });
 
                 const data = await response.json();

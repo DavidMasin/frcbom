@@ -276,9 +276,9 @@ function handleFilterBOM(filter) {
     } else {
         systemSelect = "Main"
     }
-    const bomData = getBOMDataFromLocal(robotName,systemSelect);
+    const bomData = getBOMDataFromLocal(robotName, systemSelect);
     let filteredData;
-    console.log("BOM DATA3: ",bomData)
+    console.log("BOM DATA3: ", bomData)
 
     // Save the current filter to localStorage
     localStorage.setItem('current_filter', filter);
@@ -289,8 +289,8 @@ function handleFilterBOM(filter) {
     });
     // Normalize the filter string
     const normalizedFilter = filter.trim().toLowerCase();
-    console.log("normalizedFilter: ",normalizedFilter)
-    console.log("BOM DATA2: ",bomData)
+    console.log("normalizedFilter: ", normalizedFilter)
+    console.log("BOM DATA2: ", bomData)
     // Apply filtering based on the selected filter
     switch (normalizedFilter) {
         case 'all':
@@ -399,7 +399,8 @@ async function handleRegister(event) {
 document.addEventListener('DOMContentLoaded', () => {
     console.log("Loading content")
     if (document.getElementById('dashboard')) {
-        initializeDashboard().then(() => {});
+        initializeDashboard().then(() => {
+        });
         console.log("Dashboard initialized");
     }
     const loginForm = document.getElementById('loginForm');
@@ -429,7 +430,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch BOM data from the server on page load (if applicable)
     if (window.location.pathname.includes('dashboard.html')) {
         console.log("Im Here")
-        fetchBOMDataFromServer('Main').then(() => {});
+        fetchBOMDataFromServer('Main').then(() => {
+        });
     }
 
     // Modal Logic (move inside DOMContentLoaded)
@@ -496,10 +498,6 @@ function getBOMDataFromLocal(robotName, system) {
 }
 
 
-
-// Display team number
-document.getElementById('teamNumber').textContent = teamNumber;
-
 // Modal Logic
 const modal = document.getElementById('settingsModal');
 const settingsButton = document.getElementById('settingsButton');
@@ -539,7 +537,7 @@ document.getElementById('fetchBOMButton').addEventListener('click', async () => 
         const data = await response.json();
         if (response.ok) {
             console.log(`BOM fetched and saved for system '${system}'.`);
-            saveBOMDataToLocal(data.bom_data,robot_name, system); // Save to local storage
+            saveBOMDataToLocal(data.bom_data, robot_name, system); // Save to local storage
             displayBOMAsButtons(data.bom_data); // Update the UI
         } else {
             console.error('Error fetching BOM:', data.error);
@@ -556,7 +554,7 @@ document.getElementById('fetchBOMButton').addEventListener('click', async () => 
 function displayBOMAsButtons(bomData) {
     const gridContainer = document.getElementById('bomPartsGrid');
     gridContainer.innerHTML = ''; // Clear previous content
-    console.log("BOMDATA1: ",bomData)
+    console.log("BOMDATA1: ", bomData)
     bomData.sort((a, b) => (a["Part Name"] || '').localeCompare(b["Part Name"] || ''));
 
     bomData.forEach(part => {
@@ -584,6 +582,7 @@ function displayBOMAsButtons(bomData) {
         gridContainer.appendChild(button);
     });
 }
+
 // Event listener for downloading bom_data.json
 document.getElementById('downloadBOMDataFileButton').addEventListener('click', downloadBOMDataFile);
 
@@ -732,8 +731,7 @@ function savePartQuantities(part) {
     const process1Qty = document.getElementById('process1Qty')?.value || part.process1Quantity || 0;
     const process2Qty = document.getElementById('process2Qty')?.value || part.process2Quantity || 0;
     const robot_name = localStorage.getItem('robot_name');
-    if (! robot_name)
-    {
+    if (!robot_name) {
         console.log("NO ROBOT IN SAVE PART QTY")
     }
     // Update the part's properties
@@ -749,7 +747,7 @@ function savePartQuantities(part) {
     } else {
         systemSelect = "Main"
     }
-    let bomData = getBOMDataFromLocal(robot_name,systemSelect);
+    let bomData = getBOMDataFromLocal(robot_name, systemSelect);
     console.log('Pre-Process Qty:', preProcessQty);
     console.log('Process 1 Qty:', process1Qty);
     console.log('Process 2 Qty:', process2Qty);
@@ -765,7 +763,7 @@ function savePartQuantities(part) {
     }
 
     // Save the updated BOM data back to localStorage
-    saveBOMDataToLocal(bomData,robot_name, systemSelect);
+    saveBOMDataToLocal(bomData, robot_name, systemSelect);
 
     // Re-render the BOM grid to reflect changes
     const currentFilter = localStorage.getItem('current_filter') || 'InHouse';
@@ -883,7 +881,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Function to initialize the dashboard
 async function initializeDashboard() {
-    const { teamNumber, robotName, system } = parseURL();
+    const {teamNumber, robotName, system} = parseURL();
     let jwtToken = localStorage.getItem('jwt_token');
 
     if (!teamNumber) {
@@ -937,6 +935,7 @@ async function initializeDashboard() {
 
     document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
 }
+
 function showRobotSelectionDashboard(robots) {
     const robotSelectionSection = document.getElementById('robotSelection');
     const robotList = document.getElementById('robotList');
@@ -966,7 +965,7 @@ async function getTeamRobots(teamNumber) {
     const token = localStorage.getItem('jwt_token');
     try {
         const response = await fetch(`${API_BASE_URL}api/get_robots?team_number=${teamNumber}`, {
-            headers: { 'Authorization': `Bearer ${token}` },
+            headers: {'Authorization': `Bearer ${token}`},
         });
         const data = await response.json();
         if (response.ok) {
@@ -1008,6 +1007,7 @@ function promptNewRobotCreation(teamNumber) {
     }
     createNewRobot(teamNumber, robotName);
 }
+
 function createNewRobot(teamNumber, robotName) {
     const token = localStorage.getItem('jwt_token');
 
@@ -1025,10 +1025,10 @@ function createNewRobot(teamNumber, robotName) {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ team_number: teamNumber, robot_name: robotName }),
+        body: JSON.stringify({team_number: teamNumber, robot_name: robotName}),
     })
-        .then((response) => response.json().then((data) => ({ status: response.ok, data })))
-        .then(({ status, data }) => {
+        .then((response) => response.json().then((data) => ({status: response.ok, data})))
+        .then(({status, data}) => {
             if (status) {
                 alert(data.message);
                 window.location.href = `/${teamNumber}/${robotName}/Main`;

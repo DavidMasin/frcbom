@@ -404,9 +404,10 @@ def upload_bom_dict():
         return jsonify({"error": "Invalid BOM data format."}), 400
 
     # Update the in-memory BOM data and save it to file
-    global bom_data_dict
-    bom_data_dict.update(bom_data_dict)
-    save_bom_data()
+    if bom_data_dict:
+        global bom_data_dict
+        bom_data_dict.update(bom_data_dict)
+        save_bom_data()
 
     return jsonify({"message": "BOM data uploaded successfully."}), 200
 

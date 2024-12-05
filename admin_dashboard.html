@@ -17,22 +17,11 @@
     <section class="admin-actions">
         <h2>Actions</h2>
         <div class="actions-grid">
-            <!-- Download BOM Data File -->
-            <button id="downloadBOMDataFileButton" class="button-primary">
-                Download BOM Data File
+            <!-- Download BOM Data -->
+            <button id="downloadBOMDictButton" class="button-primary">
+                Download BOM Data
             </button>
 
-            <!-- Download Settings Data File -->
-            <button id="downloadSettingsDataFileButton" class="button-primary">
-                Download Settings Data File
-            </button>
-
-            <!-- Upload BOM Data -->
-            <form id="uploadBOMDictForm" class="action-form">
-                <h3>Upload BOM Data</h3>
-                <input type="file" id="bomDictFileInput" accept=".json" required>
-                <button type="submit" class="button-primary">Upload BOM Data</button>
-            </form>
             <!-- Fetch Team BOM -->
             <form id="fetchTeamBOMForm" class="action-form">
                 <h3>Fetch Team BOM</h3>
@@ -65,7 +54,6 @@
     document.addEventListener('DOMContentLoaded', () => {
         // Admin Token
         const adminToken = localStorage.getItem('jwt_token');
-        const API_BASE_URL = '/'; // Adjust if necessary
 
         // Logout functionality
         document.getElementById('logoutButton').addEventListener('click', () => {
@@ -73,72 +61,29 @@
             window.location.href = '/';
         });
 
-        // Event listener for downloading bom_data.json
-        document.getElementById('downloadBOMDataFileButton').addEventListener('click', downloadBOMDataFile);
-
-        document.getElementById('downloadSettingsDataFileButton').addEventListener('click', downloadSettingsDataFile);
-
-        async function downloadBOMDataFile() {
-            const token = localStorage.getItem('jwt_token');
-
+        // Download BOM Dict
+        document.getElementById('downloadBOMDictButton').addEventListener('click', async () => {
             try {
-                const response = await fetch(`${API_BASE_URL}api/download_bom_data`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                    },
+                const response = await fetch('/api/admin/download_bom_dict', {
+                    headers: { 'Authorization': `Bearer ${adminToken}` },
                 });
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    alert(`Error: ${errorData.error}`);
-                    return;
+                const data = await response.json();
+                if (response.ok) {
+                    const blob = new Blob([JSON.stringify(data.bom_data_dict, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'bom_data_dict.json';
+                    link.click();
+                } else {
+                    alert(data.error || 'Failed to download BOM data.');
                 }
-
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                console.log("BLOB is: ",blob)
-                a.href = url;
-                a.download = 'bom_data.json';
-                a.click();
-                window.URL.revokeObjectURL(url);
             } catch (error) {
-                console.error('Error downloading BOM data file:', error);
-                alert('An error occurred while downloading the BOM data file.');
+                console.error('Error downloading BOM data:', error);
+                alert('Failed to download BOM data.');
             }
-        }
-
-        async function downloadSettingsDataFile() {
-            const token = localStorage.getItem('jwt_token');
-
-            try {
-                const response = await fetch(`${API_BASE_URL}api/download_settings_data`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                    },
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    alert(`Error: ${errorData.error}`);
-                    return;
-                }
-
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'settings_data.json';
-                a.click();
-                window.URL.revokeObjectURL(url);
-            } catch (error) {
-                console.error('Error downloading settings data file:', error);
-                alert('An error occurred while downloading the settings data file.');
-            }
-        }
-
+        });
 
         // Fetch Team BOM
         document.getElementById('fetchTeamBOMForm').addEventListener('submit', async (event) => {
@@ -147,8 +92,8 @@
             const system = document.getElementById('systemSelect').value;
 
             try {
-                const response = await fetch(`${API_BASE_URL}api/admin/get_bom?team_number=${teamNumber}&system=${system}`, {
-                    headers: {'Authorization': `Bearer ${adminToken}`},
+                const response = await fetch(`/api/admin/get_bom?team_number=${teamNumber}&system=${system}`, {
+                    headers: { 'Authorization': `Bearer ${adminToken}` },
                 });
 
                 const data = await response.json();

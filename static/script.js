@@ -16,7 +16,6 @@ function parseURL() {
         params.system = 'System4';
     }
     console.log("Params: ",params)
-    document.getElementById("systemSelect").textContent=params.system;
     return params;
 }
 
@@ -276,8 +275,10 @@ function handleFilterBOM(filter) {
     let systemSelect
     if (document.getElementById("systemSelect")) {
         systemSelect = document.getElementById("systemSelect").value;
+        console.log("Debug system1 ", systemSelect)
     } else {
         systemSelect = "Main"
+        console.log("Debug system2 ", systemSelect)
     }
     const bomData = getBOMDataFromLocal(robotName, systemSelect);
     let filteredData;

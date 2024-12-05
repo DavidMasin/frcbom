@@ -585,7 +585,39 @@ function displayBOMAsButtons(bomData) {
     });
 }
 document.getElementById('downloadAllDataButton').addEventListener('click', downloadData);
+async function downloadData() {
+    const teamNumber = localStorage.getItem('team_number');
+    const token = localStorage.getItem('jwt_token');
+    const isAdmin = teamNumber === '0000';  // Adjust if necessary
 
+    try {
+        const response = await fetch(`${API_BASE_URL}api/download_all_data?team_number=${teamNumber}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            alert(`Error: ${errorData.error}`);
+            return;
+        }
+
+        const data = await response.json();
+        const dataStr = JSON.stringify(data, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = isAdmin ? 'all_data.json' : `team_${teamNumber}_data.json`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('Error downloading data:', error);
+        alert('An error occurred while downloading the data.');
+    }
+}
 // Function to open the modal with part details
 function openEditModal(part) {
     const modal = document.getElementById('editModal');

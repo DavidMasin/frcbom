@@ -8,6 +8,8 @@
 # Optionally, you can redirect to a robot selection page
 /:team_number    /dashboard.html   200
 
+/:team_number/Admin    /teamAdmin_dashboard.html   200
+
 # Proxy API requests to your Railway back-end
 /api/*  https://frcbom-production.up.railway.app/api/:splat  200
 

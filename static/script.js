@@ -928,6 +928,7 @@ async function initializeDashboard() {
     if (admin)
     {
         console.log("IM HEREEEE: ",admin)
+        console.log("Is role not admin: ",localStorage.getItem("role")==="Admin")
         if (! localStorage.getItem("role")==="Admin")
         {
             alert('You must be logged in to an ADMIN account to access this dashboard.');

@@ -8,21 +8,18 @@ function parseURL() {
 
     if (pathSegments.length >= 2) {
         params.teamNumber = pathSegments[0];
-        if (pathSegments[1]==="Admin")
-        {
-            params.admin=true
+        if (pathSegments[1] === "Admin") {
+            params.admin = true
             params.robotName = pathSegments[2];
             params.system = pathSegments[3] || 'Main';
-        }
-        else
-        {
-            params.admin=false
+        } else {
+            params.admin = false
             params.robotName = pathSegments[1];
             params.system = pathSegments[2] || 'Main';
         }
     } else {
         params.teamNumber = pathSegments[0];
-        params.admin=false
+        params.admin = false
         params.robotName = null;
         params.system = 'Main';
     }
@@ -201,10 +198,10 @@ async function handleLogin(event) {
             } else {
                 if (data.isAdmin) {
                     window.location.href = `/${teamNumber}/Admin`
-                    localStorage.setItem("role","Admin")
+                    localStorage.setItem("role", "Admin")
                 } else {
                     window.location.href = `/${teamNumber}`;
-                    localStorage.setItem("role","User")
+                    localStorage.setItem("role", "User")
                 }
 
             }
@@ -413,7 +410,7 @@ async function handleRegister(event) {
         if (response.ok) {
             document.getElementById('registerMessage').textContent = 'Registration successful!';
             document.getElementById('registerMessage').style.color = 'green';
-            showRegisterMessage('Registration successful!','green')
+            showRegisterMessage('Registration successful!', 'green')
         } else {
             document.getElementById('registerMessage').textContent = `Error: ${data.error}`;
         }
@@ -494,9 +491,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('teamNumber')) {
         document.getElementById('teamNumber').textContent = teamNumber || '';
     }
-    let systemSelector=""
-    if (document.getElementById("systemSelect"))
-    {
+    let systemSelector = ""
+    if (document.getElementById("systemSelect")) {
         systemSelector = document.getElementById("systemSelect").value;
     }
 
@@ -894,10 +890,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Function to initialize the dashboard
 async function initializeDashboard() {
-    let {teamNumber,admin, robotName, system} = parseURL();
+    let {teamNumber, admin, robotName, system} = parseURL();
     try {
-        robotName=robotName.replace("%20"," ")
-    }catch {}
+        robotName = robotName.replace("%20", " ")
+    } catch {
+    }
 
     let jwtToken = localStorage.getItem('jwt_token');
 
@@ -915,7 +912,7 @@ async function initializeDashboard() {
     }
 
     localStorage.setItem('team_number', teamNumber);
-    console.log("jwtToken: ",jwtToken)
+    console.log("jwtToken: ", jwtToken)
     if (!jwtToken) {
         await showPasswordPrompt();
         jwtToken = localStorage.getItem('jwt_token');
@@ -925,12 +922,10 @@ async function initializeDashboard() {
             return;
         }
     }
-    if (admin)
-    {
-        console.log("IM HEREEEE: ",admin)
-        console.log("Is role not admin: ",localStorage.getItem("role")==="Admin")
-        if (!(localStorage.getItem("role").toString()==="Admin"))
-        {
+    if (admin) {
+        console.log("IM HEREEEE: ", admin)
+        console.log("Is role not admin: ", localStorage.getItem("role") === "Admin")
+        if (!(localStorage.getItem("role").toString() === "Admin")) {
             alert('You must be logged in to an ADMIN account to access this dashboard.');
             window.location.href = '/';
             return;
@@ -968,8 +963,7 @@ function showRobotSelectionDashboard(robots) {
     const robotList = document.getElementById('robotList');
     robotList.innerHTML = '';
     console.log(robots)
-    if (robots===null)
-    {
+    if (robots === null) {
         robotList.innerHTML = 'NO ROBOTS REGISTERED! (CONTACT TEAM ADMIN)';
     }
     robots.forEach(robot => {
@@ -982,10 +976,12 @@ function showRobotSelectionDashboard(robots) {
         });
         robotList.appendChild(robotButton);
     });
+    if (document.getElementById('createRobotButton')) {
+        document.getElementById('createRobotButton').addEventListener('click', () => {
+            promptNewRobotCreation(localStorage.getItem('team_number'));
+        });
+    }
 
-    document.getElementById('createRobotButton').addEventListener('click', () => {
-        promptNewRobotCreation(localStorage.getItem('team_number'));
-    });
 
     // document.getElementById('dashboardContent').style.display = 'none';
     robotSelectionSection.style.display = 'block';

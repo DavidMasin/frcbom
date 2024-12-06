@@ -8,8 +8,16 @@ function parseURL() {
 
     if (pathSegments.length >= 2) {
         params.teamNumber = pathSegments[0];
-        params.robotName = pathSegments[1];
-        params.system = pathSegments[2] || 'Main';
+        if (pathSegments[1]==="Admin")
+        {
+            params.robotName = pathSegments[2];
+            params.system = pathSegments[3] || 'Main';
+        }
+        else
+        {
+            params.robotName = pathSegments[1];
+            params.system = pathSegments[2] || 'Main';
+        }
     } else {
         params.teamNumber = pathSegments[0];
         params.robotName = null;
@@ -400,6 +408,7 @@ async function handleRegister(event) {
         if (response.ok) {
             document.getElementById('registerMessage').textContent = 'Registration successful!';
             document.getElementById('registerMessage').style.color = 'green';
+            showRegisterMessage('Registration successful!','green')
         } else {
             document.getElementById('registerMessage').textContent = `Error: ${data.error}`;
         }

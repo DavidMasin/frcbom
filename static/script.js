@@ -494,7 +494,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('teamNumber')) {
         document.getElementById('teamNumber').textContent = teamNumber || '';
     }
-    const systemSelector = document.getElementById("systemSelect").value;
+    let systemSelector=""
+    if (document.getElementById("systemSelect"))
+    {
+        systemSelector = document.getElementById("systemSelect").value;
+    }
+
     // Fetch BOM data from the server on page load (if applicable)
     if (window.location.pathname.includes('dashboard.html')) {
         console.log("Im Here")

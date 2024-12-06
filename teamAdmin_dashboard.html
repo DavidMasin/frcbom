@@ -71,6 +71,8 @@
             <span>Mill</span>
         </button>
 
+        <!-- Settings Button -->
+        <button id="settingsButton">Settings</button>
     </section>
 
     <!-- BOM Parts Grid Section -->
@@ -81,7 +83,21 @@
         </div>
     </section>
 
-
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Settings</h2>
+            <div class="modal-body">
+                <label for="onshapeDocumentUrl"></label><input type="text" id="onshapeDocumentUrl"
+                                                               placeholder="Enter Onshape Document URL">
+                <label for="accessKey"></label><input type="text" id="accessKey" placeholder="Enter Access Key">
+                <label for="secretKey"></label><input type="text" id="secretKey" placeholder="Enter Secret Key">
+                <!-- Add System Selection -->
+                <button id="fetchBOMButton" class="button-primary" type="button">Fetch BOM</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal for Editing Quantities -->
     <div id="editModal" class="modal">

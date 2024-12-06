@@ -15,7 +15,7 @@ function parseURL() {
         params.robotName = null;
         params.system = 'Main';
     }
-    console.log("Params: ",params)
+    console.log("Params: ", params)
     return params;
 }
 
@@ -183,17 +183,17 @@ async function handleLogin(event) {
         if (response.ok) {
             localStorage.setItem('jwt_token', data.access_token);
             localStorage.setItem('team_number', teamNumber);
-            let selectedSystem = ""
-            if (document.getElementById('systemSelect') != null) {
-                selectedSystem = document.getElementById('systemSelect').value;
-            } else {
-                selectedSystem = "";
-            }
-            // Check if admin
+
+            // Check if General Admin
             if (teamNumber === "0000") {
                 window.location.href = '/admin_dashboard.html'; // Redirect to admin dashboard
             } else {
-                window.location.href = `/${teamNumber}/${selectedSystem}`;
+                if (data.isAdmin) {
+                    window.location.href = `/${teamNumber}/Admin`
+                } else {
+                    window.location.href = `/${teamNumber}`;
+                }
+
             }
         } else {
             document.getElementById('loginMessage').textContent = data.error;
@@ -365,25 +365,35 @@ async function handleRegister(event) {
     const teamNumber = document.getElementById('registerTeamNumber').value;
     const password = document.getElementById('registerPassword').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
-
+    const adminPassword = document.getElementById("registerAdminPassword").value;
+    const adminPasswordConfirm = document.getElementById("registerAdminPasswordConfirm").value;
     if (password !== confirmPassword) {
-        showRegisterMessage('Passwords do not match.', 'danger');
+        showRegisterMessage('User Passwords do not match.', 'danger');
         return;
     }
-
+    if (adminPassword !== adminPasswordConfirm) {
+        showRegisterMessage('Admin Passwords do not match.', 'danger');
+        return;
+    }
     if (!isPasswordStrong(password)) {
         showRegisterMessage(
-            'Password is not strong enough. Please meet the requirements.',
+            'User Password is not strong enough. Please meet the requirements.',
             'danger'
         );
         return;
     }
-
+    if (!isPasswordStrong(adminPassword)) {
+        showRegisterMessage(
+            'Admin Password is not strong enough. Please meet the requirements.',
+            'danger'
+        );
+        return;
+    }
     try {
         const response = await fetch(`${API_BASE_URL}api/register`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({team_number: teamNumber, password})
+            body: JSON.stringify({"team_number": teamNumber, "password": password, "adminPassword": adminPassword})
         });
         console.log("Registered team!")
         const data = await response.json();
@@ -398,6 +408,7 @@ async function handleRegister(event) {
         document.getElementById('registerMessage').textContent = 'Registration failed.';
     }
 }
+
 document.addEventListener('DOMContentLoaded', () => {
     const uploadForm = document.getElementById('uploadBOMDataForm');
     const fileInput = document.getElementById('bomDataFileInput');
@@ -421,7 +432,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
                 },
-                body: JSON.stringify({ bom_data_dict: JSON.parse(fileContent) }),
+                body: JSON.stringify({bom_data_dict: JSON.parse(fileContent)}),
             });
 
             const result = await response.json();
@@ -469,11 +480,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('teamNumber')) {
         document.getElementById('teamNumber').textContent = teamNumber || '';
     }
-    const systemSelector=document.getElementById("systemSelect").value;
+    const systemSelector = document.getElementById("systemSelect").value;
     // Fetch BOM data from the server on page load (if applicable)
     if (window.location.pathname.includes('dashboard.html')) {
         console.log("Im Here")
-        fetchBOMDataFromServer(systemSelector,'Main').then(() => {
+        fetchBOMDataFromServer(systemSelector, 'Main').then(() => {
         });
     }
 
@@ -804,11 +815,11 @@ async function downloadCADFile(partId) {
 function determineCurrentProcess(part) {
     // console.log("PLACER1: part: " + part)
     if (part.preProcess && !part.preProcessCompleted) {
-        return {name: part.preProcess, remaining: part.Quantity-part.preProcessQuantity || part.Quantity};
+        return {name: part.preProcess, remaining: part.Quantity - part.preProcessQuantity || part.Quantity};
     } else if (part.Process1 && !part.process1Completed) {
-        return {name: part.Process1, remaining: part.Quantity-part.process1Quantity || part.Quantity};
+        return {name: part.Process1, remaining: part.Quantity - part.process1Quantity || part.Quantity};
     } else if (part.Process2 && !part.process2Completed) {
-        return {name: part.Process2, remaining: part.Quantity-part.process2Quantity || part.Quantity};
+        return {name: part.Process2, remaining: part.Quantity - part.process2Quantity || part.Quantity};
     } else {
         return {name: 'Completed', remaining: 0};
     }
@@ -830,7 +841,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log(parseURL())
     console.log(currentSystem)
     if (currentSystem) {
-        console.log("UPDATTTEDDD SYSTEM TO: ",systemSelect.value)
+        console.log("UPDATTTEDDD SYSTEM TO: ", systemSelect.value)
         systemSelect.value = currentSystem;
     }
 

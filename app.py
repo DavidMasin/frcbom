@@ -37,6 +37,7 @@ class Team(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     team_number = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
+    adminPassword = db.Column(db.String(200), nullable=False)
 
 
 # Create tables within the application context
@@ -81,9 +82,9 @@ def register_function(team_number, machine):
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.json
-    team_number = data['team_number']
-    password = data['password']
-
+    team_number = data["team_number"]
+    password = data["password"]
+    adminPassword = data["adminPassword"]
     # Check if team exists
     existing_team = Team.query.filter_by(team_number=team_number).first()
     if existing_team:
@@ -91,9 +92,9 @@ def register():
 
     # Hash the password
     hashed_password = generate_password_hash(password)
-
+    hashed_adminPassword = generate_password_hash(adminPassword)
     # Create new team
-    new_team = Team(team_number=team_number, password=hashed_password)
+    new_team = Team(team_number=team_number, password=hashed_password, adminPassword=hashed_adminPassword)
     db.session.add(new_team)
     db.session.commit()
 
@@ -115,11 +116,17 @@ def login():
 
     # Verify the password
     if not check_password_hash(team.password, password):
-        return jsonify({"error": "Invalid credentials"}), 401
+        if not check_password_hash(team.adminPassword, password):
+            return jsonify({"error": "Invalid credentials"}), 401
 
     # Generate a JWT token
-    access_token = create_access_token(identity=team_number)
-    return jsonify(access_token=access_token, team_number=team_number), 200
+    if check_password_hash(team.adminPassword, password):
+        isAdmin = True
+        access_token = create_access_token(identity=team_number, additional_headers="Admin")
+    else:
+        access_token = create_access_token(identity=team_number)
+        isAdmin = False
+    return jsonify(access_token=access_token, team_number=team_number, isAdmin=isAdmin), 200
 
 
 # Endpoint to check if a team exists
@@ -405,12 +412,10 @@ def upload_bom_dict():
 
     # Update the in-memory BOM data and save it to file
     if bom_data_dict1:
-
         bom_data_dict.update(bom_data_dict1)
         save_bom_data()
 
     return jsonify({"message": "BOM data uploaded successfully."}), 200
-
 
 
 # Endpoint to download bom_data.json

@@ -1,5 +1,7 @@
 import json
 import os
+import zipfile
+from io import BytesIO
 
 from flask import Flask, request, jsonify, render_template, send_file
 from flask_cors import CORS
@@ -22,30 +24,21 @@ CORS(app, resources={"/*": {"origins": ["*"]}},
      allow_headers=["Content-Type", "Authorization", "X-Requested-With"])
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# In-memory dictionary to store BOM data per team
 bom_data_dict = {}
-bom_data_file = 'bom_data.json'  # File to persist BOM data
+bom_data_file = 'bom_data.json'
 settings_data_dict = {}
 settings_data_file = 'settings_data.json'
 
-# In-memory storage for BOM data per team
-teams = {}
-latest_bom_data = {}
-
-
-class Team(db.Model):
+# Updated: Now we have a User model with roles
+class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    team_number = db.Column(db.String(100), unique=True, nullable=False)
+    team_number = db.Column(db.String(100), nullable=False)
+    role = db.Column(db.String(50), nullable=False)  # 'admin' or 'user'
     password = db.Column(db.String(200), nullable=False)
 
-
-# Create tables within the application context
 with app.app_context():
     db.create_all()
 
-# Onshape API Client Setup
-# access_key = 'iVTJDrE6RTFeWKRTj8cF4VCa'
-# secret_key = 'hjhZYvSX1ylafeku5a7e4wDsBXUNQ6oKynl6HnocHTTddy0Q'
 access_key = ""
 secret_key = ""
 base_url = 'https://cad.onshape.com'
@@ -54,106 +47,104 @@ client = Client(configuration={"base_url": base_url, "access_key": access_key, "
 
 @app.route('/')
 def home():
-    print("HOME")
     return render_template("index.html")
-    # return "HELLO WORLD"
+
+
+@app.route('/<team_number>')
+def team_base(team_number):
+    # If team number is provided without robot, redirect to default robot
+    # Check if default robot is set for this team
+    default_robot = settings_data_dict.get(team_number, {}).get("default_robot")
+    if default_robot:
+        return render_template('dashboard.html', team_number=team_number, robot_name=default_robot, system='Main')
+    else:
+        # if no default robot, just show dashboard.html which will handle robot selection
+        return render_template('dashboard.html', team_number=team_number)
 
 
 @app.route('/<team_number>/<robot_name>')
 def team_dashboard(team_number, robot_name):
-    # Pass the team number and robot name to the template for dynamic rendering
-    return render_template('dashboard.html', team_number=team_number, robot_name=robot_name)
+    return render_template('dashboard.html', team_number=team_number, robot_name=robot_name, system='Main')
 
 
 @app.route('/<team_number>/<robot_name>/<system>')
 def team_bom_filtered(team_number, robot_name, system):
-    # Render the dashboard with a filtered BOM
     return render_template('dashboard.html', team_number=team_number, robot_name=robot_name, filter_system=system)
 
 
 @app.route('/register')
-def register_function(team_number, machine):
-    # Render the dashboard with a filtered BOM
+def register_function():
     return render_template('register.html')
 
 
-# Register endpoint
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.json
     team_number = data['team_number']
     password = data['password']
 
-    # Check if team exists
-    existing_team = Team.query.filter_by(team_number=team_number).first()
-    if existing_team:
+    # Check if team admin already exists
+    existing_admin = User.query.filter_by(team_number=team_number, role='admin').first()
+    if existing_admin:
         return jsonify({"error": "Team already exists"}), 400
 
     # Hash the password
     hashed_password = generate_password_hash(password)
 
-    # Create new team
-    new_team = Team(team_number=team_number, password=hashed_password)
-    db.session.add(new_team)
+    # Create admin and user accounts for the team
+    new_admin = User(team_number=team_number, role='admin', password=hashed_password)
+    new_user = User(team_number=team_number, role='user', password=hashed_password)
+    db.session.add(new_admin)
+    db.session.add(new_user)
     db.session.commit()
 
-    return jsonify({"message": "Team registered successfully"}), 200
+    return jsonify({"message": "Registered"}), 200
 
 
-# Login endpoint
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json
     team_number = data['team_number']
     password = data['password']
+    role = data.get('role', 'user')  # default to user if not specified
 
-    # Retrieve the team from the database
-    team = Team.query.filter_by(team_number=team_number).first()
-
-    if not team:
+    user = User.query.filter_by(team_number=team_number, role=role).first()
+    if not user:
         return jsonify({"error": "Invalid credentials"}), 401
 
     # Verify the password
-    if not check_password_hash(team.password, password):
+    if not check_password_hash(user.password, password):
         return jsonify({"error": "Invalid credentials"}), 401
 
     # Generate a JWT token
-    access_token = create_access_token(identity=team_number)
-    return jsonify(access_token=access_token, team_number=team_number), 200
+    identity = {"team_number": team_number, "role": role}
+    access_token = create_access_token(identity=identity)
+    return jsonify(access_token=access_token, team_number=team_number, role=role), 200
 
 
-# Endpoint to check if a team exists
 @app.route('/api/team_exists', methods=['GET'])
 def team_exists():
     team_number = request.args.get('team_number')
-    app.logger.debug(f"Checking if team {team_number} exists.")
-
     if not team_number:
         return jsonify({"error": "Team number is required"}), 400
 
-    # Check if the team exists in the database
-    team = Team.query.filter_by(team_number=team_number).first()
-    app.logger.debug(f"Team found: {team}")
-
+    team = User.query.filter_by(team_number=team_number, role='admin').first()
     if team:
         return jsonify({"exists": True}), 200
     else:
         return jsonify({"exists": False}), 200
 
 
-# Health check endpoint
 @app.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({"status": "API is running"}), 200
 
 
-# Protected endpoint (example)
 @app.route('/api/dashboard', methods=['GET'])
 def get_dashboard():
     return jsonify({"message": "This is a protected endpoint"}), 200
 
 
-# Helper functions
 def findIDs(bom_dict, IDName):
     for head in bom_dict["headers"]:
         if head['name'] == IDName:
@@ -175,15 +166,13 @@ def getPartsDict(bom_dict, partNameID, DescriptionID, quantityID, materialID, ma
         part_process1 = row.get("headerIdToValue", {}).get(process1ID, "Unknown")
         part_process2 = row.get("headerIdToValue", {}).get(process2ID, "Unknown")
         part_id = row.get("itemSource", {}).get("partId", "Unknown")
-        if part_material != "N/A" and part_material is not None:
-            partDict[part_name] = (part_description,
-                                   int(quantity), part_material["displayName"], part_material_bom, part_preProcess,
-                                   part_process1,
-                                   part_process2, part_id)
+        if part_material != "N/A" and part_material is not None and isinstance(part_material, dict):
+            display_mat = part_material["displayName"]
         else:
-            partDict[part_name] = (part_description,
-                                   int(quantity), "No material set", part_material_bom, part_preProcess, part_process1,
-                                   part_process2, part_id)
+            display_mat = "No material set"
+        partDict[part_name] = (part_description,
+                               int(quantity), display_mat, part_material_bom, part_preProcess,
+                               part_process1, part_process2, part_id)
     return partDict
 
 
@@ -193,14 +182,18 @@ def save_codes():
 
 
 @app.route('/api/bom', methods=['POST'])
+@jwt_required()
 def fetch_bom():
-    global access_key, secret_key, client
-    data = request.json
+    current_user = get_jwt_identity()
+    if current_user["role"] != "admin":
+        return jsonify({"error": "Only admin can fetch BOM"}), 403
 
+    data = request.json
     document_url = data.get("document_url")
     team_number = data.get("team_number")
-    robot = data.get("robot", "Robot1")  # Default to "Robot1" if not provided
-    system = data.get("system", "Main")  # Default to "Main" if no system is provided
+    robot = data.get("robot", "Robot1")
+    system = data.get("system", "Main")
+    global access_key, secret_key, client
     access_key = data.get("access_key")
     secret_key = data.get("secret_key")
     client = Client(configuration={"base_url": base_url, "access_key": access_key, "secret_key": secret_key})
@@ -210,15 +203,15 @@ def fetch_bom():
 
     try:
         if access_key and secret_key:
-            # Save access and secret keys for the team
-            settings_data_dict[team_number] = {
+            if team_number not in settings_data_dict:
+                settings_data_dict[team_number] = {}
+            settings_data_dict[team_number].update({
                 "accessKey": access_key,
                 "secretKey": secret_key,
                 "documentURL": document_url,
-            }
+            })
             save_codes()
 
-            # Onshape API setup
             element = OnshapeElement(document_url)
             fixed_url = '/api/v10/assemblies/d/did/w/wid/e/eid/bom'
             method = 'GET'
@@ -265,15 +258,11 @@ def fetch_bom():
                     "ID": part_id,
                 })
 
-                # Save BOM data for the specific system
-                # Save BOM data under the correct team, robot, and system
-                if team_number not in bom_data_dict:
-                    bom_data_dict[team_number] = {}
-
-                if robot not in bom_data_dict[team_number]:
-                    bom_data_dict[team_number][robot] = {}
-
-                bom_data_dict[team_number][robot][system] = bom_data
+            if team_number not in bom_data_dict:
+                bom_data_dict[team_number] = {}
+            if robot not in bom_data_dict[team_number]:
+                bom_data_dict[team_number][robot] = {}
+            bom_data_dict[team_number][robot][system] = bom_data
             save_bom_data()
 
             return jsonify({"bom_data": bom_data}), 200
@@ -287,42 +276,42 @@ def fetch_bom():
 @app.route('/api/new_robot', methods=['POST'])
 @jwt_required()
 def new_robot():
+    current_user = get_jwt_identity()
     data = request.json
     team_number = data.get("team_number")
     robot_name = data.get("robot_name")
 
+    if current_user["team_number"] != team_number:
+        return jsonify({"error": "Unauthorized"}), 403
+
     if not team_number or not robot_name:
         return jsonify({"error": "Team number and robot name are required"}), 400
 
-    # Ensure the team exists
     if team_number not in bom_data_dict:
         bom_data_dict[team_number] = {}
 
-    # Ensure the robot name is unique
     if robot_name in bom_data_dict[team_number]:
         return jsonify({"error": "Robot name already exists"}), 400
 
-    # Create the new robot
-    bom_data_dict[team_number][robot_name] = {"Main": [], "System1": [], "System2": []}
+    bom_data_dict[team_number][robot_name] = {"Main": [], "System1": [], "System2": [], "System3": [], "System4": [], "System5": []}
     save_bom_data()
-
     return jsonify({"message": f"Robot {robot_name} created successfully"}), 200
 
 
 @app.route('/api/get_robots', methods=['GET'])
 @jwt_required()
 def get_robots():
+    current_user = get_jwt_identity()
     team_number = request.args.get('team_number')
+    if current_user["team_number"] != team_number:
+        return jsonify({"error": "Unauthorized"}), 403
 
-    if not team_number:
-        return jsonify({"error": "Team number is required"}), 400
-
-    # Fetch robots for the team
     robots = list(bom_data_dict.get(team_number, {}).keys())
     return jsonify({"robots": robots}), 200
 
 
-def is_admin(team_number):
+def is_global_admin(team_number):
+    # Replace with your global admin logic if needed. For now admin team is "0000"
     return team_number == "0000"
 
 
@@ -330,68 +319,57 @@ def is_admin(team_number):
 @jwt_required()
 def admin_get_bom():
     current_user = get_jwt_identity()
-
-    # Check if the user is the admin
-    if not is_admin(current_user):
-        return jsonify({"error": "Unauthorized access"}), 403
-
+    if current_user["role"] != "admin":
+        return jsonify({"error": "Unauthorized"}), 403
     team_number = request.args.get('team_number')
-    system = request.args.get('system', 'Main')  # Default to "Main"
+    robot_name = request.args.get('robot_name')
+    system = request.args.get('system', 'Main')
 
-    if not team_number:
-        return jsonify({"error": "Team number is required"}), 400
-
-    # Fetch BOM data for the specified team and system
     team_bom_data = bom_data_dict.get(team_number, {})
-    if system == "Main":
-        # Combine BOMs for all systems
-        combined_bom = []
-        for sys_bom in team_bom_data.values():
-            combined_bom.extend(sys_bom)
-        return jsonify({"bom_data": combined_bom}), 200
+    if robot_name and robot_name in team_bom_data:
+        robot_bom_data = team_bom_data[robot_name]
+        if system == "Main":
+            combined_bom = []
+            for sys_bom in robot_bom_data.values():
+                combined_bom.extend(sys_bom)
+            return jsonify({"bom_data": combined_bom}), 200
+        else:
+            return jsonify({"bom_data": robot_bom_data.get(system, [])}), 200
     else:
-        # Fetch BOM for the specific system
-        return jsonify({"bom_data": team_bom_data.get(system, [])}), 200
+        # if no robot specified or robot doesn't exist
+        combined_bom = []
+        for rdata in team_bom_data.values():
+            for sys_bom in rdata.values():
+                combined_bom.extend(sys_bom)
+        return jsonify({"bom_data": combined_bom}), 200
 
 
 @app.route('/api/admin/download_bom_dict', methods=['GET'])
 @jwt_required()
 def download_bom_dict():
     current_user = get_jwt_identity()
+    if current_user["role"] != "admin":
+        return jsonify({"error": "Unauthorized"}), 403
 
-    # Check if the user is the admin
-    if not is_admin(current_user):
-        return jsonify({"error": "Unauthorized access"}), 403
-
-    try:
-        return jsonify({"bom_data_dict": bom_data_dict}), 200
-    except Exception as e:
-        return jsonify({"error": f"Failed to download BOM data: {str(e)}"}), 500
+    return jsonify({"bom_data_dict": bom_data_dict}), 200
 
 
 @app.route('/api/admin/download_settings_dict', methods=['GET'])
 @jwt_required()
 def download_settings_dict():
     current_user = get_jwt_identity()
+    if current_user["role"] != "admin":
+        return jsonify({"error": "Unauthorized"}), 403
 
-    # Check if the user is the admin
-    if not is_admin(current_user):
-        return jsonify({"error": "Unauthorized access"}), 403
-    print(settings_data_dict)
-    try:
-        return jsonify({"settings_data_dict": settings_data_dict}), 200
-    except Exception as e:
-        return jsonify({"error": f"Failed to download Settings data: {str(e)}"}), 500
+    return jsonify({"settings_data_dict": settings_data_dict}), 200
 
 
 @app.route('/api/admin/upload_bom_dict', methods=['POST'])
 @jwt_required()
 def upload_bom_dict():
     current_user = get_jwt_identity()
-    global bom_data_dict
-    # Check if the user is an admin
-    if not is_admin(current_user):
-        return jsonify({"error": "Unauthorized access"}), 403
+    if current_user["role"] != "admin":
+        return jsonify({"error": "Unauthorized"}), 403
 
     data = request.get_json()
     bom_data_dict1 = data.get('bom_data_dict')
@@ -399,31 +377,21 @@ def upload_bom_dict():
     if not bom_data_dict1:
         return jsonify({"error": "No BOM data provided."}), 400
 
-    # Validate the BOM data format
     if not isinstance(bom_data_dict1, dict):
         return jsonify({"error": "Invalid BOM data format."}), 400
 
-    # Update the in-memory BOM data and save it to file
-    if bom_data_dict1:
-
-        bom_data_dict.update(bom_data_dict1)
-        save_bom_data()
-
+    bom_data_dict.update(bom_data_dict1)
+    save_bom_data()
     return jsonify({"message": "BOM data uploaded successfully."}), 200
 
 
-
-# Endpoint to download bom_data.json
 @app.route('/api/download_bom_data', methods=['GET'])
 @jwt_required()
 def download_bom_data():
     current_user = get_jwt_identity()
+    if current_user["role"] != "admin":
+        return jsonify({"error": "Unauthorized"}), 403
 
-    # Check if the user is the admin
-    if not is_admin(current_user):
-        return jsonify({"error": "Unauthorized access"}), 403
-
-    # Ensure the file exists
     if not os.path.exists(bom_data_file):
         return jsonify({"error": "BOM data file not found"}), 404
 
@@ -438,33 +406,22 @@ def download_bom_data():
         return jsonify({"error": f"Failed to download BOM data: {str(e)}"}), 500
 
 
-# Endpoint to download settings_data.json
 @app.route('/api/download_settings_data', methods=['GET'])
 @jwt_required()
 def download_settings_data():
     current_user = get_jwt_identity()
+    if current_user["role"] != "admin":
+        return jsonify({"error": "Unauthorized"}), 403
 
-    # Check if the user is the admin
-    if not is_admin(current_user):
-        return jsonify({"error": "Unauthorized access"}), 403
-
-    # Ensure the file exists
     if not os.path.exists(settings_data_file):
         return jsonify({"error": "Settings data file not found"}), 404
 
     try:
         return jsonify(settings_data_dict), 200
-        # return send_file(
-        #     settings_data_file,
-        #     as_attachment=True,
-        #     download_name='settings_data.json',
-        #     mimetype='application/json'
-        # )
     except Exception as e:
         return jsonify({"error": f"Failed to download settings data: {str(e)}"}), 500
 
 
-# Helper function to load BOM data from file
 def load_bom_data():
     global bom_data_dict
     try:
@@ -483,18 +440,15 @@ def load_settings_data():
         settings_data_dict = {}
 
 
-# Helper function to save BOM data to file
 def save_bom_data():
     with open(bom_data_file, 'w') as file:
         json.dump(bom_data_dict, file)
 
 
-# Load BOM data when the server starts
 load_bom_data()
 load_settings_data()
 
 
-# Endpoint to save BOM data for a specific team
 @app.route('/api/save_bom', methods=['POST'])
 def save_bom():
     data = request.json
@@ -504,14 +458,11 @@ def save_bom():
     if not team_number or not bom_data:
         return jsonify({"error": "Team number and BOM data are required"}), 400
 
-    # Save BOM data for the team
     bom_data_dict[team_number] = bom_data
     save_bom_data()
-
     return jsonify({"message": "BOM data saved successfully"}), 200
 
 
-# Endpoint to retrieve BOM data for a specific team
 @app.route('/api/get_bom', methods=['GET'])
 @jwt_required()
 def get_bom():
@@ -520,10 +471,12 @@ def get_bom():
     robot = request.args.get('robot')
     system = request.args.get('system', 'Main')
 
+    if current_user["team_number"] != team_number:
+        return jsonify({"error": "Unauthorized"}), 403
+
     if not team_number or not robot:
         return jsonify({"error": "Team number and robot name are required"}), 400
 
-        # Fetch BOM data
     team_bom_data = bom_data_dict.get(team_number, {})
     robot_bom_data = team_bom_data.get(robot, {})
     if system == "Main":
@@ -535,41 +488,41 @@ def get_bom():
         return jsonify({"bom_data": robot_bom_data.get(system, [])}), 200
 
 
-# Endpoint to clear BOM data for a specific team (Optional)
 @app.route('/api/clear_bom', methods=['POST'])
 def clear_bom():
     data = request.json
     team_number = data.get('team_number')
-
     if not team_number:
         return jsonify({"error": "Team number is required"}), 400
 
     bom_data_dict.pop(team_number, None)
     save_bom_data()
-
     return jsonify({"message": "BOM data cleared successfully"}), 200
 
 
 @app.route('/api/download_cad', methods=['POST'])
+@jwt_required()
 def download_cad():
+    current_user = get_jwt_identity()
     data = request.json
-    print(request)
     part_id = data.get('id')
     team_number = data.get("team_number")
+
+    if current_user["team_number"] != team_number:
+        return jsonify({"error": "Unauthorized"}), 403
+
     if not part_id or not team_number:
         return jsonify({'message': 'Missing part ID or team number'}), 400
-    # document_url = settings_data_dict[team_number]["documentURL"]
-    document_url = "https://cad.onshape.com/documents/0f3c906136618fd7ebb6090c/w/ad4ff8bac9eff7f8abe5f2f7/e/3427958cf6a5e5b7120e3a42"
-    print(settings_data_dict)
+
+    document_url = settings_data_dict[team_number]["documentURL"]
     access_key_data = settings_data_dict[team_number]["accessKey"]
     secret_key_data = settings_data_dict[team_number]["secretKey"]
     client_data = Client(
         configuration={"base_url": base_url, "access_key": access_key_data, "secret_key": secret_key_data})
-    if not document_url or not team_number:
+    if not document_url:
         return jsonify({"error": "Document URL and Team Number are required"}), 400
     try:
         if access_key_data != "" and secret_key_data != "":
-
             element = OnshapeElement(document_url)
 
             fixed_url = '/api/v10/parts/d/did/w/wid/e/eid/partid/pid/parasolid'
@@ -586,21 +539,77 @@ def download_cad():
             fixed_url = fixed_url.replace('wid', wid)
             fixed_url = fixed_url.replace('eid', eid)
             fixed_url = fixed_url.replace('pid', part_id)
-            print("Connecting to Onshape's API...")
             url = base_url + fixed_url
-            print("URL: ", url)
             response = client_data.api_client.request(method, url=url, query_params=params,
                                                       headers=headers,
                                                       body=payload)
-            print("Onshape API Connected.")
-            print("Response: ", response)
-            return jsonify({"response": response.data}), 200
+            # Return as a file download (assuming response.data is binary)
+            return send_file(BytesIO(response.data),
+                             as_attachment=True,
+                             download_name=f"Part-{part_id}.x_t",
+                             mimetype='application/octet-stream')
         else:
-            print("DIDN'T GET ACCESS AND SECRET!!")
-            return
+            return jsonify({"error": "Access and Secret keys missing"}), 400
     except Exception as e:
-        print("Error fetching CAD:", str(e))
-        return jsonify({"bom_data": ()}), 500
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/admin/download_all', methods=['GET'])
+@jwt_required()
+def download_all():
+    current_user = get_jwt_identity()
+    if current_user["role"] != "admin":
+        return jsonify({"error": "Unauthorized"}), 403
+
+    buffer = BytesIO()
+    with zipfile.ZipFile(buffer, 'w') as z:
+        if os.path.exists(bom_data_file):
+            z.write(bom_data_file)
+        if os.path.exists(settings_data_file):
+            z.write(settings_data_file)
+        if os.path.exists('teams.db'):
+            z.write('teams.db')
+    buffer.seek(0)
+    return send_file(buffer, as_attachment=True, download_name='all_data.zip', mimetype='application/zip')
+
+
+@app.route('/api/admin/set_default_robot', methods=['POST'])
+@jwt_required()
+def set_default_robot():
+    current_user = get_jwt_identity()
+    if current_user["role"] != "admin":
+        return jsonify({"error": "Unauthorized"}), 403
+
+    data = request.json
+    team_number = data.get('team_number')
+    robot_name = data.get('robot_name')
+    if current_user["team_number"] != team_number:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    if team_number not in settings_data_dict:
+        settings_data_dict[team_number] = {}
+    settings_data_dict[team_number]["default_robot"] = robot_name
+    save_codes()
+    return jsonify({"message": f"Default robot set to {robot_name}"}), 200
+
+
+@app.route('/api/admin/set_filters', methods=['POST'])
+@jwt_required()
+def set_filters():
+    current_user = get_jwt_identity()
+    if current_user["role"] != "admin":
+        return jsonify({"error": "Unauthorized"}), 403
+    data = request.json
+    team_number = data.get('team_number')
+    filters = data.get('filters', {})
+    if current_user["team_number"] != team_number:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    if team_number not in settings_data_dict:
+        settings_data_dict[team_number] = {}
+    settings_data_dict[team_number]["filters"] = filters
+    save_codes()
+    return jsonify({"message": "Filters updated"}), 200
 
 
 @socketio.on('connect')

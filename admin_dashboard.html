@@ -5,29 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
     <link rel="stylesheet" href="/static/style.css">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body>
-<header>
+<header class="flex items-center justify-between bg-white shadow-md p-4">
+    <a href="/">
+        <img src="/static/images/logo.png" alt="FRC BOM Logo" class="h-10 w-auto cursor-pointer">
+    </a>
     <h1>Admin Dashboard</h1>
     <button id="logoutButton" class="button-secondary">Log Out</button>
 </header>
-
 <main>
-    <!-- Actions Section -->
     <section class="admin-actions">
         <h2>Actions</h2>
         <div class="actions-grid">
-            <!-- Download BOM Data -->
             <button id="downloadBOMDictButton" class="button-primary">Download BOM Data</button>
             <button id="downloadSETTINGSDictButton" class="button-primary">Download Settings Data</button>
-            <!-- Upload BOM Data Section -->
             <form id="uploadBOMDataForm" class="action-form">
                 <h3>Upload BOM Data</h3>
                 <input type="file" id="bomDataFileInput" accept=".json" required>
                 <button type="submit" class="button-primary">Upload BOM Data</button>
             </form>
-
-            <!-- Fetch Team BOM -->
             <form id="fetchTeamBOMForm" class="action-form">
                 <h3>Fetch Team BOM</h3>
                 <input type="text" id="teamNumberInput" placeholder="Enter Team Number" required>
@@ -40,109 +38,156 @@
                     <option value="System4">System 4</option>
                     <option value="System5">System 5</option>
                 </select>
+                <input type="text" id="robotNameInput" placeholder="Robot Name (optional)">
                 <button type="submit" class="button-primary">Fetch BOM</button>
+            </form>
+            <button id="downloadAllDataButton" class="button-primary">Download All Data</button>
+
+            <form id="setFiltersForm" class="action-form mt-4">
+                <h3>Set Filter Names</h3>
+                <input type="text" id="teamNumberFilters" placeholder="Team Number" required>
+                <textarea id="filtersJson" placeholder='{"CNC":"CNC Machine","Lathe":"Lathe Machine"}'></textarea>
+                <button type="submit" class="button-primary">Set Filters</button>
+            </form>
+
+            <form id="setDefaultRobotForm" class="action-form mt-4">
+                <h3>Set Default Robot</h3>
+                <input type="text" id="teamNumberDefaultRobot" placeholder="Team Number" required>
+                <input type="text" id="defaultRobotName" placeholder="Robot Name" required>
+                <button type="submit" class="button-primary">Set Default Robot</button>
             </form>
         </div>
     </section>
-
-    <!-- Display BOM Data -->
     <section id="bomDisplaySection" class="bom-display">
         <h2>BOM Data</h2>
-        <div id="bomPartsGrid" class="grid-layout">
-            <!-- BOM parts will be dynamically populated here -->
-        </div>
+        <div id="bomPartsGrid" class="grid-layout"></div>
     </section>
 </main>
-
 <script src="/static/script.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // Admin Token
         const adminToken = localStorage.getItem('jwt_token');
 
-        // Logout functionality
         document.getElementById('logoutButton').addEventListener('click', () => {
             localStorage.clear();
             window.location.href = '/';
         });
 
-        // Download BOM Dict
         document.getElementById('downloadBOMDictButton').addEventListener('click', async () => {
-            try {
-                const response = await fetch(`${API_BASE_URL}api/admin/download_bom_dict`, {
-                    headers: {'Authorization': `Bearer ${adminToken}`},
-                });
+            const response = await fetch(`${API_BASE_URL}api/admin/download_bom_dict`, {
+                headers: {'Authorization': `Bearer ${adminToken}`},
+            });
 
-                const data = await response.json();
-                if (response.ok) {
-                    const blob = new Blob([JSON.stringify(data.bom_data_dict, null, 2)], {type: 'application/json'});
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = 'bom_data_dict.json';
-                    link.click();
-                } else {
-                    alert(data.error || 'Failed to download BOM data.');
-                }
-            } catch (error) {
-                console.error('Error downloading BOM data:', error);
-                alert('Failed to download BOM data.');
+            const data = await response.json();
+            if (response.ok) {
+                const blob = new Blob([JSON.stringify(data.bom_data_dict, null, 2)], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'bom_data_dict.json';
+                link.click();
+            } else {
+                alert(data.error || 'Failed to download BOM data.');
             }
         });
 
         document.getElementById('downloadSETTINGSDictButton').addEventListener('click', async () => {
-            try {
-                const response = await fetch(`${API_BASE_URL}api/admin/download_settings_dict`, {
-                    headers: {'Authorization': `Bearer ${adminToken}`},
-                });
-
-                const data = await response.json();
-                console.log(data)
-                if (response.ok) {
-                    const blob = new Blob([JSON.stringify(data.settings_data_dict, null, 2)], {type: 'application/json'});
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = 'settings_data.json';
-                    link.click();
-                } else {
-                    alert(data.error || 'Failed to download Settings data.');
-                }
-            } catch (error) {
-                console.error('Error downloading Settings data:', error);
-                alert('Failed to download Settings data.');
+            const response = await fetch(`${API_BASE_URL}api/admin/download_settings_dict`, {
+                headers: {'Authorization': `Bearer ${adminToken}`},
+            });
+            const data = await response.json();
+            if (response.ok) {
+                const blob = new Blob([JSON.stringify(data.settings_data_dict, null, 2)], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'settings_data.json';
+                link.click();
+            } else {
+                alert(data.error || 'Failed to download Settings data.');
             }
         });
 
-        // Fetch Team BOM
         document.getElementById('fetchTeamBOMForm').addEventListener('submit', async (event) => {
             event.preventDefault();
             const teamNumber = document.getElementById('teamNumberInput').value;
             const system = document.getElementById('systemSelect').value;
-            const robot_name = localStorage.getItem("robot_name");
-            try {
-                const response = await fetch(`${API_BASE_URL}api/admin/get_bom?team_number=${teamNumber}&robot_name=${robot_name}&system=${system}`, {
-                    headers: {'Authorization': `Bearer ${adminToken}`},
-                });
+            const robotName = document.getElementById('robotNameInput').value;
+            let url = `${API_BASE_URL}api/admin/get_bom?team_number=${teamNumber}&system=${system}`;
+            if (robotName) url += `&robot_name=${robotName}`;
+            const response = await fetch(url, {
+                headers: {'Authorization': `Bearer ${adminToken}`},
+            });
 
-                const data = await response.json();
-                if (response.ok) {
-                    displayBOMAsButtons(data.bom_data);
-                } else {
-                    alert(data.error || 'Failed to fetch BOM.');
-                }
-            } catch (error) {
-                console.error('Error fetching BOM:', error);
-                alert('Failed to fetch BOM.');
+            const data = await response.json();
+            if (response.ok) {
+                displayBOMAsButtons(data.bom_data);
+            } else {
+                alert(data.error || 'Failed to fetch BOM.');
             }
         });
 
-        // Function to display BOM data
+        document.getElementById('downloadAllDataButton').addEventListener('click', async () => {
+            const response = await fetch(`${API_BASE_URL}api/admin/download_all`, {
+                headers: {'Authorization': `Bearer ${adminToken}`},
+            });
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'all_data.zip';
+                link.click();
+            } else {
+                const err = await response.json();
+                alert(`Error: ${err.error}`);
+            }
+        });
+
+        document.getElementById('setFiltersForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const team_number = document.getElementById('teamNumberFilters').value;
+            const filters = JSON.parse(document.getElementById('filtersJson').value);
+            const res = await fetch(`${API_BASE_URL}api/admin/set_filters`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${adminToken}`
+                },
+                body: JSON.stringify({team_number, filters})
+            });
+            const data = await res.json();
+            if (res.ok) {
+                alert(data.message);
+            } else {
+                alert(data.error || 'Failed to set filters.');
+            }
+        });
+
+        document.getElementById('setDefaultRobotForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const team_number = document.getElementById('teamNumberDefaultRobot').value;
+            const robot_name = document.getElementById('defaultRobotName').value;
+            const res = await fetch(`${API_BASE_URL}api/admin/set_default_robot`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${adminToken}`
+                },
+                body: JSON.stringify({team_number, robot_name})
+            });
+            const data = await res.json();
+            if (res.ok) {
+                alert(data.message);
+            } else {
+                alert(data.error || 'Failed to set default robot.');
+            }
+        });
+
         function displayBOMAsButtons(bomData) {
             const gridContainer = document.getElementById('bomPartsGrid');
-            gridContainer.innerHTML = ''; // Clear previous content
+            gridContainer.innerHTML = '';
             bomData.sort((a, b) => (a["Part Name"] || '').localeCompare(b["Part Name"] || ''));
-
             bomData.forEach(part => {
                 const button = document.createElement('div');
                 button.classList.add('part-button');

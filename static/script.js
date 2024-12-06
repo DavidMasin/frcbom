@@ -10,16 +10,19 @@ function parseURL() {
         params.teamNumber = pathSegments[0];
         if (pathSegments[1]==="Admin")
         {
+            params.admin=true
             params.robotName = pathSegments[2];
             params.system = pathSegments[3] || 'Main';
         }
         else
         {
+            params.admin=false
             params.robotName = pathSegments[1];
             params.system = pathSegments[2] || 'Main';
         }
     } else {
         params.teamNumber = pathSegments[0];
+        params.admin=false
         params.robotName = null;
         params.system = 'Main';
     }
@@ -198,8 +201,10 @@ async function handleLogin(event) {
             } else {
                 if (data.isAdmin) {
                     window.location.href = `/${teamNumber}/Admin`
+                    localStorage.setItem("role","Admin")
                 } else {
                     window.location.href = `/${teamNumber}`;
+                    localStorage.setItem("role","User")
                 }
 
             }
@@ -884,7 +889,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Function to initialize the dashboard
 async function initializeDashboard() {
-    let {teamNumber, robotName, system} = parseURL();
+    let {teamNumber,admin, robotName, system} = parseURL();
     try {
         robotName=robotName.replace("%20"," ")
     }catch {}
@@ -915,7 +920,15 @@ async function initializeDashboard() {
             return;
         }
     }
-
+    if (admin)
+    {
+        if (! localStorage.getItem("role"))
+        {
+            alert('You must be logged in to an ADMIN account to access this dashboard.');
+            window.location.href = '/';
+            return;
+        }
+    }
     const robots = await getTeamRobots(teamNumber);
 
     if (!robotName) {
@@ -947,7 +960,11 @@ function showRobotSelectionDashboard(robots) {
     const robotSelectionSection = document.getElementById('robotSelection');
     const robotList = document.getElementById('robotList');
     robotList.innerHTML = '';
-
+    console.log(robots)
+    if (robots.isEmptyObject())
+    {
+        robotList.innerHTML = 'NO ROBOTS REGISTERED! (CONTACT TEAM ADMIN)';
+    }
     robots.forEach(robot => {
         const robotButton = document.createElement('button');
         robotButton.className = 'robot-button';

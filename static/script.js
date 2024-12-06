@@ -183,17 +183,17 @@ async function handleLogin(event) {
         if (response.ok) {
             localStorage.setItem('jwt_token', data.access_token);
             localStorage.setItem('team_number', teamNumber);
-            localStorage.setItem('role', data.role);
-
+            let selectedSystem = ""
+            if (document.getElementById('systemSelect') != null) {
+                selectedSystem = document.getElementById('systemSelect').value;
+            } else {
+                selectedSystem = "";
+            }
             // Check if admin
             if (teamNumber === "0000") {
                 window.location.href = '/admin_dashboard.html'; // Redirect to admin dashboard
             } else {
-                if (data.role === 'admin') {
-                    window.location.href = `/${teamNumber}`;
-                } else {
-                    window.location.href = `/${teamNumber}`;
-                }
+                window.location.href = `/${teamNumber}/${selectedSystem}`;
             }
         } else {
             document.getElementById('loginMessage').textContent = data.error;
@@ -390,7 +390,6 @@ async function handleRegister(event) {
         if (response.ok) {
             document.getElementById('registerMessage').textContent = 'Registration successful!';
             document.getElementById('registerMessage').style.color = 'green';
-            showRegisterMessage('Registration successful!','green')
         } else {
             document.getElementById('registerMessage').textContent = `Error: ${data.error}`;
         }

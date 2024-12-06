@@ -929,7 +929,7 @@ async function initializeDashboard() {
     {
         console.log("IM HEREEEE: ",admin)
         console.log("Is role not admin: ",localStorage.getItem("role")==="Admin")
-        if (! localStorage.getItem("role")==="Admin")
+        if (!(localStorage.getItem("role").toString()==="Admin"))
         {
             alert('You must be logged in to an ADMIN account to access this dashboard.');
             window.location.href = '/';

@@ -122,7 +122,7 @@ def login():
     # Generate a JWT token
     if check_password_hash(team.adminPassword, password):
         isAdmin = True
-        access_token = create_access_token(identity=team_number, additional_headers="Admin")
+        access_token = create_access_token(identity=team_number)
     else:
         access_token = create_access_token(identity=team_number)
         isAdmin = False

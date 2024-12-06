@@ -876,7 +876,10 @@ document.addEventListener('DOMContentLoaded', () => {
 // Function to initialize the dashboard
 async function initializeDashboard() {
     let {teamNumber, robotName, system} = parseURL();
-    robotName=robotName.replace("%20"," ")
+    try {
+        robotName=robotName.replace("%20"," ")
+    }catch {}
+
     let jwtToken = localStorage.getItem('jwt_token');
 
     if (!teamNumber) {

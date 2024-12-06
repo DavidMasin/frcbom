@@ -1,3 +1,5 @@
+/:team_number/Admin    /teamAdmin_dashboard.html   200
+
 # Redirect system-specific routes with robot name to dashboard.html
 /:team_number/:robot_name/:system    /dashboard.html   200
 
@@ -8,7 +10,6 @@
 # Optionally, you can redirect to a robot selection page
 /:team_number    /dashboard.html   200
 
-/:team_number/Admin    /teamAdmin_dashboard.html   200
 
 # Proxy API requests to your Railway back-end
 /api/*  https://frcbom-production.up.railway.app/api/:splat  200

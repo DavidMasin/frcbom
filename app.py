@@ -65,7 +65,7 @@ def team_dashboard(team_number, robot_name):
     # Pass the team number and robot name to the template for dynamic rendering
     return render_template('dashboard.html', team_number=team_number, robot_name=robot_name)
 
-@app.route('/<team_number>/admin')
+@app.route('/<team_number>/Admin')
 def team_dashboardAdmin(team_number):
     # Pass the team number and robot name to the template for dynamic rendering
     return render_template('teamAdmin_dashboard.html', team_number=team_number)

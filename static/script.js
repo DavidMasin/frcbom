@@ -910,7 +910,7 @@ async function initializeDashboard() {
     }
 
     localStorage.setItem('team_number', teamNumber);
-
+    console.log("jwtToken: ",jwtToken)
     if (!jwtToken) {
         await showPasswordPrompt();
         jwtToken = localStorage.getItem('jwt_token');
@@ -961,7 +961,7 @@ function showRobotSelectionDashboard(robots) {
     const robotList = document.getElementById('robotList');
     robotList.innerHTML = '';
     console.log(robots)
-    if (robots.isEmptyObject())
+    if (robots===null)
     {
         robotList.innerHTML = 'NO ROBOTS REGISTERED! (CONTACT TEAM ADMIN)';
     }
@@ -1102,7 +1102,7 @@ document.querySelectorAll('.filter-button').forEach(button => {
 
 document.getElementById('createRobotButton').addEventListener('click', () => {
     const teamNumber = localStorage.getItem('team_number');
-    const robotName = prompt('Enter a name for the new robot (e.g., Robot2):');
+    const robotName = prompt('Enter a name for the new robot (e.g., Robot1):');
     if (!robotName) {
         alert('Robot name is required.');
         return;

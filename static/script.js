@@ -519,7 +519,12 @@ document.getElementById('systemSelect').addEventListener('change', (event) => {
     const selectedSystem = event.target.value;
     const teamNumber = localStorage.getItem('team_number');
     const robotName = localStorage.getItem('robot_name');
-    if (teamNumber && robotName && selectedSystem) {
+    const role = localStorage.getItem("role");
+    if (teamNumber && robotName && selectedSystem &&role==="Admin") {
+        window.location.href = `/${teamNumber}/Admin/${robotName}/${selectedSystem}`;
+    }
+    else
+    {
         window.location.href = `/${teamNumber}/${robotName}/${selectedSystem}`;
     }
 });
@@ -975,7 +980,15 @@ function showRobotSelectionDashboard(robots) {
         robotButton.textContent = robot;
         robotButton.addEventListener('click', async () => {
             const teamNumber = localStorage.getItem('team_number');
-            window.location.href = `/${teamNumber}/${robot}/Main`;
+            const role = localStorage.getItem("role");
+            if (role==="Admin")
+            {
+                window.location.href = `/${teamNumber}/Admin/${robot}/Main`;
+            }
+            else
+            {
+                window.location.href = `/${teamNumber}/${robot}/Main`;
+            }
             await fetchBOMDataFromServer(robot, "Main")
         });
         robotList.appendChild(robotButton);

@@ -502,7 +502,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch BOM data from the server on page load (if applicable)
     if (window.location.pathname.includes('dashboard.html')) {
         console.log("Im Here")
-        fetchBOMDataFromServer(systemSelector, 'Main').then(() => {});
+        fetchBOMDataFromServer(systemSelector, 'Main').then(() => {
+        });
     }
 
     // Modal Logic (move inside DOMContentLoaded)
@@ -520,11 +521,9 @@ document.getElementById('systemSelect').addEventListener('change', (event) => {
     const teamNumber = localStorage.getItem('team_number');
     const robotName = localStorage.getItem('robot_name');
     const role = localStorage.getItem("role");
-    if (teamNumber && robotName && selectedSystem &&role==="Admin") {
+    if (teamNumber && robotName && selectedSystem && role === "Admin") {
         window.location.href = `/${teamNumber}/Admin/${robotName}/${selectedSystem}`;
-    }
-    else
-    {
+    } else {
         window.location.href = `/${teamNumber}/${robotName}/${selectedSystem}`;
     }
 });
@@ -981,12 +980,9 @@ function showRobotSelectionDashboard(robots) {
         robotButton.addEventListener('click', async () => {
             const teamNumber = localStorage.getItem('team_number');
             const role = localStorage.getItem("role");
-            if (role==="Admin")
-            {
+            if (role === "Admin") {
                 window.location.href = `/${teamNumber}/Admin/${robot}/Main`;
-            }
-            else
-            {
+            } else {
                 window.location.href = `/${teamNumber}/${robot}/Main`;
             }
             await fetchBOMDataFromServer(robot, "Main")
@@ -1167,8 +1163,13 @@ function loadRobotSelector() {
         })
         .then(({status, data}) => {
             if (status) {
-                const robotSelector = document.getElementById('robotSelector');
-                robotSelector.innerHTML = ''; // Clear existing options
+                if (document.getElementById('robotSelector')) {
+                    let robotSelector = document.getElementById('robotSelector');
+                    robotSelector.innerHTML = ''; // Clear existing options
+                } else {
+                    let robotSelector;
+                }
+
 
                 const select = document.createElement('select');
                 select.id = 'robotSelect';
@@ -1186,6 +1187,7 @@ function loadRobotSelector() {
                     alert(`Switched to ${selectedRobot}`);
                     // Optionally reload the BOM data here
                 });
+
 
                 robotSelector.appendChild(select);
             } else {

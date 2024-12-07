@@ -421,43 +421,46 @@ async function handleRegister(event) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const uploadForm = document.getElementById('uploadBOMDataForm');
-    const fileInput = document.getElementById('bomDataFileInput');
+    if (document.getElementById('uploadBOMDataForm')) {
+        const uploadForm = document.getElementById('uploadBOMDataForm');
+        const fileInput = document.getElementById('bomDataFileInput');
 
-    uploadForm.addEventListener('submit', async (event) => {
-        event.preventDefault(); // Prevent form submission
-        const file = fileInput.files[0];
+        uploadForm.addEventListener('submit', async (event) => {
+            event.preventDefault(); // Prevent form submission
+            const file = fileInput.files[0];
 
-        if (!file) {
-            alert('Please select a file to upload.');
-            return;
-        }
-
-        try {
-            const fileContent = await file.text(); // Read the file content
-            const token = localStorage.getItem('jwt_token');
-
-            const response = await fetch(`${API_BASE_URL}api/admin/upload_bom_dict`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: JSON.stringify({bom_data_dict: JSON.parse(fileContent)}),
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-                alert('BOM data uploaded successfully!');
-            } else {
-                alert(`Error: ${result.error || 'Failed to upload BOM data.'}`);
+            if (!file) {
+                alert('Please select a file to upload.');
+                return;
             }
-        } catch (error) {
-            console.error('Error uploading BOM data:', error);
-            alert('An error occurred while uploading the BOM data.');
-        }
-    });
+
+            try {
+                const fileContent = await file.text(); // Read the file content
+                const token = localStorage.getItem('jwt_token');
+
+                const response = await fetch(`${API_BASE_URL}api/admin/upload_bom_dict`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({bom_data_dict: JSON.parse(fileContent)}),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('BOM data uploaded successfully!');
+                } else {
+                    alert(`Error: ${result.error || 'Failed to upload BOM data.'}`);
+                }
+            } catch (error) {
+                console.error('Error uploading BOM data:', error);
+                alert('An error occurred while uploading the BOM data.');
+            }
+        });
+    }
+
 });
 
 // Initialize event listeners
@@ -499,8 +502,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch BOM data from the server on page load (if applicable)
     if (window.location.pathname.includes('dashboard.html')) {
         console.log("Im Here")
-        fetchBOMDataFromServer(systemSelector, 'Main').then(() => {
-        });
+        fetchBOMDataFromServer(systemSelector, 'Main').then(() => {});
     }
 
     // Modal Logic (move inside DOMContentLoaded)
@@ -566,57 +568,58 @@ function getBOMDataFromLocal(robotName, system) {
     return bomDict[teamNumber]?.[robotName]?.[system] || [];
 }
 
+if (document.getElementById('settingsButton')) {
+    // Modal Logic
+    const modal = document.getElementById('settingsModal');
+    const settingsButton = document.getElementById('settingsButton');
+    const closeButton = document.querySelector('.close');
 
-// Modal Logic
-const modal = document.getElementById('settingsModal');
-const settingsButton = document.getElementById('settingsButton');
-const closeButton = document.querySelector('.close');
-
-settingsButton.addEventListener('click', () => modal.style.display = 'flex');
-closeButton.addEventListener('click', () => modal.style.display = 'none');
+    settingsButton.addEventListener('click', () => modal.style.display = 'flex');
+    closeButton.addEventListener('click', () => modal.style.display = 'none');
 
 // Fetch BOM Data and Save to Local Storage
 // Function to fetch BOM with system selection
-document.getElementById('fetchBOMButton').addEventListener('click', async () => {
-    const documentUrl = document.getElementById('onshapeDocumentUrl').value;
-    const accessKey = document.getElementById('accessKey').value;
-    const secretKey = document.getElementById('secretKey').value;
-    const system = document.getElementById('systemSelect').value; // Get selected system
-    const teamNumber = localStorage.getItem('team_number');
-    const robot_name = localStorage.getItem('robot_name');
+    document.getElementById('fetchBOMButton').addEventListener('click', async () => {
+        const documentUrl = document.getElementById('onshapeDocumentUrl').value;
+        const accessKey = document.getElementById('accessKey').value;
+        const secretKey = document.getElementById('secretKey').value;
+        const system = document.getElementById('systemSelect').value; // Get selected system
+        const teamNumber = localStorage.getItem('team_number');
+        const robot_name = localStorage.getItem('robot_name');
 
-    if (!documentUrl || !teamNumber) {
-        alert('Document URL and Team Number are required.');
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_BASE_URL}api/bom`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                document_url: documentUrl,
-                team_number: teamNumber,
-                system: system, // Include the selected system
-                access_key: accessKey,
-                secret_key: secretKey,
-            }),
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-            console.log(`BOM fetched and saved for system '${system}'.`);
-            saveBOMDataToLocal(data.bom_data, robot_name, system); // Save to local storage
-            displayBOMAsButtons(data.bom_data); // Update the UI
-        } else {
-            console.error('Error fetching BOM:', data.error);
-            alert(`Error: ${data.error}`);
+        if (!documentUrl || !teamNumber) {
+            alert('Document URL and Team Number are required.');
+            return;
         }
-    } catch (error) {
-        console.error('Fetch BOM Error:', error);
-        alert('An error occurred while fetching the BOM.');
-    }
-});
+
+        try {
+            const response = await fetch(`${API_BASE_URL}api/bom`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    document_url: documentUrl,
+                    team_number: teamNumber,
+                    system: system, // Include the selected system
+                    access_key: accessKey,
+                    secret_key: secretKey,
+                }),
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                console.log(`BOM fetched and saved for system '${system}'.`);
+                saveBOMDataToLocal(data.bom_data, robot_name, system); // Save to local storage
+                displayBOMAsButtons(data.bom_data); // Update the UI
+            } else {
+                console.error('Error fetching BOM:', data.error);
+                alert(`Error: ${data.error}`);
+            }
+        } catch (error) {
+            console.error('Fetch BOM Error:', error);
+            alert('An error occurred while fetching the BOM.');
+        }
+    });
+}
 
 
 // Function to display BOM data as buttons
@@ -970,13 +973,13 @@ function showRobotSelectionDashboard(robots) {
         const robotButton = document.createElement('button');
         robotButton.className = 'robot-button';
         robotButton.textContent = robot;
-        robotButton.addEventListener('click', () => {
+        robotButton.addEventListener('click', async () => {
             const teamNumber = localStorage.getItem('team_number');
             window.location.href = `/${teamNumber}/${robot}/Main`;
+            await fetchBOMDataFromServer(robot, "Main")
         });
         robotList.appendChild(robotButton);
     });
-
 
 
     // document.getElementById('dashboardContent').style.display = 'none';

@@ -1,3 +1,10 @@
+# Redirect system-specific routes with robot name to dashboard.html
+/:team_number/Admin/:robot_name/:system    /teamAdmin_dashboard.html   200
+
+# Redirect team number and robot name routes to dashboard.html
+/:team_number/Admin/:robot_name    /teamAdmin_dashboard.html   200
+
+
 /:team_number/Admin    /teamAdmin_dashboard.html   200
 
 # Redirect system-specific routes with robot name to dashboard.html

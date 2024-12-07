@@ -733,15 +733,6 @@ function openEditModal(part) {
     `;
 
     }
-    console.log(modalBody.innerHTML)
-    const downloadCADButton = document.getElementById('downloadCADButton');
-    if (downloadCADButton) {
-        downloadCADButton.addEventListener('click', () => {
-            console.log('Downloading CAD for part:', part["Part Name"], " with the id of" + part["ID"]);
-            downloadCADFile(part["ID"]).then(r => {
-            });
-        });
-    }
     // Show the modal
     modal.style.display = 'flex';
     attachCounterListeners();

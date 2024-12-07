@@ -114,6 +114,30 @@
             }
         });
 
+        document.getElementById('downloadTEAMSDictButton').addEventListener('click', async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}api/admin/download_teams_db`, {
+                    headers: {'Authorization': `Bearer ${adminToken}`},
+                });
+
+                const data = await response.json();
+                console.log(data)
+                if (response.ok) {
+                    const blob = new Blob([JSON.stringify(data.settings_data_dict, null, 2)], {type: 'application/json'});
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'settings_data.json';
+                    link.click();
+                } else {
+                    alert(data.error || 'Failed to download Settings data.');
+                }
+            } catch (error) {
+                console.error('Error downloading Settings data:', error);
+                alert('Failed to download Settings data.');
+            }
+        });
+
         // Fetch Team BOM
         document.getElementById('fetchTeamBOMForm').addEventListener('submit', async (event) => {
             event.preventDefault();

@@ -1,5 +1,4 @@
 import json
-import os
 
 from flask import Flask, request, jsonify, render_template, send_file
 from flask_cors import CORS
@@ -27,10 +26,6 @@ bom_data_dict = {}
 bom_data_file = 'bom_data.json'  # File to persist BOM data
 settings_data_dict = {}
 settings_data_file = 'settings_data.json'
-
-# In-memory storage for BOM data per team
-teams = {}
-latest_bom_data = {}
 
 
 class Team(db.Model):
@@ -65,10 +60,13 @@ def team_dashboard(team_number, robot_name):
     # Pass the team number and robot name to the template for dynamic rendering
     return render_template('dashboard.html', team_number=team_number, robot_name=robot_name)
 
+
 @app.route('/<team_number>/Admin')
 def team_dashboardAdmin(team_number):
     # Pass the team number and robot name to the template for dynamic rendering
     return render_template('teamAdmin_dashboard.html', team_number=team_number)
+
+
 @app.route('/<team_number>/<robot_name>/<system>')
 def team_bom_filtered(team_number, robot_name, system):
     # Render the dashboard with a filtered BOM
@@ -405,6 +403,7 @@ def download_parasolid():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 @app.route('/api/admin/download_bom_dict', methods=['GET'])
 @jwt_required()
 def download_bom_dict():
@@ -436,6 +435,23 @@ def download_settings_dict():
         return jsonify({"error": f"Failed to download Settings data: {str(e)}"}), 500
 
 
+@app.route('/api/admin/download_teams_db', methods=['GET'])
+@jwt_required()
+def download_teams_db():
+    current_user = get_jwt_identity()
+
+    # Check if the user is the admin
+    if not is_admin(current_user):
+        return jsonify({"error": "Unauthorized access"}), 403
+    with open('teams.db','r') as f:
+        teams_data=f.read()
+        print(teams_data)
+    try:
+        return {"teams_data_db": teams_data}, 200
+    except Exception as e:
+        return jsonify({"error": f"Failed to download Settings data: {str(e)}"}), 500
+
+
 @app.route('/api/admin/upload_bom_dict', methods=['POST'])
 @jwt_required()
 def upload_bom_dict():
@@ -461,7 +477,6 @@ def upload_bom_dict():
         save_bom_data()
 
     return jsonify({"message": "BOM data uploaded successfully."}), 200
-
 
 
 # Helper function to load BOM data from file

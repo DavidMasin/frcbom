@@ -6,58 +6,61 @@ let teamNumber = localStorage.getItem('team_number');
 const ONSHAPE_API_BASE = "https://cad.onshape.com";
 
 // Event Listener for Download CAD
-document.getElementById("downloadCADButton").addEventListener("click", async () => {
-    const partName = document.getElementById("partNameTitle").textContent;
+if (document.getElementById("downloadCADButton")){
+    document.getElementById("downloadCADButton").addEventListener("click", async () => {
+        const partName = document.getElementById("partNameTitle").textContent;
 
-    // Fetch Part Information
-    const documentUrl = localStorage.getItem("document_url");  // Store this during BOM fetch
-    if (!documentUrl) {
-        alert("Document URL is missing. Please fetch the BOM first.");
-        return;
-    }
-
-    try {
-        // Extract Document Details
-        const element = new OnshapeElement(documentUrl);
-        const did = element.did;
-        const wid = element.wvmid;
-        const eid = element.eid;
-
-        // Construct the Export API Endpoint
-        const exportUrl = `${ONSHAPE_API_BASE}/api/v10/documents/d/${did}/w/${wid}/e/${eid}/parasolid`;
-
-        // Onshape API Request Headers
-        const token = localStorage.getItem("jwt_token");
-        const response = await fetch(exportUrl, {
-            method: "GET",
-            headers: {
-                "Authorization": `Bearer ${token}`,
-                "Accept": "application/vnd.onshape.v1+json",
-            },
-        });
-
-        if (!response.ok) {
-            throw new Error("Failed to download CAD file.");
+        // Fetch Part Information
+        const documentUrl = localStorage.getItem("document_url");  // Store this during BOM fetch
+        if (!documentUrl) {
+            alert("Document URL is missing. Please fetch the BOM first.");
+            return;
         }
 
-        // Convert to Blob for Download
-        const fileBlob = await response.blob();
-        const url = window.URL.createObjectURL(fileBlob);
+        try {
+            // Extract Document Details
+            const element = new OnshapeElement(documentUrl);
+            const did = element.did;
+            const wid = element.wvmid;
+            const eid = element.eid;
 
-        // Create a Temporary Download Link
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${partName}.x_t`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
+            // Construct the Export API Endpoint
+            const exportUrl = `${ONSHAPE_API_BASE}/api/v10/documents/d/${did}/w/${wid}/e/${eid}/parasolid`;
 
-        alert("CAD file downloaded successfully!");
-    } catch (error) {
-        console.error("Error downloading CAD:", error);
-        alert("Failed to download CAD file.");
-    }
-});
+            // Onshape API Request Headers
+            const token = localStorage.getItem("jwt_token");
+            const response = await fetch(exportUrl, {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Accept": "application/vnd.onshape.v1+json",
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to download CAD file.");
+            }
+
+            // Convert to Blob for Download
+            const fileBlob = await response.blob();
+            const url = window.URL.createObjectURL(fileBlob);
+
+            // Create a Temporary Download Link
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${partName}.x_t`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+
+            alert("CAD file downloaded successfully!");
+        } catch (error) {
+            console.error("Error downloading CAD:", error);
+            alert("Failed to download CAD file.");
+        }
+    });
+}
+
 
 function parseURL() {
     const path = window.location.pathname;

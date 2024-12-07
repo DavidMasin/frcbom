@@ -144,6 +144,14 @@ function showPasswordPrompt() {
                     overlay.remove();
                     // Remove blur from background
                     document.body.style.filter = 'none';
+                    if (data.isAdmin)
+                    {
+                        localStorage.setItem("role","Admin")
+                    }
+                    else
+                    {
+                        localStorage.setItem("role","User")
+                    }
                     resolve(); // Resolve the Promise
                 } else {
                     alert('Incorrect password');

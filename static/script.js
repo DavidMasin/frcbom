@@ -1136,7 +1136,6 @@ document.getElementById('createRobotButton').addEventListener('click', () => {
         .then(({status, data}) => {
             if (status) {
                 alert(data.message);
-                loadRobotSelector(); // Reload the robot selector
             } else {
                 alert(data.error || 'Failed to create a new robot.');
             }
@@ -1148,54 +1147,3 @@ document.getElementById('createRobotButton').addEventListener('click', () => {
 });
 
 
-function loadRobotSelector() {
-    const teamNumber = localStorage.getItem('team_number');
-    const token = localStorage.getItem('jwt_token');
-
-    fetch(`${API_BASE_URL}api/get_robots?team_number=${teamNumber}`, {
-        headers: {
-            'Authorization': `Bearer ${token}`,
-        },
-    })
-        .then((response) => {
-            // Preserve both the status and data
-            return response.json().then((data) => ({status: response.ok, data}));
-        })
-        .then(({status, data}) => {
-            if (status) {
-                if (document.getElementById('robotSelector')) {
-                    let robotSelector = document.getElementById('robotSelector');
-                    robotSelector.innerHTML = ''; // Clear existing options
-                } else {
-                    let robotSelector;
-                }
-
-
-                const select = document.createElement('select');
-                select.id = 'robotSelect';
-                data.robots.forEach((robot) => {
-                    const option = document.createElement('option');
-                    option.value = robot;
-                    option.textContent = robot;
-                    select.appendChild(option);
-                });
-
-                // Add change listener to update the current robot
-                select.addEventListener('change', () => {
-                    const selectedRobot = select.value;
-                    localStorage.setItem('current_robot', selectedRobot);
-                    alert(`Switched to ${selectedRobot}`);
-                    // Optionally reload the BOM data here
-                });
-
-
-                robotSelector.appendChild(select);
-            } else {
-                alert(data.error || 'Failed to load robots.');
-            }
-        })
-        .catch((error) => {
-            console.error('Error loading robots:', error);
-            alert('An error occurred while loading robots.');
-        });
-}

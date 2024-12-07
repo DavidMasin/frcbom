@@ -1,6 +1,64 @@
 const API_BASE_URL = 'https://frcbom-production.up.railway.app/';
 let teamNumber = localStorage.getItem('team_number');
 
+
+// Onshape API Base URL
+const ONSHAPE_API_BASE = "https://cad.onshape.com";
+
+// Event Listener for Download CAD
+document.getElementById("downloadCADButton").addEventListener("click", async () => {
+    const partName = document.getElementById("partNameTitle").textContent;
+
+    // Fetch Part Information
+    const documentUrl = localStorage.getItem("document_url");  // Store this during BOM fetch
+    if (!documentUrl) {
+        alert("Document URL is missing. Please fetch the BOM first.");
+        return;
+    }
+
+    try {
+        // Extract Document Details
+        const element = new OnshapeElement(documentUrl);
+        const did = element.did;
+        const wid = element.wvmid;
+        const eid = element.eid;
+
+        // Construct the Export API Endpoint
+        const exportUrl = `${ONSHAPE_API_BASE}/api/v10/documents/d/${did}/w/${wid}/e/${eid}/parasolid`;
+
+        // Onshape API Request Headers
+        const token = localStorage.getItem("jwt_token");
+        const response = await fetch(exportUrl, {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Accept": "application/vnd.onshape.v1+json",
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to download CAD file.");
+        }
+
+        // Convert to Blob for Download
+        const fileBlob = await response.blob();
+        const url = window.URL.createObjectURL(fileBlob);
+
+        // Create a Temporary Download Link
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${partName}.x_t`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        alert("CAD file downloaded successfully!");
+    } catch (error) {
+        console.error("Error downloading CAD:", error);
+        alert("Failed to download CAD file.");
+    }
+});
+
 function parseURL() {
     const path = window.location.pathname;
     const pathSegments = path.split('/').filter(segment => segment !== '');
@@ -27,41 +85,6 @@ function parseURL() {
     return params;
 }
 
-
-async function handlePasswordSubmit() {
-    const password = document.getElementById('passwordPromptInput').value;
-    const teamNumber = localStorage.getItem('team_number');
-
-    if (!password || !teamNumber) {
-        alert('Please enter a password');
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_BASE_URL}api/login`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({team_number: teamNumber, password})
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-            localStorage.setItem('jwt_token', data.access_token);
-            // Remove the overlay
-            const overlay = document.getElementById('passwordOverlay');
-            overlay.remove();
-            // Remove blur from background
-            document.body.style.filter = 'none';
-            // Proceed to initialize the dashboard
-            initializeDashboard();
-        } else {
-            alert('Incorrect password');
-        }
-    } catch (error) {
-        console.error('Login Error:', error);
-        alert('An error occurred while logging in.');
-    }
-}
 
 function showPasswordPrompt() {
     return new Promise((resolve, reject) => {

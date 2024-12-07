@@ -364,6 +364,47 @@ def admin_get_bom():
         return jsonify({"bom_data": team_bom_data.get(system, [])}), 200
 
 
+@app.route("/api/download_parasolid", methods=["POST"])
+def download_parasolid():
+    data = request.json
+    document_url = data.get("document_url")
+    part_name = data.get("part_name")
+    access_key_data = data.get("access_key")
+    secret_key_data = data.get("secret_key")
+
+    if not document_url or not part_name:
+        return jsonify({"error": "Missing required fields"}), 400
+
+    try:
+        # Initialize Onshape Client
+        client_cad = Client(configuration={
+            "base_url": "https://cad.onshape.com",
+            "access_key": access_key_data,
+            "secret_key": secret_key_data
+        })
+
+        # Extract Document Details
+        element = OnshapeElement(document_url)
+        did = element.did
+        wid = element.wvmid
+        eid = element.eid
+
+        # Construct Export API URL
+        export_url = f"/api/v10/documents/d/{did}/w/{wid}/e/{eid}/parasolid"
+        response = client_cad.api_client.request("GET", export_url, headers={
+            "Accept": "application/vnd.onshape.v1+json",
+        })
+
+        # Save File and Return
+        filename = f"{part_name}.x_t"
+        with open(filename, "wb") as f:
+            f.write(response.data)
+
+        return send_file(filename, as_attachment=True, download_name=filename)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/admin/download_bom_dict', methods=['GET'])
 @jwt_required()
 def download_bom_dict():

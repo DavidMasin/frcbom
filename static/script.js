@@ -849,15 +849,7 @@ function determineCurrentProcess(part) {
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    const systemSelect = document.getElementById('systemSelect');
-    const {teamNumber, robotName} = parseURL();
 
-    systemSelect.addEventListener('change', () => {
-        const selectedSystem = systemSelect.value;
-        if (teamNumber && robotName && selectedSystem) {
-            window.location.href = `/${teamNumber}/${robotName}/${selectedSystem}`;
-        }
-    });
 
     const currentSystem = parseURL().system;
     console.log(parseURL())
@@ -1066,7 +1058,16 @@ function createNewRobot(teamNumber, robotName) {
         .then(({status, data}) => {
             if (status) {
                 alert(data.message);
-                window.location.href = `/${teamNumber}/${robotName}/Main`;
+                if (localStorage.getItem("role")==="Admin")
+                {
+                    window.location.href = `/${teamNumber}/Admin/${robotName}/Main`;
+
+                }
+                else
+                {
+                    window.location.href = `/${teamNumber}/${robotName}/Main`;
+
+                }
             } else {
                 alert(data.error || 'Failed to create a new robot.');
             }

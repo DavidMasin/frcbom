@@ -781,26 +781,29 @@ async function downloadCADFile(partId) {
     const jwtToken = localStorage.getItem('jwt_token');
 
     try {
-        const response = await fetch(`${API_BASE_URL}api/download_cad`, {
+        const response = await fetch(`${API_BASE_URL}/api/download_cad`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${jwtToken}`,
+                'Authorization': `Bearer ${jwtToken}`
             },
-            body: JSON.stringify({id: partId, team_number: teamNumber}),
+            body: JSON.stringify({ id: partId, team_number: teamNumber }),
         });
 
         if (!response.ok) {
             const error = await response.json();
-            console.error(error.message || 'Failed to download CAD file.');
+            console.error(error.message || 'Failed to get redirect URL.');
             return;
         }
 
-        const blob = await response.blob();
-        const downloadLink = document.createElement('a');
-        downloadLink.href = URL.createObjectURL(blob);
-        downloadLink.download = `Part-${partId}.step`;
-        downloadLink.click();
+        const data = await response.json();
+        if (data.redirect_url) {
+            // This will open the URL in a new browser tab
+            window.open(data.redirect_url, '_blank');
+        } else {
+            console.error('No redirect URL returned from the server.');
+        }
+
     } catch (error) {
         console.error('Error downloading CAD file:', error);
         alert('Failed to download CAD file. Check the console for details.');

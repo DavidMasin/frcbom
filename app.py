@@ -619,27 +619,10 @@ def download_cad():
             # initial_response should contain a 307 redirect. Extract the Location.
             redirect_url = initial_response.headers.get('Location')
             print("redirectedURL: " + redirect_url)
-            if not redirect_url:
-                return jsonify({"error": "No redirect URL found"}), 500
-
-            # Second request to the redirect URL to actually get the file
-            file_response = client_data.api_client.request(
-                method='GET',
-                url=redirect_url,
-                query_params={},
-                headers={
-                    'Accept': 'application/vnd.onshape.v1+parasolid',
-                    'Content-Type': 'application/json'
-                },
-                body={}
-            )
-
-            if hasattr(file_response, 'data') and file_response.data:
-                file_data = io.BytesIO(file_response.data)
-                # Use the correct file extension based on file type (e.g., .x_t for Parasolid)
-                return send_file(file_data, download_name=f'Part-{part_id}.x_t', as_attachment=True)
+            if redirect_url:
+                return jsonify({"redirect_url": redirect_url}), 200
             else:
-                return jsonify({"error": "No file data received"}), 500
+                return jsonify({"error": "No redirect URL found"}), 500
 
         else:
             return jsonify({"error": "Missing access or secret key"}), 400

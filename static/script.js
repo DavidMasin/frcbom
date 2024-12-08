@@ -781,7 +781,7 @@ async function downloadCADFile(partId) {
     const jwtToken = localStorage.getItem('jwt_token');
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/download_cad`, {
+        const response = await fetch(`${API_BASE_URL}api/download_cad`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

@@ -1,6 +1,7 @@
 import json
 import os
-from flask import Flask, request, jsonify, render_template, send_file
+
+from flask import Flask, render_template
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
 from flask_socketio import SocketIO
@@ -26,7 +27,8 @@ bom_data_dict = {}
 bom_data_file = 'bom_data.json'  # File to persist BOM data
 settings_data_dict = {}
 settings_data_file = 'settings_data.json'
-BASE_URL="https://cad.onshape.com"
+BASE_URL = "https://cad.onshape.com"
+
 
 class Team(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -443,8 +445,8 @@ def download_teams_db():
     # Check if the user is the admin
     if not is_admin(current_user):
         return jsonify({"error": "Unauthorized access"}), 403
-    with open('teams.db','r') as f:
-        teams_data=f.read()
+    with open('teams.db', 'r') as f:
+        teams_data = f.read()
         print(teams_data)
     try:
         return {"teams_data_db": teams_data}, 200
@@ -565,10 +567,7 @@ def clear_bom():
     return jsonify({"message": "BOM data cleared successfully"}), 200
 
 
-from flask import Flask, request, jsonify, send_file
-import io
-
-from flask import Flask, request, jsonify, send_file
+from flask import request, jsonify, send_file
 import io
 
 
@@ -583,6 +582,8 @@ def download_cad():
     document_url = "https://cad.onshape.com/documents/0f3c906136618fd7ebb6090c/w/ad4ff8bac9eff7f8abe5f2f7/e/3427958cf6a5e5b7120e3a42"
     access_key_data = settings_data_dict[team_number]["accessKey"]
     secret_key_data = settings_data_dict[team_number]["secretKey"]
+    print("access_key_data: ", access_key_data)
+    print("secret_key_data: ", secret_key_data)
     client_data = Client(
         configuration={"base_url": base_url, "access_key": access_key_data, "secret_key": secret_key_data}
     )
@@ -602,7 +603,7 @@ def download_cad():
 
             fixed_url = fixed_url.replace('did', did).replace('wid', wid).replace('eid', eid).replace('pid', part_id)
             url = base_url + fixed_url
-
+            print("url: ",url)
             # First request to get the redirect URL
             initial_response = client_data.api_client.request(
                 method=method,
@@ -617,6 +618,7 @@ def download_cad():
 
             # initial_response should contain a 307 redirect. Extract the Location.
             redirect_url = initial_response.headers.get('Location')
+            print("redirectedURL: " + redirect_url)
             if not redirect_url:
                 return jsonify({"error": "No redirect URL found"}), 500
 
@@ -645,6 +647,7 @@ def download_cad():
     except Exception as e:
         print("Error fetching CAD:", str(e))
         return jsonify({"error": "Internal server error"}), 500
+
 
 @socketio.on('connect')
 def handle_connect():

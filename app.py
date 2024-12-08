@@ -603,13 +603,13 @@ def download_cad():
             fixed_url = fixed_url.replace('pid', part_id)
             print("Connecting to Onshape's API...")
             url = base_url + fixed_url
-            print("URL: ", url)
+            print("URL: " , url)
             response = client_data.api_client.request(method, url=url, query_params=params,
                                                       headers=headers,
                                                       body=payload)
             print("Onshape API Connected.")
-            print("Response: ", response)
-            return jsonify({"response": response.data}), 200
+            print("Response: ",response)
+            return jsonify({"response":response.data}), 200
         else:
             print("DIDN'T GET ACCESS AND SECRET!!")
             return

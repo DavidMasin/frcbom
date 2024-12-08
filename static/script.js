@@ -9,45 +9,35 @@ const ONSHAPE_API_BASE = "https://cad.onshape.com";
 if (document.getElementById("downloadCADButton")){
     document.getElementById("downloadCADButton").addEventListener("click", async () => {
         const partName = document.getElementById("partNameTitle").textContent;
-
-        // Fetch Part Information
-        const documentUrl = localStorage.getItem("document_url");  // Store this during BOM fetch
+        const documentUrl = localStorage.getItem("document_url");
+        console.log("Trying to Download")
         if (!documentUrl) {
             alert("Document URL is missing. Please fetch the BOM first.");
             return;
         }
 
         try {
-            // Extract Document Details
-            const element = new OnshapeElement(documentUrl);
-            const did = element.did;
-            const wid = element.wvmid;
-            const eid = element.eid;
-
-            // Construct the Export API Endpoint
-            const exportUrl = `${ONSHAPE_API_BASE}/api/v10/documents/d/${did}/w/${wid}/e/${eid}/parasolid`;
-
-            // Onshape API Request Headers
-            const token = localStorage.getItem("jwt_token");
-            const response = await fetch(exportUrl, {
-                method: "GET",
+            const response = await fetch(`${API_BASE_URL}/api/download_parasolid`, {
+                method: "POST",
                 headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Accept": "application/vnd.onshape.v1+json",
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("jwt_token")}`
                 },
+                body: JSON.stringify({
+                    document_url: documentUrl,
+                    part_name: partName
+                })
             });
 
             if (!response.ok) {
                 throw new Error("Failed to download CAD file.");
             }
 
-            // Convert to Blob for Download
-            const fileBlob = await response.blob();
-            const url = window.URL.createObjectURL(fileBlob);
-
-            // Create a Temporary Download Link
+            // Trigger File Download
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
             const a = document.createElement("a");
-            a.href = url;
+            a.href = downloadUrl;
             a.download = `${partName}.x_t`;
             document.body.appendChild(a);
             a.click();

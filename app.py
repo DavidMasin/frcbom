@@ -1,5 +1,5 @@
 import json
-
+import os
 from flask import Flask, request, jsonify, render_template, send_file
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
@@ -26,7 +26,7 @@ bom_data_dict = {}
 bom_data_file = 'bom_data.json'  # File to persist BOM data
 settings_data_dict = {}
 settings_data_file = 'settings_data.json'
-
+BASE_URL="https://cad.onshape.com"
 
 class Team(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -364,41 +364,41 @@ def admin_get_bom():
 
 @app.route("/api/download_parasolid", methods=["POST"])
 def download_parasolid():
+    """ Handles Parasolid (.x_t) file download request """
     data = request.json
     document_url = data.get("document_url")
     part_name = data.get("part_name")
-    access_key_data = data.get("access_key")
-    secret_key_data = data.get("secret_key")
 
     if not document_url or not part_name:
         return jsonify({"error": "Missing required fields"}), 400
 
     try:
-        # Initialize Onshape Client
-        client_cad = Client(configuration={
-            "base_url": "https://cad.onshape.com",
-            "access_key": access_key_data,
-            "secret_key": secret_key_data
-        })
-
-        # Extract Document Details
+        # Extract Document Details from URL
         element = OnshapeElement(document_url)
         did = element.did
         wid = element.wvmid
         eid = element.eid
 
-        # Construct Export API URL
+        # Construct Export API Endpoint
         export_url = f"/api/v10/documents/d/{did}/w/{wid}/e/{eid}/parasolid"
-        response = client_cad.api_client.request("GET", export_url, headers={
-            "Accept": "application/vnd.onshape.v1+json",
-        })
 
-        # Save File and Return
+        # Make API Request to Onshape
+        response = client.api_client.request(
+            method="GET",
+            url=BASE_URL + export_url,
+            headers={
+                "Accept": "application/vnd.onshape.v1+json"
+            }
+        )
+
+        # Save File Locally
         filename = f"{part_name}.x_t"
-        with open(filename, "wb") as f:
+        filepath = os.path.join("/tmp", filename)
+        with open(filepath, "wb") as f:
             f.write(response.data)
 
-        return send_file(filename, as_attachment=True, download_name=filename)
+        # Send the File as a Response
+        return send_file(filepath, as_attachment=True, download_name=filename)
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500

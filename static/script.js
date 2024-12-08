@@ -793,9 +793,9 @@ async function downloadCADFile(partId) {
         if (!response.ok) {
             const error = await response.json();
             console.error(error.message || 'Failed to download CAD file.');
+            return;
         }
-        console.log(response.blob())
-        console.log(response.body)
+
         const blob = await response.blob();
         const downloadLink = document.createElement('a');
         downloadLink.href = URL.createObjectURL(blob);
@@ -806,6 +806,7 @@ async function downloadCADFile(partId) {
         alert('Failed to download CAD file. Check the console for details.');
     }
 }
+
 
 // Function to determine the current process and remaining quantity
 function determineCurrentProcess(part) {

@@ -565,26 +565,31 @@ def clear_bom():
     return jsonify({"message": "BOM data cleared successfully"}), 200
 
 
+from flask import Flask, request, jsonify, send_file
+import io
+
+
 @app.route('/api/download_cad', methods=['POST'])
 def download_cad():
     data = request.json
-    print(request)
     part_id = data.get('id')
     team_number = data.get("team_number")
     if not part_id or not team_number:
         return jsonify({'message': 'Missing part ID or team number'}), 400
-    # document_url = settings_data_dict[team_number]["documentURL"]
+
     document_url = "https://cad.onshape.com/documents/0f3c906136618fd7ebb6090c/w/ad4ff8bac9eff7f8abe5f2f7/e/3427958cf6a5e5b7120e3a42"
-    print(settings_data_dict)
+
     access_key_data = settings_data_dict[team_number]["accessKey"]
     secret_key_data = settings_data_dict[team_number]["secretKey"]
     client_data = Client(
-        configuration={"base_url": base_url, "access_key": access_key_data, "secret_key": secret_key_data})
+        configuration={"base_url": base_url, "access_key": access_key_data, "secret_key": secret_key_data}
+    )
+
     if not document_url or not team_number:
         return jsonify({"error": "Document URL and Team Number are required"}), 400
-    try:
-        if access_key_data != "" and secret_key_data != "":
 
+    try:
+        if access_key_data and secret_key_data:
             element = OnshapeElement(document_url)
 
             fixed_url = '/api/v10/parts/d/did/w/wid/e/eid/partid/pid/parasolid'
@@ -592,30 +597,27 @@ def download_cad():
             did = element.did
             wid = element.wvmid
             eid = element.eid
-            params = {}
-            payload = {}
-            headers = {'Accept': 'application/vnd.onshape.v1+json; charset=UTF-8;qs=0.1',
-                       'Content-Type': 'application/json'}
 
-            fixed_url = fixed_url.replace('did', did)
-            fixed_url = fixed_url.replace('wid', wid)
-            fixed_url = fixed_url.replace('eid', eid)
-            fixed_url = fixed_url.replace('pid', part_id)
-            print("Connecting to Onshape's API...")
+            fixed_url = fixed_url.replace('did', did).replace('wid', wid).replace('eid', eid).replace('pid', part_id)
             url = base_url + fixed_url
-            print("URL: " , url)
-            response = client_data.api_client.request(method, url=url, query_params=params,
-                                                      headers=headers,
-                                                      body=payload)
-            print("Onshape API Connected.")
-            print("Response: ",response)
-            return jsonify({"response":response.data}), 200
+
+            response = client_data.api_client.request(method, url=url, query_params={}, headers={
+                'Accept': 'application/vnd.onshape.v1+json; charset=UTF-8;qs=0.1',
+                'Content-Type': 'application/json'
+            }, body={})
+
+            if response.status_code == 200:
+                file_data = io.BytesIO(response.data)
+                return send_file(file_data, download_name=f'Part-{part_id}.step', as_attachment=True)
+            else:
+                return jsonify({"error": "Failed to fetch CAD file from Onshape"}), 500
+
         else:
-            print("DIDN'T GET ACCESS AND SECRET!!")
-            return
+            return jsonify({"error": "Missing access or secret key"}), 400
+
     except Exception as e:
         print("Error fetching CAD:", str(e))
-        return jsonify({"bom_data": ()}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @socketio.on('connect')

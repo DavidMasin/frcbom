@@ -610,8 +610,8 @@ def download_cad():
                 url=url,
                 query_params={},
                 headers={
-                    'Accept': 'application/vnd.onshape.v1+parasolid',
-                    'Content-Type': 'application/json'
+                    'Accept': 'application/vnd.onshape.v1+json; charset=UTF-8;qs=0.1',
+                    'Content-Type': 'application/json',
                 },  # Get the redirect info
                 body={}
             )

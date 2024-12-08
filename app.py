@@ -581,7 +581,6 @@ def download_cad():
         return jsonify({'message': 'Missing part ID or team number'}), 400
 
     document_url = "https://cad.onshape.com/documents/0f3c906136618fd7ebb6090c/w/ad4ff8bac9eff7f8abe5f2f7/e/3427958cf6a5e5b7120e3a42"
-
     access_key_data = settings_data_dict[team_number]["accessKey"]
     secret_key_data = settings_data_dict[team_number]["secretKey"]
     client_data = Client(
@@ -595,7 +594,7 @@ def download_cad():
         if access_key_data and secret_key_data:
             element = OnshapeElement(document_url)
 
-            fixed_url = '/api/v10/parts/d/did/w/wid/e/eid/partid/pid/parasolid'
+            fixed_url = '/api/v10/parts/d/did/w/wid/e/eid/partid/pid/parasolid?version=0'
             method = 'GET'
             did = element.did
             wid = element.wvmid
@@ -604,23 +603,35 @@ def download_cad():
             fixed_url = fixed_url.replace('did', did).replace('wid', wid).replace('eid', eid).replace('pid', part_id)
             url = base_url + fixed_url
 
-            response = client_data.api_client.request(
-                method,
+            # First request to get the redirect URL
+            initial_response = client_data.api_client.request(
+                method=method,
                 url=url,
                 query_params={},
-                headers={
-                    'Accept': 'application/vnd.onshape.v1+parasolid',
-                    'Content-Type': 'application/json'
-                },
+                headers={'Accept': '*/*'},  # Get the redirect info
                 body={}
             )
 
-            # Once correct Accept header is set, response.data should be binary.
-            if response and hasattr(response, 'data') and response.data:
-                file_data = io.BytesIO(response.data)
+            # initial_response should contain a 307 redirect. Extract the Location.
+            redirect_url = initial_response.headers.get('Location')
+            if not redirect_url:
+                return jsonify({"error": "No redirect URL found"}), 500
+
+            # Second request to the redirect URL to actually get the file
+            file_response = client_data.api_client.request(
+                method='GET',
+                url=redirect_url,
+                query_params={},
+                headers={'Accept': '*/*'},
+                body={}
+            )
+
+            if hasattr(file_response, 'data') and file_response.data:
+                file_data = io.BytesIO(file_response.data)
+                # Use the correct file extension based on file type (e.g., .x_t for Parasolid)
                 return send_file(file_data, download_name=f'Part-{part_id}.x_t', as_attachment=True)
             else:
-                return jsonify({"error": "Failed to fetch CAD file from Onshape"}), 500
+                return jsonify({"error": "No file data received"}), 500
 
         else:
             return jsonify({"error": "Missing access or secret key"}), 400

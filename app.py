@@ -604,15 +604,21 @@ def download_cad():
             fixed_url = fixed_url.replace('did', did).replace('wid', wid).replace('eid', eid).replace('pid', part_id)
             url = base_url + fixed_url
 
-            response = client_data.api_client.request(method, url=url, query_params={}, headers={
-                'Accept': 'application/vnd.onshape.v1+json; charset=UTF-8;qs=0.1',
-                'Content-Type': 'application/json'
-            }, body={})
+            response = client_data.api_client.request(
+                method,
+                url=url,
+                query_params={},
+                headers={
+                    'Accept': 'application/vnd.onshape.v1+parasolid',
+                    'Content-Type': 'application/json'
+                },
+                body={}
+            )
 
-            # Check if response contains data
+            # Once correct Accept header is set, response.data should be binary.
             if response and hasattr(response, 'data') and response.data:
                 file_data = io.BytesIO(response.data)
-                return send_file(file_data, download_name=f'Part-{part_id}.step', as_attachment=True)
+                return send_file(file_data, download_name=f'Part-{part_id}.x_t', as_attachment=True)
             else:
                 return jsonify({"error": "Failed to fetch CAD file from Onshape"}), 500
 
@@ -622,7 +628,6 @@ def download_cad():
     except Exception as e:
         print("Error fetching CAD:", str(e))
         return jsonify({"error": "Internal server error"}), 500
-
 
 @socketio.on('connect')
 def handle_connect():

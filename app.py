@@ -568,6 +568,9 @@ def clear_bom():
 from flask import Flask, request, jsonify, send_file
 import io
 
+from flask import Flask, request, jsonify, send_file
+import io
+
 
 @app.route('/api/download_cad', methods=['POST'])
 def download_cad():
@@ -606,7 +609,8 @@ def download_cad():
                 'Content-Type': 'application/json'
             }, body={})
 
-            if response.status_code == 200:
+            # Check if response contains data
+            if response and hasattr(response, 'data') and response.data:
                 file_data = io.BytesIO(response.data)
                 return send_file(file_data, download_name=f'Part-{part_id}.step', as_attachment=True)
             else:

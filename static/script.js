@@ -2,56 +2,6 @@ const API_BASE_URL = 'https://frcbom-production.up.railway.app/';
 let teamNumber = localStorage.getItem('team_number');
 
 
-// Onshape API Base URL
-const ONSHAPE_API_BASE = "https://cad.onshape.com";
-
-// Event Listener for Download CAD
-if (document.getElementById("downloadCADButton")){
-    document.getElementById("downloadCADButton").addEventListener("click", async () => {
-        const partName = document.getElementById("partNameTitle").textContent;
-        const documentUrl = localStorage.getItem("document_url");
-        console.log("Trying to Download")
-        if (!documentUrl) {
-            alert("Document URL is missing. Please fetch the BOM first.");
-            return;
-        }
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/download_parasolid`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${localStorage.getItem("jwt_token")}`
-                },
-                body: JSON.stringify({
-                    document_url: documentUrl,
-                    part_name: partName
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error("Failed to download CAD file.");
-            }
-
-            // Trigger File Download
-            const blob = await response.blob();
-            const downloadUrl = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = downloadUrl;
-            a.download = `${partName}.x_t`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-
-            alert("CAD file downloaded successfully!");
-        } catch (error) {
-            console.error("Error downloading CAD:", error);
-            alert("Failed to download CAD file.");
-        }
-    });
-}
-
-
 function parseURL() {
     const path = window.location.pathname;
     const pathSegments = path.split('/').filter(segment => segment !== '');
@@ -722,6 +672,15 @@ function openEditModal(part) {
         </div>
     `;
 
+    }
+    console.log(modalBody.innerHTML)
+    const downloadCADButton = document.getElementById('downloadCADButton');
+    if (downloadCADButton) {
+        downloadCADButton.addEventListener('click', () => {
+            console.log('Downloading CAD for part:', part["Part Name"], " with the id of" + part["ID"]);
+            downloadCADFile(part["ID"]).then(r => {
+            });
+        });
     }
     // Show the modal
     modal.style.display = 'flex';

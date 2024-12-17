@@ -721,6 +721,7 @@ function openEditModal(part) {
     // Clear existing content
     // modalBody.innerHTML = '<button id="downloadCADButton" class="button-primary">Download STEP File</button>';
     // Populate modal with editable fields for the part
+    modalBody.innerHTML ='';
     if (part.preProcess) {
         modalBody.innerHTML += `
         <label for="preProcessQty">Pre-Process (${part.preProcess}):</label>

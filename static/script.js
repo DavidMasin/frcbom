@@ -155,7 +155,7 @@ async function handleLogin(event) {
     const password = document.getElementById('loginPassword').value;
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/login`, {
+        const response = await fetch(`${API_BASE_URL}api/login`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({team_number: teamNumber, password}),
@@ -507,7 +507,7 @@ document.getElementById('systemSelect').addEventListener('change', (event) => {
 async function fetchBOMDataFromServer(robotName, system = 'Main') {
     const teamNumber = localStorage.getItem('team_number');
     try {
-        const response = await fetch(`${API_BASE_URL}/api/get_bom?team_number=${teamNumber}&robot=${robotName}&system=${system}`, {
+        const response = await fetch(`${API_BASE_URL}api/get_bom?team_number=${teamNumber}&robot=${robotName}&system=${system}`, {
             headers: {'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`}
         });
         const data = await response.json();
@@ -781,7 +781,7 @@ async function downloadCADFile(partId) {
     const jwtToken = localStorage.getItem('jwt_token');
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/download_cad`, {
+        const response = await fetch(`${API_BASE_URL}api/download_cad`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

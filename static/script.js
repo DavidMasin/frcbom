@@ -24,7 +24,7 @@ function parseURL() {
         params.robotName = null;
         params.system = 'Main';
     }
-    console.log("Params: ", params)
+    //console.log("Params: ", params)
     return params;
 }
 
@@ -201,7 +201,7 @@ function getPartStatus(part) {
 
 function checkProcessProgress(item) {
     const requiredQuantity = item.Quantity;
-    // console.log("PLACER3: item: " + item)
+    // //console.log("PLACER3: item: " + item)
     // Check Pre-Process Completion
     if (item.preProcess) {
         item.preProcessQuantity = item.preProcessQuantity || 0;
@@ -259,33 +259,33 @@ function handleFilterBOM(filter) {
     let systemSelect
     if (document.getElementById("systemSelect")) {
         systemSelect = document.getElementById("systemSelect").value;
-        console.log("Debug system1 ", systemSelect)
+        //console.log("Debug system1 ", systemSelect)
     } else {
         systemSelect = "Main"
-        console.log("Debug system2 ", systemSelect)
+        //console.log("Debug system2 ", systemSelect)
     }
     const bomData = getBOMDataFromLocal(robotName, systemSelect);
     let filteredData;
-    console.log("BOM DATA3: ", bomData)
+    //console.log("BOM DATA3: ", bomData)
 
     // Save the current filter to localStorage
     localStorage.setItem('current_filter', filter);
-    console.log("The filter is: " + filter)
+    //console.log("The filter is: " + filter)
     // Update process completion states
     bomData.forEach((item) => {
         checkProcessProgress(item);
     });
     // Normalize the filter string
     const normalizedFilter = filter.trim().toLowerCase();
-    console.log("normalizedFilter: ", normalizedFilter)
-    console.log("BOM DATA2: ", bomData)
+    //console.log("normalizedFilter: ", normalizedFilter)
+    //console.log("BOM DATA2: ", bomData)
     // Apply filtering based on the selected filter
     switch (normalizedFilter) {
         case 'all':
             filteredData = bomData;
             break;
         case 'cots':
-            console.log("IN COTS")
+            //console.log("IN COTS")
             filteredData = bomData.filter(item =>
                 !item.preProcess && !item.Process1 && !item.Process2
             );
@@ -327,7 +327,7 @@ function isPasswordStrong(password) {
     const hasUpperCase = /[A-Z]/.test(password);
     const hasLowerCase = /[a-z]/.test(password);
     const hasNumbers = /\d/.test(password);
-    console.log("Checking strength: " + (password.length >= minLength && hasUpperCase && hasLowerCase && hasNumbers))
+    //console.log("Checking strength: " + (password.length >= minLength && hasUpperCase && hasLowerCase && hasNumbers))
     return (
         password.length >= minLength && hasUpperCase && hasLowerCase && hasNumbers
     );
@@ -336,7 +336,7 @@ function isPasswordStrong(password) {
 function showRegisterMessage(message, type) {
     const registerMessage = document.getElementById('registerMessage');
     registerMessage.textContent = message;
-    console.log("Showing message: " + message)
+    //console.log("Showing message: " + message)
     registerMessage.className = `alert alert-${type} mt-3`;
     registerMessage.classList.remove('d-none');
 }
@@ -344,7 +344,7 @@ function showRegisterMessage(message, type) {
 // Handle Registration
 async function handleRegister(event) {
     event.preventDefault();
-    console.log('Register form submitted');
+    //console.log('Register form submitted');
 
     const teamNumber = document.getElementById('registerTeamNumber').value;
     const password = document.getElementById('registerPassword').value;
@@ -379,7 +379,7 @@ async function handleRegister(event) {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({"team_number": teamNumber, "password": password, "adminPassword": adminPassword})
         });
-        console.log("Registered team!")
+        //console.log("Registered team!")
         const data = await response.json();
         if (response.ok) {
             document.getElementById('registerMessage').textContent = 'Registration successful!';
@@ -518,11 +518,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Initialize event listeners
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("Loading content")
+    //console.log("Loading content")
     if (document.getElementById('dashboard')) {
         initializeDashboard().then(() => {
         });
-        console.log("Dashboard initialized");
+        //console.log("Dashboard initialized");
     }
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
@@ -554,7 +554,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Fetch BOM data from the server on page load (if applicable)
     if (window.location.pathname.includes('dashboard.html')) {
-        console.log("Im Here")
+        //console.log("Im Here")
         fetchBOMDataFromServer(systemSelector, 'Main').then(() => {
         });
     }
@@ -590,7 +590,7 @@ async function fetchBOMDataFromServer(robotName, system = 'Main') {
             headers: {'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`}
         });
         const data = await response.json();
-        console.log(data)
+        //console.log(data)
         if (response.ok) {
             saveBOMDataToLocal(data.bom_data, robotName, system);
             displayBOMAsButtons(data.bom_data);
@@ -616,7 +616,7 @@ function saveBOMDataToLocal(bomData, robotName, system) {
     }
     bomDict[teamNumber][robotName][system] = bomData;
     localStorage.setItem('bom_data', JSON.stringify(bomDict));
-    console.log(`Saved BOM for robot '${robotName}' and system '${system}' locally.`);
+    //console.log(`Saved BOM for robot '${robotName}' and system '${system}' locally.`);
 }
 
 
@@ -665,7 +665,7 @@ if (document.getElementById('settingsButton')) {
 
             const data = await response.json();
             if (response.ok) {
-                console.log(`BOM fetched and saved for system '${system}'.`);
+                //console.log(`BOM fetched and saved for system '${system}'.`);
                 saveBOMDataToLocal(data.bom_data, robot_name, system); // Save to local storage
                 displayBOMAsButtons(data.bom_data); // Update the UI
             } else {
@@ -684,7 +684,7 @@ if (document.getElementById('settingsButton')) {
 function displayBOMAsButtons(bomData) {
     const gridContainer = document.getElementById('bomPartsGrid');
     gridContainer.innerHTML = ''; // Clear previous content
-    console.log("BOMDATA1: ", bomData)
+    //console.log("BOMDATA1: ", bomData)
     bomData.sort((a, b) => (a["Part Name"] || '').localeCompare(b["Part Name"] || ''));
 
     bomData.forEach(part => {
@@ -754,11 +754,11 @@ function openEditModal(part) {
     `;
 
     }
-    console.log(modalBody.innerHTML)
+    //console.log(modalBody.innerHTML)
     const downloadCADButton = document.getElementById('downloadCADButton');
     if (downloadCADButton) {
         downloadCADButton.addEventListener('click', () => {
-            console.log('Downloading CAD for part:', part["Part Name"], " with the id of" + part["ID"]);
+            //console.log('Downloading CAD for part:', part["Part Name"], " with the id of" + part["ID"]);
             downloadCADFile(part["ID"]).then(r => {
             });
         });
@@ -795,7 +795,7 @@ function savePartQuantities(part) {
     const process2Qty = document.getElementById('process2Qty')?.value || part.process2Quantity || 0;
     const robot_name = localStorage.getItem('robot_name');
     if (!robot_name) {
-        console.log("NO ROBOT IN SAVE PART QTY")
+        //console.log("NO ROBOT IN SAVE PART QTY")
     }
     // Update the part's properties
     part.preProcessQuantity = parseInt(preProcessQty, 10);
@@ -807,18 +807,18 @@ function savePartQuantities(part) {
     let systemSelect
     if (document.getElementById("systemSelect")) {
         systemSelect = document.getElementById("systemSelect").value;
-        console.log("Debug system3 ", systemSelect)
+        //console.log("Debug system3 ", systemSelect)
 
     } else {
         systemSelect = "Main"
-        console.log("Debug system4 ", systemSelect)
+        //console.log("Debug system4 ", systemSelect)
 
     }
     let bomData = getBOMDataFromLocal(robot_name, systemSelect);
-    console.log('Pre-Process Qty:', preProcessQty);
-    console.log('Process 1 Qty:', process1Qty);
-    console.log('Process 2 Qty:', process2Qty);
-    console.log('Updated Part:', part);
+    //console.log('Pre-Process Qty:', preProcessQty);
+    //console.log('Process 1 Qty:', process1Qty);
+    //console.log('Process 2 Qty:', process2Qty);
+    //console.log('Updated Part:', part);
 
     // Find and update the part in the BOM data
     const partIndex = bomData.findIndex(item => item["Part Name"] === part["Part Name"]);
@@ -894,7 +894,7 @@ async function downloadCADFile(partId) {
 
 // Function to determine the current process and remaining quantity
 function determineCurrentProcess(part) {
-    // console.log("PLACER1: part: " + part)
+    // //console.log("PLACER1: part: " + part)
     if (part.preProcess && !part.preProcessCompleted) {
         return {name: part.preProcess, remaining: part.Quantity - part.preProcessQuantity || part.Quantity};
     } else if (part.Process1 && !part.process1Completed) {
@@ -911,10 +911,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     const currentSystem = parseURL().system;
-    console.log(parseURL())
-    console.log(currentSystem)
+    //console.log(parseURL())
+    //console.log(currentSystem)
     if (currentSystem) {
-        console.log("UPDATTTEDDD SYSTEM TO: ", systemSelect.value)
+        //console.log("UPDATTTEDDD SYSTEM TO: ", systemSelect.value)
         systemSelect.value = currentSystem;
     }
 
@@ -970,7 +970,7 @@ async function initializeDashboard() {
     }
 
     localStorage.setItem('team_number', teamNumber);
-    console.log("jwtToken: ", jwtToken)
+    //console.log("jwtToken: ", jwtToken)
     if (!jwtToken) {
         await showPasswordPrompt();
         jwtToken = localStorage.getItem('jwt_token');
@@ -981,8 +981,8 @@ async function initializeDashboard() {
         }
     }
     if (admin) {
-        console.log("IM HEREEEE: ", admin)
-        console.log("Is role admin: ", localStorage.getItem("role") === "Admin")
+        //console.log("IM HEREEEE: ", admin)
+        //console.log("Is role admin: ", localStorage.getItem("role") === "Admin")
         if (!(localStorage.getItem("role") === "Admin")) {
             alert('You must be logged in to an ADMIN account to access this dashboard.');
             window.location.href = '/';
@@ -1020,7 +1020,7 @@ function showRobotSelectionDashboard(robots) {
     const robotSelectionSection = document.getElementById('robotSelection');
     const robotList = document.getElementById('robotList');
     robotList.innerHTML = '';
-    console.log(robots)
+    //console.log(robots)
     if (robots === null) {
         robotList.innerHTML = 'NO ROBOTS REGISTERED! (CONTACT TEAM ADMIN)';
     }
@@ -1142,7 +1142,7 @@ async function checkTeamExists(teamNumber) {
     try {
         const response = await fetch(`${API_BASE_URL}api/team_exists?team_number=${teamNumber}`);
         const data = await response.json();
-        console.log(data)
+        //console.log(data)
         if (response.ok) {
             return data.exists;
         } else {

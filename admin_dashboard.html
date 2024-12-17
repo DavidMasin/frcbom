@@ -108,9 +108,9 @@
                 const response = await fetch(`${API_BASE_URL}api/admin/download_settings_dict`, {
                     headers: {'Authorization': `Bearer ${adminToken}`},
                 });
-                console.log("Im here!!!")
+                //console.log("Im here!!!")
                 const data = await response.json();
-                console.log(data)
+                //console.log(data)
                 if (response.ok) {
                     const blob = new Blob([JSON.stringify(data.settings_data_dict, null, 2)], {type: 'application/json'});
                     const url = URL.createObjectURL(blob);

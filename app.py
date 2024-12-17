@@ -602,11 +602,11 @@ def download_cad():
     with onshape_client.oas.ApiClient(configuration) as api_client:
         # Create an instance of the API class
         api_instance = onshape_client.oas.PartsApi(api_client)
-        did = 'did_example'  # str |
-        wvm = 'wvm_example'  # str |
-        wvmid = 'wvmid_example'  # str |
-        eid = 'eid_example'  # str |
-        partid = 'partid_example'  # str |
+        did = '0f3c906136618fd7ebb6090c'  # str |
+        wvm = 'w'  # str |
+        wvmid = 'ad4ff8bac9eff7f8abe5f2f7'  # str |
+        eid = '3427958cf6a5e5b7120e3a42'  # str |
+        partid = 'R3HD'  # str |
 
 
     # example passing only required values which don't have defaults set

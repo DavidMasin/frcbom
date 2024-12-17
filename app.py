@@ -32,7 +32,7 @@ settings_data_file = 'settings_data.json'
 BASE_URL = "https://cad.onshape.com"
 configuration = onshape_client.oas.Configuration()
 # Configure OAuth2 access token for authorization: OAuth2
-configuration.access_token = 'YOUR_ACCESS_TOKEN'
+configuration.access_token = '2GY4HFX3GCSPKR7ECE3SQX5QKO5PV4ZB4R6UNVICLLLZMC25ZJUQ===='
 
 # Defining host is optional and default to https://cad.onshape.com
 configuration.host = BASE_URL

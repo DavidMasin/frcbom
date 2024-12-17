@@ -590,6 +590,7 @@ async function fetchBOMDataFromServer(robotName, system = 'Main') {
             headers: {'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`}
         });
         const data = await response.json();
+        console.log(data)
         if (response.ok) {
             saveBOMDataToLocal(data.bom_data, robotName, system);
             displayBOMAsButtons(data.bom_data);

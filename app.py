@@ -195,9 +195,9 @@ def getPartsDict(bom_dict, partNameID, DescriptionID, quantityID, materialID, ma
         part_process2 = row.get("headerIdToValue", {}).get(process2ID, "Unknown")
         part_id = row.get("itemSource", {}).get("partId", "Unknown")
         if part_material_bom != "Unknown":
-            part_material["displayName"] = part_material_bom
+            part_material = part_material_bom
         elif part_material != "Unknown":
-            part_material_bom = part_material["displayName"]
+            part_material_bom = part_material
         if part_material != "Unknown" and part_material is not None:
             partDict[part_name] = (part_description,
                                    int(quantity), part_material["displayName"], part_material_bom, part_preProcess,

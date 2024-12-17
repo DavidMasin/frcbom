@@ -487,6 +487,56 @@ def upload_bom_dict():
 
     return jsonify({"message": "BOM data uploaded successfully."}), 200
 
+@app.route('/api/admin/upload_settings_dict', methods=['POST'])
+@jwt_required()
+def upload_settings_dict():
+    current_user = get_jwt_identity()
+    global settings_data_dict
+    # Check if the user is an admin
+    if not is_admin(current_user):
+        return jsonify({"error": "Unauthorized access"}), 403
+
+    data = request.get_json()
+    settings_data_dict1 = data.get('settings_data_dict')
+
+    if not settings_data_dict1:
+        return jsonify({"error": "No Settings data provided."}), 400
+
+    # Validate the BOM data format
+    if not isinstance(settings_data_dict1, dict):
+        return jsonify({"error": "Invalid Settings data format."}), 400
+
+    # Update the in-memory BOM data and save it to file
+    if settings_data_dict1:
+        settings_data_dict.update(settings_data_dict1)
+        save_bom_data()
+
+    return jsonify({"message": "Settings data uploaded successfully."}), 200
+
+@app.route('/api/admin/upload_teams_dict', methods=['POST'])
+@jwt_required()
+def upload_teams_dict():
+    current_user = get_jwt_identity()
+    # Check if the user is an admin
+    if not is_admin(current_user):
+        return jsonify({"error": "Unauthorized access"}), 403
+
+    data = request.get_json()
+    team_data_dict1 = data.get('team_data_dict')
+
+    if not team_data_dict1:
+        return jsonify({"error": "No team data provided."}), 400
+
+    # Validate the BOM data format
+    if not isinstance(team_data_dict1, dict):
+        return jsonify({"error": "Invalid team data format."}), 400
+
+    # Update the in-memory BOM data and save it to file
+    if team_data_dict1:
+        settings_data_dict.update(team_data_dict1)
+        save_bom_data()
+
+    return jsonify({"message": "team data uploaded successfully."}), 200
 
 # Helper function to load BOM data from file
 def load_bom_data():

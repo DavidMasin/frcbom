@@ -434,6 +434,45 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+    if (document.getElementById('uploadSettingsDataForm')) {
+        const uploadForm = document.getElementById('uploadSettingsDataForm');
+        const fileInput = document.getElementById('settingsDataFileInput');
+
+        uploadForm.addEventListener('submit', async (event) => {
+            event.preventDefault(); // Prevent form submission
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('Please select a file to upload.');
+                return;
+            }
+
+            try {
+                const fileContent = await file.text(); // Read the file content
+                const token = localStorage.getItem('jwt_token');
+
+                const response = await fetch(`${API_BASE_URL}api/admin/upload_settings_dict`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({settings_data_dict: JSON.parse(fileContent)}),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('settings data uploaded successfully!');
+                } else {
+                    alert(`Error: ${result.error || 'Failed to upload settings data.'}`);
+                }
+            } catch (error) {
+                console.error('Error uploading settings data:', error);
+                alert('An error occurred while uploading the settings data.');
+            }
+        });
+    }
 
 });
 

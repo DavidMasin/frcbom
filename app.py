@@ -452,7 +452,7 @@ def download_teams_db():
     # Check if the user is the admin
     if not is_admin(current_user):
         return jsonify({"error": "Unauthorized access"}), 403
-    with open('teams.db', 'r') as f:
+    with open('instance/teams.db', 'r') as f:
         teams_data = f.read()
         print(teams_data)
     try:

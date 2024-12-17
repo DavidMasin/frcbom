@@ -574,11 +574,23 @@ document.getElementById('systemSelect').addEventListener('change', (event) => {
     const teamNumber = localStorage.getItem('team_number');
     const robotName = localStorage.getItem('robot_name');
     const role = localStorage.getItem("role");
-    if (teamNumber && robotName && selectedSystem && role === "Admin") {
-        window.location.href = `/${teamNumber}/Admin/${robotName}/${selectedSystem}`;
-    } else {
-        window.location.href = `/${teamNumber}/${robotName}/${selectedSystem}`;
+    if (robotName!==null)
+    {
+        if (teamNumber && robotName && selectedSystem && role === "Admin") {
+            window.location.href = `/${teamNumber}/Admin/${robotName}/${selectedSystem}`;
+        } else {
+            window.location.href = `/${teamNumber}/${robotName}/${selectedSystem}`;
+        }
     }
+    else
+    {
+        if (teamNumber && robotName && selectedSystem && role === "Admin") {
+            window.location.href = `/${teamNumber}/Admin/`;
+        } else {
+            window.location.href = `/${teamNumber}/`;
+        }
+    }
+
 });
 
 

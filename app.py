@@ -12,6 +12,8 @@ from onshape_client.onshape_url import OnshapeElement
 from werkzeug.security import generate_password_hash, check_password_hash
 from pprint import pprint
 
+from werkzeug.utils import secure_filename
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///teams.db'
 app.config['JWT_SECRET_KEY'] = 'ysm201996'  # Update this with a secure key
@@ -36,6 +38,7 @@ configuration.access_token = '2GY4HFX3GCSPKR7ECE3SQX5QKO5PV4ZB4R6UNVICLLLZMC25ZJ
 
 # Defining host is optional and default to https://cad.onshape.com
 configuration.host = BASE_URL
+
 
 class Team(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -490,6 +493,7 @@ def upload_bom_dict():
 
     return jsonify({"message": "BOM data uploaded successfully."}), 200
 
+
 @app.route('/api/admin/upload_settings_dict', methods=['POST'])
 @jwt_required()
 def upload_settings_dict():
@@ -516,30 +520,37 @@ def upload_settings_dict():
 
     return jsonify({"message": "Settings data uploaded successfully."}), 200
 
-@app.route('/api/admin/upload_teams_dict', methods=['POST'])
+
+UPLOAD_FOLDER = 'instance'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Create upload folder if it doesn't exist
+
+
+@app.route('/api/admin/upload_teams_db', methods=['POST'])
 @jwt_required()
-def upload_teams_dict():
+def upload_teams_db():
     current_user = get_jwt_identity()
     # Check if the user is an admin
     if not is_admin(current_user):
         return jsonify({"error": "Unauthorized access"}), 403
 
-    data = request.get_json()
-    team_data_dict1 = data.get('team_data_dict')
+    # Check if file is included in the request
+    if 'file' not in request.files:
+        return jsonify({"error": "No file uploaded."}), 400
 
-    if not team_data_dict1:
-        return jsonify({"error": "No team data provided."}), 400
+    file = request.files['file']
 
-    # Validate the BOM data format
-    if not isinstance(team_data_dict1, dict):
-        return jsonify({"error": "Invalid team data format."}), 400
+    # Check if a file is selected and has a valid name
+    if file.filename == '':
+        return jsonify({"error": "No file selected."}), 400
 
-    # Update the in-memory BOM data and save it to file
-    if team_data_dict1:
-        settings_data_dict.update(team_data_dict1)
-        save_bom_data()
+    try:
+        # Save the uploaded file securely
+        filename = secure_filename('teams.db')  # Force it to always save as "teams.db"
+        file.save(os.path.join(UPLOAD_FOLDER, filename))
+        return jsonify({"message": "File uploaded successfully."}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-    return jsonify({"message": "team data uploaded successfully."}), 200
 
 # Helper function to load BOM data from file
 def load_bom_data():
@@ -660,7 +671,6 @@ def download_cad():
     eid = '3427958cf6a5e5b7120e3a42'  # str |
     partid = 'R3HD'  # str |
 
-
     # example passing only required values which don't have defaults set
     try:
         # Export Part to Parasolid.
@@ -680,7 +690,7 @@ def download_cad():
 
             fixed_url = fixed_url.replace('did', did).replace('wid', wid).replace('eid', eid).replace('pid', part_id)
             url = base_url + fixed_url
-            print("url: ",url)
+            print("url: ", url)
             # First request to get the redirect URL
             initial_response = client_data.api_client.request(
                 method=method,

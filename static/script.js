@@ -473,6 +473,46 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+    if (document.getElementById('uploadTeamsDBForm')) {
+        const uploadForm = document.getElementById('uploadTeamsDBForm');
+        const fileInput = document.getElementById('teamsDBFileInput');
+
+        uploadForm.addEventListener('submit', async (event) => {
+            event.preventDefault(); // Prevent form submission
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('Please select a file to upload.');
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file); // Append the file to FormData
+
+                const token = localStorage.getItem('jwt_token');
+                const response = await fetch(`${API_BASE_URL}api/admin/upload_teams_db`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData, // Send the file as multipart/form-data
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('teams.db uploaded successfully!');
+                } else {
+                    alert(`Error: ${result.error || 'Failed to upload teams.db.'}`);
+                }
+            } catch (error) {
+                console.error('Error uploading file:', error);
+                alert('An error occurred while uploading the file.');
+            }
+        });
+    }
+
 
 });
 

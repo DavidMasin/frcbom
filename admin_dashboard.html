@@ -33,11 +33,12 @@
                 <button type="submit" class="button-primary">Upload Settings Data</button>
             </form>
 
-            <form id="uploadTeamsDataForm" class="action-form">
-                <h3>Upload Teams Data</h3>
-                <input type="file" id="teamsDataFileInput" accept=".db" required>
-                <button type="submit" class="button-primary">Upload Teams Data</button>
+            <form id="uploadTeamsDBForm">
+                <label for="teamsDBFileInput">Upload teams.db File:</label>
+                <input type="file" id="teamsDBFileInput" accept=".db" required>
+                <button type="submit">Upload</button>
             </form>
+
 
             <!-- Fetch Team BOM -->
             <form id="fetchTeamBOMForm" class="action-form">
@@ -107,7 +108,7 @@
                 const response = await fetch(`${API_BASE_URL}api/admin/download_settings_dict`, {
                     headers: {'Authorization': `Bearer ${adminToken}`},
                 });
-
+                console.log("Im here!!!")
                 const data = await response.json();
                 console.log(data)
                 if (response.ok) {

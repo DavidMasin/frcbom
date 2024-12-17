@@ -640,7 +640,7 @@ function openEditModal(part) {
     const saveButton = document.getElementById('saveButton');
 
     // Clear existing content
-    modalBody.innerHTML = '<button id="downloadCADButton" class="button-primary">Download STEP File</button>';
+    // modalBody.innerHTML = '<button id="downloadCADButton" class="button-primary">Download STEP File</button>';
     // Populate modal with editable fields for the part
     if (part.preProcess) {
         modalBody.innerHTML += `
@@ -779,7 +779,7 @@ window.addEventListener('click', (event) => {
 
 async function downloadCADFile(partId) {
     const jwtToken = localStorage.getItem('jwt_token');
-    
+
     try {
         const response = await fetch(`${API_BASE_URL}api/download_cad`, {
             method: 'POST',

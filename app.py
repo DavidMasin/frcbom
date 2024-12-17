@@ -1,5 +1,6 @@
 import json
 import os
+import onshape_client.oas
 
 from flask import Flask, render_template
 from flask_cors import CORS
@@ -9,6 +10,7 @@ from flask_sqlalchemy import SQLAlchemy
 from onshape_client.client import Client
 from onshape_client.onshape_url import OnshapeElement
 from werkzeug.security import generate_password_hash, check_password_hash
+from pprint import pprint
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///teams.db'
@@ -28,7 +30,12 @@ bom_data_file = 'bom_data.json'  # File to persist BOM data
 settings_data_dict = {}
 settings_data_file = 'settings_data.json'
 BASE_URL = "https://cad.onshape.com"
+configuration = onshape_client.oas.Configuration()
+# Configure OAuth2 access token for authorization: OAuth2
+configuration.access_token = 'YOUR_ACCESS_TOKEN'
 
+# Defining host is optional and default to https://cad.onshape.com
+configuration.host = BASE_URL
 
 class Team(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -573,6 +580,7 @@ import io
 
 @app.route('/api/download_cad', methods=['POST'])
 def download_cad():
+    global configuration
     data = request.json
     part_id = data.get('id')
     team_number = data.get("team_number")
@@ -590,7 +598,24 @@ def download_cad():
 
     if not document_url or not team_number:
         return jsonify({"error": "Document URL and Team Number are required"}), 400
+    # Enter a context with an instance of the API client
+    with onshape_client.oas.ApiClient(configuration) as api_client:
+        # Create an instance of the API class
+        api_instance = onshape_client.oas.PartsApi(api_client)
+        did = 'did_example'  # str |
+        wvm = 'wvm_example'  # str |
+        wvmid = 'wvmid_example'  # str |
+        eid = 'eid_example'  # str |
+        partid = 'partid_example'  # str |
 
+
+    # example passing only required values which don't have defaults set
+    try:
+        # Export Part to Parasolid.
+        api_response = api_instance.export_ps(did, wvm, wvmid, eid, partid)
+        pprint(api_response)
+    except onshape_client.oas.ApiException as e:
+        print("Exception when calling PartsApi->export_ps: %s\n" % e)
     try:
         if access_key_data and secret_key_data:
             element = OnshapeElement(document_url)

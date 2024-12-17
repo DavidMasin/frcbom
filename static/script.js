@@ -779,7 +779,7 @@ window.addEventListener('click', (event) => {
 
 async function downloadCADFile(partId) {
     const jwtToken = localStorage.getItem('jwt_token');
-
+    
     try {
         const response = await fetch(`${API_BASE_URL}api/download_cad`, {
             method: 'POST',

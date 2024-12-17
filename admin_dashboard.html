@@ -129,26 +129,37 @@
         document.getElementById('downloadTEAMSDictButton').addEventListener('click', async () => {
             try {
                 const response = await fetch(`${API_BASE_URL}api/admin/download_teams_db`, {
-                    headers: {'Authorization': `Bearer ${adminToken}`},
+                    headers: {
+                        'Authorization': `Bearer ${adminToken}`
+                    }
                 });
 
-                const data = await response.json();
-                console.log(data)
                 if (response.ok) {
-                    const blob = new Blob([JSON.stringify(data.settings_data_dict, null, 2)], {type: 'application/json'});
+                    // Convert the response to a Blob (binary large object)
+                    const blob = await response.blob();
+
+                    // Create a temporary download link
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement('a');
                     link.href = url;
-                    link.download = 'settings_data.json';
-                    link.click();
+                    link.download = 'teams.db';  // Set the filename for the download
+                    document.body.appendChild(link);  // Append the link to the document
+
+                    link.click();  // Programmatically click the link to trigger download
+
+                    // Cleanup: Remove the temporary link and revoke the object URL
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
                 } else {
-                    alert(data.error || 'Failed to download Settings data.');
+                    const errorData = await response.json();
+                    alert(errorData.error || 'Failed to download teams.db.');
                 }
             } catch (error) {
-                console.error('Error downloading Settings data:', error);
-                alert('Failed to download Settings data.');
+                console.error('Error downloading teams.db:', error);
+                alert('An error occurred while downloading the file.');
             }
         });
+
 
         // Fetch Team BOM
         document.getElementById('fetchTeamBOMForm').addEventListener('submit', async (event) => {

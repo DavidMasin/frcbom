@@ -452,11 +452,14 @@ def download_teams_db():
     # Check if the user is the admin
     if not is_admin(current_user):
         return jsonify({"error": "Unauthorized access"}), 403
-    with open('instance/teams.db', 'r') as f:
-        teams_data = f.read()
-        print(teams_data)
+    file_path = "instance/teams.db"
     try:
-        return {"teams_data_db": teams_data}, 200
+        return send_file(
+            file_path,
+            as_attachment=True,  # Forces download
+            download_name="teams.db",  # Sets download name
+            mimetype="application/octet-stream"  # Generic binary file type
+        ), 200
     except Exception as e:
         return jsonify({"error": f"Failed to download Settings data: {str(e)}"}), 500
 

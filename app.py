@@ -1,7 +1,8 @@
 import json
 import os
-import onshape_client.oas
+from pprint import pprint
 
+import onshape_client.oas
 from flask import Flask, render_template
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
@@ -10,8 +11,6 @@ from flask_sqlalchemy import SQLAlchemy
 from onshape_client.client import Client
 from onshape_client.onshape_url import OnshapeElement
 from werkzeug.security import generate_password_hash, check_password_hash
-from pprint import pprint
-
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
@@ -640,7 +639,6 @@ def clear_bom():
 
 
 from flask import request, jsonify, send_file
-import io
 
 
 @app.route('/api/download_cad', methods=['POST'])

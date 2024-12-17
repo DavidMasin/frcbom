@@ -613,7 +613,10 @@ def get_bom():
 
         # Fetch BOM data
     team_bom_data = bom_data_dict.get(team_number, {})
+    print("TEAM BOM DATA: ",team_bom_data)
+
     robot_bom_data = team_bom_data.get(robot, {})
+    print("ROBOT BOM DATA: ", robot_bom_data)
     if system == "Main":
         combined_bom = []
         for sys_bom in robot_bom_data.values():

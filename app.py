@@ -258,22 +258,15 @@ def fetch_bom():
 
             bom_dict = dict(json.loads(response.data))
             part_nameID = findIDs(bom_dict, "Name")
-            part_quantityID = findIDs(bom_dict, "Quantity")
+            part_quantity = findIDs(bom_dict, "Quantity")
             part_materialID = findIDs(bom_dict, "Material")
             part_materialBomID = findIDs(bom_dict, "Bom Material")
             part_preProcessID = findIDs(bom_dict, "Pre Process")
             process1ID = findIDs(bom_dict, "Process 1")
             process2ID = findIDs(bom_dict, "Process 2")
-            if part_preProcessID is None or process1ID is None or process2ID is None:
-                part_preProcessID = findIDs(bom_dict, "Title 1")
-                process1ID = findIDs(bom_dict, "Title 2")
-                process2ID = findIDs(bom_dict, "Length")
-            if part_quantityID is None:
-                part_quantityID = findIDs(bom_dict, "QTY")
-
             DescriptionID = findIDs(bom_dict, "Description")
             parts = getPartsDict(
-                bom_dict, part_nameID, DescriptionID, part_quantityID, part_materialID,
+                bom_dict, part_nameID, DescriptionID, part_quantity, part_materialID,
                 part_materialBomID, part_preProcessID, process1ID, process2ID
             )
 

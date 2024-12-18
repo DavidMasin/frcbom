@@ -379,7 +379,7 @@ async function handleRegister(event) {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({"team_number": teamNumber, "password": password, "adminPassword": adminPassword})
         });
-        //console.log("Registered team!")
+        console.log("Registered team!")
         const data = await response.json();
         if (response.ok) {
             document.getElementById('registerMessage').textContent = 'Registration successful!';
@@ -518,7 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Initialize event listeners
 document.addEventListener('DOMContentLoaded', () => {
-    //console.log("Loading content")
+    console.log("Loading content")
     if (document.getElementById('dashboard')) {
         initializeDashboard().then(() => {
         });
@@ -628,7 +628,7 @@ function saveBOMDataToLocal(bomData, robotName, system) {
     }
     bomDict[teamNumber][robotName][system] = bomData;
     localStorage.setItem('bom_data', JSON.stringify(bomDict));
-    //console.log(`Saved BOM for robot '${robotName}' and system '${system}' locally.`);
+    console.log(`Saved BOM for robot '${robotName}' and system '${system}' locally.`);
 }
 
 
@@ -696,7 +696,7 @@ if (document.getElementById('settingsButton')) {
 function displayBOMAsButtons(bomData) {
     const gridContainer = document.getElementById('bomPartsGrid');
     gridContainer.innerHTML = ''; // Clear previous content
-    //console.log("BOMDATA1: ", bomData)
+    console.log("BOMDATA: ", bomData)
     bomData.sort((a, b) => (a["Part Name"] || '').localeCompare(b["Part Name"] || ''));
 
     bomData.forEach(part => {

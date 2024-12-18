@@ -270,7 +270,8 @@ def fetch_bom():
                 process2ID = findIDs(bom_dict, "Length")
             if part_quantityID is None:
                 part_quantityID = findIDs(bom_dict, "QTY")
-
+            if part_materialBomID is None:
+                part_materialBomID = part_materialID
             DescriptionID = findIDs(bom_dict, "Description")
             parts = getPartsDict(
                 bom_dict, part_nameID, DescriptionID, part_quantityID, part_materialID,

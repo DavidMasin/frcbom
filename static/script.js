@@ -672,6 +672,7 @@ if (document.getElementById('settingsButton')) {
                     system: system, // Include the selected system
                     access_key: accessKey,
                     secret_key: secretKey,
+                    robot:robot_name
                 }),
             });
 

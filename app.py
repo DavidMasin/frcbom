@@ -184,25 +184,50 @@ def getPartsDict(bom_dict, partNameID, DescriptionID, quantityID, materialID, ma
                  process2ID):
     partDict = {}
     rows = bom_dict.get("rows", [])
-    for row in rows:
-        part_name = row.get("headerIdToValue", {}).get(partNameID, "Unknown")
-        part_description = row.get("headerIdToValue", {}).get(DescriptionID, "Unknown")
-        quantity = row.get("headerIdToValue", {}).get(quantityID, "N/A")
-        part_material = row.get("headerIdToValue", {}).get(materialID, "Unknown")
-        part_material_bom = row.get("headerIdToValue", {}).get(materialBomID, "Unknown")
-        part_preProcess = row.get("headerIdToValue", {}).get(preProcessID, "Unknown")
-        part_process1 = row.get("headerIdToValue", {}).get(process1ID, "Unknown")
-        part_process2 = row.get("headerIdToValue", {}).get(process2ID, "Unknown")
-        part_id = row.get("itemSource", {}).get("partId", "Unknown")
-        if part_material != "N/A" and part_material is not None:
-            partDict[part_name] = (part_description,
-                                   int(quantity), part_material["displayName"], part_material_bom, part_preProcess,
-                                   part_process1,
-                                   part_process2, part_id)
-        else:
-            partDict[part_name] = (part_description,
-                                   int(quantity), "No material set", part_material_bom, part_preProcess, part_process1,
-                                   part_process2, part_id)
+    if materialID == materialBomID:
+        for row in rows:
+            part_name = row.get("headerIdToValue", {}).get(partNameID, "Unknown")
+            part_description = row.get("headerIdToValue", {}).get(DescriptionID, "Unknown")
+            quantity = row.get("headerIdToValue", {}).get(quantityID, "N/A")
+            part_material = row.get("headerIdToValue", {}).get(materialID, "Unknown")
+            part_material_bom = row.get("headerIdToValue", {}).get(materialBomID, "Unknown")
+            part_preProcess = row.get("headerIdToValue", {}).get(preProcessID, "Unknown")
+            part_process1 = row.get("headerIdToValue", {}).get(process1ID, "Unknown")
+            part_process2 = row.get("headerIdToValue", {}).get(process2ID, "Unknown")
+            part_id = row.get("itemSource", {}).get("partId", "Unknown")
+            if part_material != "N/A" and part_material is not None:
+                partDict[part_name] = (part_description,
+                                       int(quantity), part_material["displayName"], part_material_bom["displayName"],
+                                       part_preProcess,
+                                       part_process1,
+                                       part_process2, part_id)
+            else:
+                partDict[part_name] = (part_description,
+                                       int(quantity), "No material set", part_material_bom["displayName"],
+                                       part_preProcess,
+                                       part_process1,
+                                       part_process2, part_id)
+    else:
+        for row in rows:
+            part_name = row.get("headerIdToValue", {}).get(partNameID, "Unknown")
+            part_description = row.get("headerIdToValue", {}).get(DescriptionID, "Unknown")
+            quantity = row.get("headerIdToValue", {}).get(quantityID, "N/A")
+            part_material = row.get("headerIdToValue", {}).get(materialID, "Unknown")
+            part_material_bom = row.get("headerIdToValue", {}).get(materialBomID, "Unknown")
+            part_preProcess = row.get("headerIdToValue", {}).get(preProcessID, "Unknown")
+            part_process1 = row.get("headerIdToValue", {}).get(process1ID, "Unknown")
+            part_process2 = row.get("headerIdToValue", {}).get(process2ID, "Unknown")
+            part_id = row.get("itemSource", {}).get("partId", "Unknown")
+            if part_material != "N/A" and part_material is not None:
+                partDict[part_name] = (part_description,
+                                       int(quantity), part_material["displayName"], part_material_bom, part_preProcess,
+                                       part_process1,
+                                       part_process2, part_id)
+            else:
+                partDict[part_name] = (part_description,
+                                       int(quantity), "No material set", part_material_bom, part_preProcess,
+                                       part_process1,
+                                       part_process2, part_id)
     return partDict
 
 
@@ -263,6 +288,12 @@ def fetch_bom():
             process1ID = findIDs(bom_dict, "Process 1")
             process2ID = findIDs(bom_dict, "Process 2")
             DescriptionID = findIDs(bom_dict, "Description")
+
+            if part_materialBomID is None:
+                part_materialBomID = part_materialID
+            if part_quantity is None:
+                part_quantity = findIDs(bom_dict, "QTY")
+
             parts = getPartsDict(
                 bom_dict, part_nameID, DescriptionID, part_quantity, part_materialID,
                 part_materialBomID, part_preProcessID, process1ID, process2ID

@@ -203,7 +203,7 @@ def getPartsDict(bom_dict, partNameID, DescriptionID, quantityID, materialID, ma
                                        part_process2, part_id)
             else:
                 partDict[part_name] = (part_description,
-                                       int(quantity), "No material set", part_material_bom["displayName"],
+                                       int(quantity), "No material set", "No material set",
                                        part_preProcess,
                                        part_process1,
                                        part_process2, part_id)

@@ -628,6 +628,53 @@ def save_bom():
 
     return jsonify({"message": "BOM data saved successfully"}), 200
 
+# Endpoint to rename a robot
+@app.route('/api/rename_robot', methods=['POST'])
+def rename_robot():
+    data = request.json
+    team_number = data.get('team_number')
+    old_robot_name = data.get('old_robot_name')
+    new_robot_name = data.get('new_robot_name')
+
+    if not team_number or not old_robot_name or not new_robot_name:
+        return jsonify({"error": "Team number, old robot name, and new robot name are required."}), 400
+
+    team = get_team(team_number)
+    if team is None:
+        return jsonify({"error": "Team not found."}), 404
+
+    if old_robot_name not in team["robots"]:
+        return jsonify({"error": "Old robot name does not exist."}), 404
+
+    if new_robot_name in team["robots"]:
+        return jsonify({"error": "A robot with the new name already exists."}), 400
+
+    # Rename the robot
+    team["robots"].remove(old_robot_name)
+    team["robots"].append(new_robot_name)
+
+    return jsonify({"message": f"Robot '{old_robot_name}' renamed to '{new_robot_name}' successfully."}), 200
+
+# Endpoint to delete a robot
+@app.route('/api/delete_robot', methods=['POST'])
+def delete_robot():
+    data = request.json
+    team_number = data.get('team_number')
+    robot_name = data.get('robot_name')
+
+    if not team_number or not robot_name:
+        return jsonify({"error": "Team number and robot name are required."}), 400
+
+    team = get_team(team_number)
+    if team is None:
+        return jsonify({"error": "Team not found."}), 404
+
+    if robot_name not in team["robots"]:
+        return jsonify({"error": "Robot not found."}), 404
+
+    # Delete the robot
+    team["robots"].remove(robot_name)
+    return jsonify({"message": f"Robot '{robot_name}' deleted successfully."}), 200
 
 # Endpoint to retrieve BOM data for a specific team
 @app.route('/api/get_bom', methods=['GET'])

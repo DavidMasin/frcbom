@@ -13,203 +13,28 @@
 </header>
 
 <main>
-    <section>
-        <h2>Robots</h2>
-        <div id="robotList" class="grid-layout">
-            <!-- Robots will be dynamically listed here -->
+    <!-- Robots Section -->
+    <section id="robotsSection" class="robots-section">
+        <h2>Your Robots</h2>
+        <div id="robotList" class="robot-list">
+            <!-- Dynamically populated robot buttons will appear here -->
         </div>
         <button id="createRobotButton" class="button-primary">Create New Robot</button>
     </section>
-
-    <!-- Modal for Renaming Robot -->
-    <div id="renameRobotModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <span class="close" id="closeRenameModal">&times;</span>
-            <h3>Rename Robot</h3>
-            <input type="text" id="renameRobotInput" placeholder="Enter new robot name">
-            <button id="renameRobotConfirmButton" class="button-primary">Confirm</button>
-        </div>
-    </div>
-
-    <!-- Modal for Deleting Robot -->
-    <div id="deleteRobotModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <span class="close" id="closeDeleteModal">&times;</span>
-            <h3>Are you sure you want to delete this robot?</h3>
-            <button id="deleteRobotConfirmButton" class="button-danger">Delete</button>
-            <button id="cancelDeleteButton" class="button-secondary">Cancel</button>
-        </div>
-    </div>
 </main>
 
-<script src="/static/script.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const teamNumber = localStorage.getItem('team_number');
-        const jwtToken = localStorage.getItem('jwt_token');
-        const robotListContainer = document.getElementById('robotList');
+<!-- Modal for Renaming and Deleting Robots -->
+<div id="robotActionModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2 id="modalTitle">Robot Action</h2>
+        <div id="modalBody" class="modal-body">
+            <!-- Modal content dynamically added -->
+        </div>
+        <button id="confirmActionButton" class="button-primary">Confirm</button>
+    </div>
+</div>
 
-        // Load robots
-        loadRobots();
-
-        // Event Listener: Create Robot
-        document.getElementById('createRobotButton').addEventListener('click', () => {
-            const robotName = prompt('Enter a name for the new robot:');
-            if (robotName) {
-                createRobot(robotName);
-            }
-        });
-
-        // Close modals
-        document.getElementById('closeRenameModal').addEventListener('click', () => {
-            document.getElementById('renameRobotModal').style.display = 'none';
-        });
-
-        document.getElementById('closeDeleteModal').addEventListener('click', () => {
-            document.getElementById('deleteRobotModal').style.display = 'none';
-        });
-
-        document.getElementById('cancelDeleteButton').addEventListener('click', () => {
-            document.getElementById('deleteRobotModal').style.display = 'none';
-        });
-
-        // Load Robots
-        async function loadRobots() {
-            const response = await fetch(`${API_BASE_URL}api/get_robots?team_number=${teamNumber}`, {
-                headers: { 'Authorization': `Bearer ${jwtToken}` },
-            });
-            const data = await response.json();
-
-            if (response.ok) {
-                displayRobots(data.robots);
-            } else {
-                alert(`Error fetching robots: ${data.error}`);
-            }
-        }
-
-        // Display Robots
-        function displayRobots(robots) {
-            robotListContainer.innerHTML = ''; // Clear existing robots
-            robots.forEach(robot => {
-                const robotCard = document.createElement('div');
-                robotCard.className = 'robot-card';
-                robotCard.innerHTML = `
-                        <h3>${robot}</h3>
-                        <button class="button-secondary rename-button" data-robot="${robot}">Rename</button>
-                        <button class="button-danger delete-button" data-robot="${robot}">Delete</button>
-                    `;
-                robotListContainer.appendChild(robotCard);
-            });
-
-            // Add event listeners for Rename and Delete buttons
-            document.querySelectorAll('.rename-button').forEach(button => {
-                button.addEventListener('click', (event) => {
-                    const robotName = event.target.getAttribute('data-robot');
-                    openRenameModal(robotName);
-                });
-            });
-
-            document.querySelectorAll('.delete-button').forEach(button => {
-                button.addEventListener('click', (event) => {
-                    const robotName = event.target.getAttribute('data-robot');
-                    openDeleteModal(robotName);
-                });
-            });
-        }
-
-        // Open Rename Modal
-        function openRenameModal(robotName) {
-            const modal = document.getElementById('renameRobotModal');
-            const input = document.getElementById('renameRobotInput');
-            modal.style.display = 'block';
-            input.value = robotName;
-
-            document.getElementById('renameRobotConfirmButton').onclick = () => {
-                const newRobotName = input.value.trim();
-                if (newRobotName) {
-                    renameRobot(robotName, newRobotName);
-                } else {
-                    alert('Robot name cannot be empty.');
-                }
-            };
-        }
-
-        // Open Delete Modal
-        function openDeleteModal(robotName) {
-            const modal = document.getElementById('deleteRobotModal');
-            modal.style.display = 'block';
-
-            document.getElementById('deleteRobotConfirmButton').onclick = () => {
-                deleteRobot(robotName);
-            };
-        }
-
-        // Create Robot
-        async function createRobot(robotName) {
-            const response = await fetch(`${API_BASE_URL}api/new_robot`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${jwtToken}`,
-                },
-                body: JSON.stringify({ team_number: teamNumber, robot_name: robotName }),
-            });
-            const data = await response.json();
-
-            if (response.ok) {
-                alert('Robot created successfully.');
-                loadRobots();
-            } else {
-                alert(`Error creating robot: ${data.error}`);
-            }
-        }
-
-        // Rename Robot
-        async function renameRobot(oldName, newName) {
-            const response = await fetch(`${API_BASE_URL}api/rename_robot`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${jwtToken}`,
-                },
-                body: JSON.stringify({
-                    team_number: teamNumber,
-                    old_robot_name: oldName,
-                    new_robot_name: newName,
-                }),
-            });
-            const data = await response.json();
-
-            if (response.ok) {
-                alert('Robot renamed successfully.');
-                loadRobots();
-                document.getElementById('renameRobotModal').style.display = 'none';
-            } else {
-                alert(`Error renaming robot: ${data.error}`);
-            }
-        }
-
-        // Delete Robot
-        async function deleteRobot(robotName) {
-            const response = await fetch(`${API_BASE_URL}api/delete_robot`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${jwtToken}`,
-                },
-                body: JSON.stringify({ team_number: teamNumber, robot_name: robotName }),
-            });
-            const data = await response.json();
-
-            if (response.ok) {
-                alert('Robot deleted successfully.');
-                loadRobots();
-                document.getElementById('deleteRobotModal').style.display = 'none';
-            } else {
-                alert(`Error deleting robot: ${data.error}`);
-            }
-        }
-    });
-</script>
+<script src="/admin_dashboard.js"></script>
 </body>
 </html>

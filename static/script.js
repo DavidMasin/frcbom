@@ -287,7 +287,7 @@ function handleFilterBOM(filter) {
         case 'cots':
             //console.log("IN COTS")
             filteredData = bomData.filter(item =>
-                (!item.preProcess && !item.Process1 && !item.Process2) ||(item.preProcess==="Unknown" && item.Process1==="Unknown" && item.Process2==="Unknown")
+                !item.preProcess && !item.Process1 && !item.Process2
             );
             break;
         case 'inhouse':

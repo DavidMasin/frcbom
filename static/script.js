@@ -110,13 +110,10 @@ function showPasswordPrompt() {
                     overlay.remove();
                     // Remove blur from background
                     document.body.style.filter = 'none';
-                    if (data.isAdmin)
-                    {
-                        localStorage.setItem("role","Admin")
-                    }
-                    else
-                    {
-                        localStorage.setItem("role","User")
+                    if (data.isAdmin) {
+                        localStorage.setItem("role", "Admin")
+                    } else {
+                        localStorage.setItem("role", "User")
                     }
                     resolve(); // Resolve the Promise
                 } else {
@@ -287,12 +284,12 @@ function handleFilterBOM(filter) {
         case 'cots':
             //console.log("IN COTS")
             filteredData = bomData.filter(item =>
-                !item.preProcess && !item.Process1 && !item.Process2 ||(item.preProcess==="Unknown" && item.Process1==="Unknown" && item.Process2==="Unknown")
+                !item.preProcess && !item.Process1 && !item.Process2 || (item.preProcess === "Unknown" && item.Process1 === "Unknown" && item.Process2 === "Unknown")
             );
             break;
         case 'inhouse':
             filteredData = bomData.filter(item =>
-                (item.preProcess || item.Process1 || item.Process2) && !(item.preProcess==="Unknown" && item.Process1==="Unknown" && item.Process2==="Unknown")
+                (item.preProcess || item.Process1 || item.Process2) && !(item.preProcess === "Unknown" && item.Process1 === "Unknown" && item.Process2 === "Unknown")
             );
             break;
         case 'pre-process':
@@ -574,16 +571,13 @@ document.getElementById('systemSelect').addEventListener('change', (event) => {
     const teamNumber = localStorage.getItem('team_number');
     const robotName = localStorage.getItem('robot_name');
     const role = localStorage.getItem("role");
-    if (robotName!==null)
-    {
+    if (robotName !== null) {
         if (teamNumber && robotName && selectedSystem && role === "Admin") {
             window.location.href = `/${teamNumber}/Admin/${robotName}/${selectedSystem}`;
         } else {
             window.location.href = `/${teamNumber}/${robotName}/${selectedSystem}`;
         }
-    }
-    else
-    {
+    } else {
         if (teamNumber && robotName && selectedSystem && role === "Admin") {
             window.location.href = `/${teamNumber}/Admin/`;
         } else {
@@ -672,7 +666,7 @@ if (document.getElementById('settingsButton')) {
                     system: system, // Include the selected system
                     access_key: accessKey,
                     secret_key: secretKey,
-                    robot:robot_name
+                    robot: robot_name
                 }),
             });
 
@@ -742,6 +736,7 @@ function attachCounterListeners() {
         });
     });
 }
+
 document.getElementById('renameRobotButton')?.addEventListener('click', () => {
     const teamNumber = localStorage.getItem('team_number');
     const oldRobotName = document.getElementById('oldRobotName').value.trim();
@@ -832,8 +827,8 @@ function openEditModal(part) {
         // 2) If user is admin, also send updated process fields to the server
         if (role === "Admin") {
             const newPreProcess = document.getElementById('process_pre')?.value.trim() || part.preProcess;
-            const newProcess1  = document.getElementById('process_1')?.value.trim() || part.Process1;
-            const newProcess2  = document.getElementById('process_2')?.value.trim() || part.Process2;
+            const newProcess1 = document.getElementById('process_1')?.value.trim() || part.Process1;
+            const newProcess2 = document.getElementById('process_2')?.value.trim() || part.Process2;
             updatePartProcesses(part, newPreProcess, newProcess1, newProcess2);
         }
     };
@@ -893,7 +888,7 @@ async function renameRobot(teamNumber, oldRobotName, newRobotName) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ team_number: teamNumber, old_robot_name: oldRobotName, new_robot_name: newRobotName })
+            body: JSON.stringify({team_number: teamNumber, old_robot_name: oldRobotName, new_robot_name: newRobotName})
         });
         const data = await response.json();
         if (response.ok) {
@@ -918,7 +913,7 @@ async function deleteRobot(teamNumber, robotName) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ team_number: teamNumber, robot_name: robotName })
+            body: JSON.stringify({team_number: teamNumber, robot_name: robotName})
         });
         const data = await response.json();
         if (response.ok) {
@@ -935,37 +930,33 @@ async function deleteRobot(teamNumber, robotName) {
 }
 
 // Function to save quantities and update the BOM data
-function savePartQuantities(part) {
+async function savePartQuantities(part) {
     // Fetch updated quantities from the modal
     const preProcessQty = document.getElementById('preProcessQty')?.value || part.preProcessQuantity || 0;
     const process1Qty = document.getElementById('process1Qty')?.value || part.process1Quantity || 0;
     const process2Qty = document.getElementById('process2Qty')?.value || part.process2Quantity || 0;
     const robot_name = localStorage.getItem('robot_name');
+    const teamNumber = localStorage.getItem('team_number'); // Get team number
+
     if (!robot_name) {
-        //console.log("NO ROBOT IN SAVE PART QTY")
+        console.error("No robot name found in local storage.");
+        return;
     }
+
     // Update the part's properties
     part.preProcessQuantity = parseInt(preProcessQty, 10);
     part.process1Quantity = parseInt(process1Qty, 10);
     part.process2Quantity = parseInt(process2Qty, 10);
 
     // Retrieve the BOM data from localStorage
-
-    let systemSelect
+    let systemSelect;
     if (document.getElementById("systemSelect")) {
         systemSelect = document.getElementById("systemSelect").value;
-        //console.log("Debug system3 ", systemSelect)
-
     } else {
-        systemSelect = "Main"
-        //console.log("Debug system4 ", systemSelect)
-
+        systemSelect = "Main";
     }
+
     let bomData = getBOMDataFromLocal(robot_name, systemSelect);
-    //console.log('Pre-Process Qty:', preProcessQty);
-    //console.log('Process 1 Qty:', process1Qty);
-    //console.log('Process 2 Qty:', process2Qty);
-    //console.log('Updated Part:', part);
 
     // Find and update the part in the BOM data
     const partIndex = bomData.findIndex(item => item["Part Name"] === part["Part Name"]);
@@ -985,6 +976,36 @@ function savePartQuantities(part) {
 
     // Close the modal
     closeModal();
+
+    // Now, send the updated BOM to the server
+    try {
+        const token = localStorage.getItem('jwt_token');
+
+        const response = await fetch(`${API_BASE_URL}api/save_bom_for_robot_system`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                team_number: teamNumber,
+                robot_name: robot_name,
+                system: systemSelect,
+                bom_data: bomData
+            })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            console.log(data.message);
+        } else {
+            console.error("Error saving BOM data to server:", data.error);
+            alert(`Failed to save BOM data: ${data.error}`);
+        }
+    } catch (error) {
+        console.error("Error saving BOM data to server:", error);
+        alert('An error occurred while saving BOM data to the server.');
+    }
 }
 
 
@@ -1015,7 +1036,7 @@ async function downloadCADFile(partId) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${jwtToken}`
             },
-            body: JSON.stringify({ id: partId, team_number: teamNumber }),
+            body: JSON.stringify({id: partId, team_number: teamNumber}),
         });
 
         if (!response.ok) {
@@ -1264,13 +1285,10 @@ function createNewRobot(teamNumber, robotName) {
         .then(({status, data}) => {
             if (status) {
                 alert(data.message);
-                if (localStorage.getItem("role")==="Admin")
-                {
+                if (localStorage.getItem("role") === "Admin") {
                     window.location.href = `/${teamNumber}/Admin/${robotName}/Main`;
 
-                }
-                else
-                {
+                } else {
                     window.location.href = `/${teamNumber}/${robotName}/Main`;
 
                 }

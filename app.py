@@ -179,6 +179,52 @@ def findIDs(bom_dict, IDName):
             return head['id']
     return None
 
+from flask_jwt_extended import get_jwt_identity
+
+@app.route('/api/save_bom_for_robot_system', methods=['POST'])
+@jwt_required()
+def save_bom_for_robot_system():
+    """
+    Saves BOM data for a specific team, robot, and system.
+    Only team admins can perform this action.
+    """
+    current_user = get_jwt_identity()
+    data = request.get_json()
+    team_number = data.get('team_number')
+    robot_name = data.get('robot_name')
+    system = data.get('system')
+    bom_data = data.get('bom_data')
+
+    # Validate input
+    if not all([team_number, robot_name, system, bom_data]):
+        return jsonify({"error": "Missing required fields"}), 400
+
+    # Check if the current user is admin
+    team = Team.query.filter_by(team_number=team_number).first()
+    if not team:
+        return jsonify({"error": "Team not found"}), 404
+
+    # Assuming `get_jwt_identity()` returns `team_number`
+    # and you have a way to determine if the user is admin.
+    # Adjust this logic based on your authentication system.
+    is_admin = check_password_hash(team.adminPassword, current_user)
+    if not is_admin:
+        return jsonify({"error": "Unauthorized access"}), 403
+
+    # Initialize team and robot in the BOM dictionary if they don't exist
+    if team_number not in bom_data_dict:
+        bom_data_dict[team_number] = {}
+    if robot_name not in bom_data_dict[team_number]:
+        bom_data_dict[team_number][robot_name] = {}
+
+    # Save BOM data for the specified system
+    bom_data_dict[team_number][robot_name][system] = bom_data
+
+    # Persist changes to the JSON file
+    save_bom_data()
+
+    return jsonify({"message": f"BOM data saved for {robot_name}/{system}"}), 200
+
 
 def getPartsDict(bom_dict, partNameID, DescriptionID, quantityID, materialID, materialBomID, preProcessID, process1ID,
                  process2ID):

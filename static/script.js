@@ -851,6 +851,17 @@ async function updatePartProcesses(part, newPreProcess, newProcess1, newProcess2
     }
 
     try {
+        console.log(teamNumber)
+        console.log(robotName)
+        console.log(system)
+        console.log(part["Part Name"])
+
+        console.log( newPreProcess)
+
+        console.log( newProcess1)
+
+        console.log( newProcess2)
+        console.log( )
         const response = await fetch(`${API_BASE_URL}api/update_part_processes`, {
             method: 'POST',
             headers: {

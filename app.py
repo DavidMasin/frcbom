@@ -855,6 +855,7 @@ def update_part_processes():
         return jsonify({"error": "System not found"}), 404
 
     part_list = bom_data_dict[team_number][robot_name][system]
+    print(part_list)
     for item in part_list:
         if item["Part Name"] == part_name:
             # Update only if fields provided

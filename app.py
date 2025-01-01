@@ -813,24 +813,26 @@ def delete_robot():
         return jsonify({"error": f"Robot '{robot_name}' not found"}), 404
 
     # Delete the robot
-    del bom_data_dict[team_number][robot_name]
+    bom_data_dict[team_number].remove(robot_name)
     save_bom_data()
 
     return jsonify({"message": f"Robot '{robot_name}' deleted successfully"}), 200
+
+
 @app.route('/api/update_part_processes', methods=['POST'])
 @jwt_required()
 def update_part_processes():
     """
-    Updates the process fields of a given part in the BOM.
-    Payload should include:
+    Updates the process fields (preProcess, Process1, Process2) of a given part in the BOM.
+    Example payload:
     {
        "team_number": "XXXX",
        "robot_name": "Robot1",
        "system": "Main",
-       "part_name": "Some Part",
-       "preProcess": "CNC",
-       "process1": "Lathe",
-       "process2": "3D Print"
+       "part_name": "SomePart",
+       "preProcess": "NewPreProcess",
+       "process1": "NewProcess1",
+       "process2": "NewProcess2"
     }
     """
     data = request.get_json()
@@ -838,11 +840,8 @@ def update_part_processes():
     robot_name = data.get('robot_name')
     system = data.get('system')
     part_name = data.get('part_name')
-    preProcess = data.get('preProcess')
-    process1 = data.get('process1')
-    process2 = data.get('process2')
 
-    # Basic checks
+    # Make sure these are present
     if not (team_number and robot_name and system and part_name):
         return jsonify({"error": "Missing required fields"}), 400
 
@@ -855,21 +854,21 @@ def update_part_processes():
     if system not in bom_data_dict[team_number][robot_name]:
         return jsonify({"error": "System not found"}), 404
 
-    # Locate the part by name and update processes
-    bom_list = bom_data_dict[team_number][robot_name][system]
-    for item in bom_list:
+    part_list = bom_data_dict[team_number][robot_name][system]
+    for item in part_list:
         if item["Part Name"] == part_name:
-            item["preProcess"] = preProcess or item["preProcess"]
-            item["Process1"] = process1 or item["Process1"]
-            item["Process2"] = process2 or item["Process2"]
-            break
-    else:
-        return jsonify({"error": f"Part '{part_name}' not found in BOM"}), 404
+            # Update only if fields provided
+            if "preProcess" in data:
+                item["preProcess"] = data["preProcess"]
+            if "process1" in data:
+                item["Process1"] = data["process1"]
+            if "process2" in data:
+                item["Process2"] = data["process2"]
+            save_bom_data()
+            return jsonify({"message": "Part processes updated successfully"}), 200
 
-    # Save updated BOM
-    save_bom_data()
+    return jsonify({"error": f"Part '{part_name}' not found"}), 404
 
-    return jsonify({"message": "Part processes updated successfully"}), 200
 
 @socketio.on('connect')
 def handle_connect():

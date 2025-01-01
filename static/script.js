@@ -770,50 +770,73 @@ function openEditModal(part) {
 
     // Clear existing content
     modalBody.innerHTML = '';
-
-    // Add fields for processes
-    modalBody.innerHTML += `
-      <label for="process_pre">Pre-Process:</label>
-      <input type="text" id="process_pre" value="${part.preProcess || ''}" />
-
-      <label for="process_1">Process 1:</label>
-      <input type="text" id="process_1" value="${part.Process1 || ''}" />
-
-      <label for="process_2">Process 2:</label>
-      <input type="text" id="process_2" value="${part.Process2 || ''}" />
-    `;
-
-    // If you still want to keep quantity editing
     if (part.preProcess) {
         modalBody.innerHTML += `
-          <label for="preProcessQty">Pre-Process Qty (${part.preProcess}):</label>
-          ...
+            <label for="preProcessQty">Pre-Process (${part.preProcess}):</label>
+            <div class="quantity-counter">
+                <button class="decrement" data-target="preProcessQty">-</button>
+                <input type="number" id="preProcessQty" value="${part.preProcessQuantity || 0}" min="0">
+                <button class="increment" data-target="preProcessQty">+</button>
+            </div>
         `;
     }
-    // ... etc for process1, process2 quantity
+    if (part.Process1) {
+        modalBody.innerHTML += `
+            <label for="process1Qty">Process 1 (${part.Process1}):</label>
+            <div class="quantity-counter">
+                <button class="decrement" data-target="process1Qty">-</button>
+                <input type="number" id="process1Qty" value="${part.process1Quantity || 0}" min="0">
+                <button class="increment" data-target="process1Qty">+</button>
+            </div>
+        `;
+    }
+    if (part.Process2) {
+        modalBody.innerHTML += `
+            <label for="process2Qty">Process 2 (${part.Process2}):</label>
+            <div class="quantity-counter">
+                <button class="decrement" data-target="process2Qty">-</button>
+                <input type="number" id="process2Qty" value="${part.process2Quantity || 0}" min="0">
+                <button class="increment" data-target="process2Qty">+</button>
+            </div>
+        `;
+    }
+
+    // 2) Conditionally show process name fields if role is Admin
+    const role = localStorage.getItem("role");
+    if (role === "Admin") {
+        modalBody.innerHTML += `
+            <hr>
+            <h3>Change Processes (Admin Only)</h3>
+            <label for="process_pre">Pre-Process Name:</label>
+            <input type="text" id="process_pre" value="${part.preProcess || ''}" />
+
+            <label for="process_1">Process 1 Name:</label>
+            <input type="text" id="process_1" value="${part.Process1 || ''}" />
+
+            <label for="process_2">Process 2 Name:</label>
+            <input type="text" id="process_2" value="${part.Process2 || ''}" />
+        `;
+    }
 
     // Show the modal
     modal.style.display = 'flex';
-    attachCounterListeners();  // If you have your increment/decrement logic
 
-    // Save changes
+    // If you have the attachCounterListeners() for +/-:
+    attachCounterListeners();
+
+    // Save Button
     saveButton.onclick = () => {
-        // Gather new processes
-        const newPreProcess = document.getElementById('process_pre').value.trim();
-        const newProcess1 = document.getElementById('process_1').value.trim();
-        const newProcess2 = document.getElementById('process_2').value.trim();
-
-        // Update in local BOM first (if you want immediate UI feedback)
-        part.preProcess = newPreProcess;
-        part.Process1 = newProcess1;
-        part.Process2 = newProcess2;
-
-        // Save the updated processes to the server
-        updatePartProcesses(part, newPreProcess, newProcess1, newProcess2);
-
-        // Then save quantities if you also have them
+        // 1) Save existing quantity changes (no matter if user is admin or not)
         savePartQuantities(part);
-    }
+
+        // 2) If user is admin, also send updated process fields to the server
+        if (role === "Admin") {
+            const newPreProcess = document.getElementById('process_pre')?.value.trim() || part.preProcess;
+            const newProcess1  = document.getElementById('process_1')?.value.trim() || part.Process1;
+            const newProcess2  = document.getElementById('process_2')?.value.trim() || part.Process2;
+            updatePartProcesses(part, newPreProcess, newProcess1, newProcess2);
+        }
+    };
 }
 
 // New function to make the server call to update processes
@@ -821,9 +844,10 @@ async function updatePartProcesses(part, newPreProcess, newProcess1, newProcess2
     const token = localStorage.getItem('jwt_token');
     const teamNumber = localStorage.getItem('team_number');
     const robotName = localStorage.getItem('robot_name');
-    let systemSelect = "Main";
-    if (document.getElementById("systemSelect")) {
-        systemSelect = document.getElementById("systemSelect").value;
+    let system = 'Main';
+
+    if (document.getElementById('systemSelect')) {
+        system = document.getElementById('systemSelect').value;
     }
 
     try {
@@ -836,20 +860,26 @@ async function updatePartProcesses(part, newPreProcess, newProcess1, newProcess2
             body: JSON.stringify({
                 team_number: teamNumber,
                 robot_name: robotName,
-                system: systemSelect,
+                system: system,
                 part_name: part["Part Name"],
                 preProcess: newPreProcess,
                 process1: newProcess1,
                 process2: newProcess2
             }),
         });
+
         const data = await response.json();
         if (!response.ok) {
             alert(data.error || 'Failed to update part processes.');
+        } else {
+            // Optionally update the local part object so the UI is consistent
+            part.preProcess = newPreProcess;
+            part.Process1 = newProcess1;
+            part.Process2 = newProcess2;
         }
     } catch (error) {
         console.error('Error updating part processes:', error);
-        alert('An error occurred while updating part processes.');
+        alert('An error occurred while updating the processes.');
     }
 }
 

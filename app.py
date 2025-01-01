@@ -865,9 +865,9 @@ def update_part_processes():
                 item["Process1"] = data["process1"]
             if "process2" in data:
                 item["Process2"] = data["process2"]
+            bom_data_dict[team_number][robot_name][system] = part_list
             save_bom_data()
             return jsonify({"message": "Part processes updated successfully"}), 200
-
     return jsonify({"error": f"Part '{part_name}' not found"}), 404
 
 

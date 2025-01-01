@@ -287,12 +287,12 @@ function handleFilterBOM(filter) {
         case 'cots':
             //console.log("IN COTS")
             filteredData = bomData.filter(item =>
-                !item.preProcess && !item.Process1 && !item.Process2
+                !item.preProcess && !item.Process1 && !item.Process2 ||(item.preProcess==="Unknown" && item.Process1==="Unknown" && item.Process2==="Unknown")
             );
             break;
         case 'inhouse':
             filteredData = bomData.filter(item =>
-                item.preProcess || item.Process1 || item.Process2
+                item.preProcess || item.Process1 || item.Process2 && !(item.preProcess==="Unknown" && item.Process1==="Unknown" && item.Process2==="Unknown")
             );
             break;
         case 'pre-process':

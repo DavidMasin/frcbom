@@ -747,7 +747,129 @@ def download_cad():
     except Exception as e:
         print("Error fetching CAD:", str(e))
         return jsonify({"error": "Internal server error"}), 500
+@app.route('/api/rename_robot', methods=['POST'])
+@jwt_required()
+def rename_robot():
+    """
+    Renames an existing robot for a given team.
+    Payload should include:
+    {
+       "team_number": "XXXX",
+       "old_robot_name": "OldRobot",
+       "new_robot_name": "NewRobot"
+    }
+    """
+    data = request.get_json()
+    team_number = data.get('team_number')
+    old_robot_name = data.get('old_robot_name')
+    new_robot_name = data.get('new_robot_name')
 
+    if not team_number or not old_robot_name or not new_robot_name:
+        return jsonify({"error": "Missing required fields"}), 400
+
+    # Check if the team exists in bom_data_dict
+    if team_number not in bom_data_dict:
+        return jsonify({"error": "Team not found"}), 404
+
+    # Check if the old robot exists
+    if old_robot_name not in bom_data_dict[team_number]:
+        return jsonify({"error": f"Robot '{old_robot_name}' does not exist"}), 404
+
+    # Check if the new robot name is already taken
+    if new_robot_name in bom_data_dict[team_number]:
+        return jsonify({"error": f"Robot '{new_robot_name}' already exists"}), 400
+
+    # Perform the rename: copy data and delete old entry
+    bom_data_dict[team_number][new_robot_name] = bom_data_dict[team_number].pop(old_robot_name)
+
+    # Persist changes
+    save_bom_data()
+
+    return jsonify({"message": f"Robot '{old_robot_name}' renamed to '{new_robot_name}'"}), 200
+
+
+@app.route('/api/delete_robot', methods=['DELETE'])
+@jwt_required()
+def delete_robot():
+    """
+    Deletes a robot for a given team.
+    Payload should include:
+    {
+       "team_number": "XXXX",
+       "robot_name": "RobotToDelete"
+    }
+    """
+    data = request.get_json()
+    team_number = data.get('team_number')
+    robot_name = data.get('robot_name')
+
+    if not team_number or not robot_name:
+        return jsonify({"error": "Missing required fields"}), 400
+
+    if team_number not in bom_data_dict:
+        return jsonify({"error": f"Team '{team_number}' not found"}), 404
+
+    if robot_name not in bom_data_dict[team_number]:
+        return jsonify({"error": f"Robot '{robot_name}' not found"}), 404
+
+    # Delete the robot
+    del bom_data_dict[team_number][robot_name]
+    save_bom_data()
+
+    return jsonify({"message": f"Robot '{robot_name}' deleted successfully"}), 200
+@app.route('/api/update_part_processes', methods=['POST'])
+@jwt_required()
+def update_part_processes():
+    """
+    Updates the process fields of a given part in the BOM.
+    Payload should include:
+    {
+       "team_number": "XXXX",
+       "robot_name": "Robot1",
+       "system": "Main",
+       "part_name": "Some Part",
+       "preProcess": "CNC",
+       "process1": "Lathe",
+       "process2": "3D Print"
+    }
+    """
+    data = request.get_json()
+    team_number = data.get('team_number')
+    robot_name = data.get('robot_name')
+    system = data.get('system')
+    part_name = data.get('part_name')
+    preProcess = data.get('preProcess')
+    process1 = data.get('process1')
+    process2 = data.get('process2')
+
+    # Basic checks
+    if not (team_number and robot_name and system and part_name):
+        return jsonify({"error": "Missing required fields"}), 400
+
+    if team_number not in bom_data_dict:
+        return jsonify({"error": "Team not found"}), 404
+
+    if robot_name not in bom_data_dict[team_number]:
+        return jsonify({"error": "Robot not found"}), 404
+
+    if system not in bom_data_dict[team_number][robot_name]:
+        return jsonify({"error": "System not found"}), 404
+
+    # Locate the part by name and update processes
+    bom_list = bom_data_dict[team_number][robot_name][system]
+    for item in bom_list:
+        if item["Part Name"] == part_name:
+            item["preProcess"] = preProcess or item["preProcess"]
+            item["Process1"] = process1 or item["Process1"]
+            item["Process2"] = process2 or item["Process2"]
+            break
+    else:
+        return jsonify({"error": f"Part '{part_name}' not found in BOM"}), 404
+
+    # Save updated BOM
+    save_bom_data()
+
+    return jsonify({"message": "Part processes updated successfully"}), 200
 
 @socketio.on('connect')
 def handle_connect():

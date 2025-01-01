@@ -292,7 +292,7 @@ function handleFilterBOM(filter) {
             break;
         case 'inhouse':
             filteredData = bomData.filter(item =>
-                item.preProcess || item.Process1 || item.Process2 && !(item.preProcess==="Unknown" && item.Process1==="Unknown" && item.Process2==="Unknown")
+                (item.preProcess || item.Process1 || item.Process2) && !(item.preProcess==="Unknown" && item.Process1==="Unknown" && item.Process2==="Unknown")
             );
             break;
         case 'pre-process':
@@ -726,63 +726,6 @@ function displayBOMAsButtons(bomData) {
     });
 }
 
-// Function to open the modal with part details
-function openEditModal(part) {
-    const modal = document.getElementById('editModal');
-    const modalBody = document.getElementById('modalBody');
-    const saveButton = document.getElementById('saveButton');
-
-    // Clear existing content
-    // modalBody.innerHTML = '<button id="downloadCADButton" class="button-primary">Download STEP File</button>';
-    // Populate modal with editable fields for the part
-    modalBody.innerHTML ='';
-    if (part.preProcess) {
-        modalBody.innerHTML += `
-        <label for="preProcessQty">Pre-Process (${part.preProcess}):</label>
-        <div class="quantity-counter">
-            <button class="decrement" data-target="preProcessQty">-</button>
-            <input type="number" id="preProcessQty" value="${part.preProcessQuantity || 0}" min="0">
-            <button class="increment" data-target="preProcessQty">+</button>
-        </div>
-    `;
-    }
-    if (part.Process1) {
-        modalBody.innerHTML += `
-        <label for="process1Qty">Process 1 (${part.Process1}):</label>
-        <div class="quantity-counter">
-            <button class="decrement" data-target="process1Qty">-</button>
-            <input type="number" id="process1Qty" value="${part.process1Quantity || 0}" min="0">
-            <button class="increment" data-target="process1Qty">+</button>
-        </div>
-    `;
-    }
-    if (part.Process2) {
-        modalBody.innerHTML += `
-        <label for="process2Qty">Process 2 (${part.Process2}):</label>
-        <div class="quantity-counter">
-            <button class="decrement" data-target="process2Qty">-</button>
-            <input type="number" id="process2Qty" value="${part.process2Quantity || 0}" min="0">
-            <button class="increment" data-target="process2Qty">+</button>
-        </div>
-    `;
-
-    }
-    //console.log(modalBody.innerHTML)
-    const downloadCADButton = document.getElementById('downloadCADButton');
-    if (downloadCADButton) {
-        downloadCADButton.addEventListener('click', () => {
-            //console.log('Downloading CAD for part:', part["Part Name"], " with the id of" + part["ID"]);
-            downloadCADFile(part["ID"]).then(r => {
-            });
-        });
-    }
-    // Show the modal
-    modal.style.display = 'flex';
-    attachCounterListeners();
-
-    // Save changes
-    saveButton.onclick = () => savePartQuantities(part);
-}
 
 function attachCounterListeners() {
     document.querySelectorAll('.increment').forEach(button => {
@@ -798,6 +741,166 @@ function attachCounterListeners() {
             target.value = Math.max(0, parseInt(target.value) - 1); // Ensure value doesn't go below 0
         });
     });
+}
+document.getElementById('renameRobotButton')?.addEventListener('click', () => {
+    const teamNumber = localStorage.getItem('team_number');
+    const oldRobotName = document.getElementById('oldRobotName').value.trim();
+    const newRobotName = document.getElementById('newRobotName').value.trim();
+    if (!oldRobotName || !newRobotName) {
+        alert('Please provide both old robot name and new robot name.');
+        return;
+    }
+    renameRobot(teamNumber, oldRobotName, newRobotName);
+});
+
+document.getElementById('deleteRobotButton')?.addEventListener('click', () => {
+    const teamNumber = localStorage.getItem('team_number');
+    const robotName = document.getElementById('deleteRobotName').value.trim();
+    if (!robotName) {
+        alert('Please provide a robot name to delete.');
+        return;
+    }
+    deleteRobot(teamNumber, robotName);
+});
+
+function openEditModal(part) {
+    const modal = document.getElementById('editModal');
+    const modalBody = document.getElementById('modalBody');
+    const saveButton = document.getElementById('saveButton');
+
+    // Clear existing content
+    modalBody.innerHTML = '';
+
+    // Add fields for processes
+    modalBody.innerHTML += `
+      <label for="process_pre">Pre-Process:</label>
+      <input type="text" id="process_pre" value="${part.preProcess || ''}" />
+
+      <label for="process_1">Process 1:</label>
+      <input type="text" id="process_1" value="${part.Process1 || ''}" />
+
+      <label for="process_2">Process 2:</label>
+      <input type="text" id="process_2" value="${part.Process2 || ''}" />
+    `;
+
+    // If you still want to keep quantity editing
+    if (part.preProcess) {
+        modalBody.innerHTML += `
+          <label for="preProcessQty">Pre-Process Qty (${part.preProcess}):</label>
+          ...
+        `;
+    }
+    // ... etc for process1, process2 quantity
+
+    // Show the modal
+    modal.style.display = 'flex';
+    attachCounterListeners();  // If you have your increment/decrement logic
+
+    // Save changes
+    saveButton.onclick = () => {
+        // Gather new processes
+        const newPreProcess = document.getElementById('process_pre').value.trim();
+        const newProcess1 = document.getElementById('process_1').value.trim();
+        const newProcess2 = document.getElementById('process_2').value.trim();
+
+        // Update in local BOM first (if you want immediate UI feedback)
+        part.preProcess = newPreProcess;
+        part.Process1 = newProcess1;
+        part.Process2 = newProcess2;
+
+        // Save the updated processes to the server
+        updatePartProcesses(part, newPreProcess, newProcess1, newProcess2);
+
+        // Then save quantities if you also have them
+        savePartQuantities(part);
+    }
+}
+
+// New function to make the server call to update processes
+async function updatePartProcesses(part, newPreProcess, newProcess1, newProcess2) {
+    const token = localStorage.getItem('jwt_token');
+    const teamNumber = localStorage.getItem('team_number');
+    const robotName = localStorage.getItem('robot_name');
+    let systemSelect = "Main";
+    if (document.getElementById("systemSelect")) {
+        systemSelect = document.getElementById("systemSelect").value;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}api/update_part_processes`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+                team_number: teamNumber,
+                robot_name: robotName,
+                system: systemSelect,
+                part_name: part["Part Name"],
+                preProcess: newPreProcess,
+                process1: newProcess1,
+                process2: newProcess2
+            }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            alert(data.error || 'Failed to update part processes.');
+        }
+    } catch (error) {
+        console.error('Error updating part processes:', error);
+        alert('An error occurred while updating part processes.');
+    }
+}
+
+async function renameRobot(teamNumber, oldRobotName, newRobotName) {
+    const token = localStorage.getItem('jwt_token');
+    try {
+        const response = await fetch(`${API_BASE_URL}api/rename_robot`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ team_number: teamNumber, old_robot_name: oldRobotName, new_robot_name: newRobotName })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            alert(data.message);
+            // Reload the robot list or refresh the page
+            window.location.reload();
+        } else {
+            alert(data.error || 'Failed to rename robot.');
+        }
+    } catch (error) {
+        console.error('Error renaming robot:', error);
+        alert('An error occurred while renaming the robot.');
+    }
+}
+
+async function deleteRobot(teamNumber, robotName) {
+    const token = localStorage.getItem('jwt_token');
+    try {
+        const response = await fetch(`${API_BASE_URL}api/delete_robot`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ team_number: teamNumber, robot_name: robotName })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            alert(data.message);
+            // Reload the robot list or refresh the page
+            window.location.reload();
+        } else {
+            alert(data.error || 'Failed to delete robot.');
+        }
+    } catch (error) {
+        console.error('Error deleting robot:', error);
+        alert('An error occurred while deleting the robot.');
+    }
 }
 
 // Function to save quantities and update the BOM data

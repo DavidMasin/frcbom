@@ -206,10 +206,7 @@ def save_bom_for_robot_system():
 
     # Assuming `get_jwt_identity()` returns `team_number`
     # and you have a way to determine if the user is admin.
-    # Adjust this logic based on your authentication system.
-    is_admin = check_password_hash(team.adminPassword, current_user)
-    if not is_admin:
-        return jsonify({"error": "Unauthorized access"}), 403
+
 
     # Initialize team and robot in the BOM dictionary if they don't exist
     if team_number not in bom_data_dict:

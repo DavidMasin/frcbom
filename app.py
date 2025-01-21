@@ -182,7 +182,7 @@ def findIDs(bom_dict, IDName):
 from flask_jwt_extended import get_jwt_identity
 
 @app.route('/api/save_bom_for_robot_system', methods=['POST'])
-@jwt_required()
+@jwt_required(skip_revocation_check=True)
 def save_bom_for_robot_system():
     """
     Saves BOM data for a specific team, robot, and system.
@@ -378,7 +378,7 @@ def fetch_bom():
 
 
 @app.route('/api/new_robot', methods=['POST'])
-@jwt_required()
+@jwt_required(skip_revocation_check=True)
 def new_robot():
     data = request.json
     team_number = data.get("team_number")
@@ -403,7 +403,7 @@ def new_robot():
 
 
 @app.route('/api/get_robots', methods=['GET'])
-@jwt_required()
+@jwt_required(skip_revocation_check=True)
 def get_robots():
     team_number = request.args.get('team_number')
 
@@ -420,7 +420,7 @@ def is_admin(team_number):
 
 
 @app.route('/api/admin/get_bom', methods=['GET'])
-@jwt_required()
+@jwt_required(skip_revocation_check=True)
 def admin_get_bom():
     current_user = get_jwt_identity()
 
@@ -490,7 +490,7 @@ def download_parasolid():
 
 
 @app.route('/api/admin/download_bom_dict', methods=['GET'])
-@jwt_required()
+@jwt_required(skip_revocation_check=True)
 def download_bom_dict():
     current_user = get_jwt_identity()
 
@@ -506,7 +506,7 @@ def download_bom_dict():
 
 
 @app.route('/api/admin/download_settings_dict', methods=['GET'])
-@jwt_required()
+@jwt_required(skip_revocation_check=True)
 def download_settings_dict():
     current_user = get_jwt_identity()
 
@@ -521,7 +521,7 @@ def download_settings_dict():
 
 
 @app.route('/api/admin/download_teams_db', methods=['GET'])
-@jwt_required()
+@jwt_required(skip_revocation_check=True)
 def download_teams_db():
     current_user = get_jwt_identity()
 
@@ -541,7 +541,7 @@ def download_teams_db():
 
 
 @app.route('/api/admin/upload_bom_dict', methods=['POST'])
-@jwt_required()
+@jwt_required(skip_revocation_check=True)
 def upload_bom_dict():
     current_user = get_jwt_identity()
     global bom_data_dict
@@ -568,7 +568,7 @@ def upload_bom_dict():
 
 
 @app.route('/api/admin/upload_settings_dict', methods=['POST'])
-@jwt_required()
+@jwt_required(skip_revocation_check=True)
 def upload_settings_dict():
     current_user = get_jwt_identity()
     global settings_data_dict
@@ -599,7 +599,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Create upload folder if it doesn't 
 
 
 @app.route('/api/admin/upload_teams_db', methods=['POST'])
-@jwt_required()
+@jwt_required(skip_revocation_check=True)
 def upload_teams_db():
     current_user = get_jwt_identity()
     # Check if the user is an admin
@@ -674,7 +674,7 @@ def save_bom():
 
 # Endpoint to retrieve BOM data for a specific team
 @app.route('/api/get_bom', methods=['GET'])
-@jwt_required()
+@jwt_required(skip_revocation_check=True)
 def get_bom():
     current_user = get_jwt_identity()
     team_number = request.args.get('team_number')
@@ -791,7 +791,7 @@ def download_cad():
         print("Error fetching CAD:", str(e))
         return jsonify({"error": "Internal server error"}), 500
 @app.route('/api/rename_robot', methods=['POST'])
-@jwt_required()
+@jwt_required(skip_revocation_check=True)
 def rename_robot():
     """
     Renames an existing robot for a given team.
@@ -832,7 +832,7 @@ def rename_robot():
 
 
 @app.route('/api/delete_robot', methods=['DELETE'])
-@jwt_required()
+@jwt_required(skip_revocation_check=True)
 def delete_robot():
     """
     Deletes a robot for a given team.
@@ -863,7 +863,7 @@ def delete_robot():
 
 
 @app.route('/api/update_part_processes', methods=['POST'])
-@jwt_required()
+@jwt_required(skip_revocation_check=True)
 def update_part_processes():
     """
     Updates the process fields (preProcess, Process1, Process2) of a given part in the BOM.

@@ -134,9 +134,9 @@ def login():
     # Generate a JWT token
     if check_password_hash(team.adminPassword, password):
         isAdmin = True
-        access_token = create_access_token(identity=team_number)
+        access_token = create_access_token(identity=team_number,expires_delta=False)
     else:
-        access_token = create_access_token(identity=team_number)
+        access_token = create_access_token(identity=team_number,expires_delta=False)
         isAdmin = False
     return jsonify(access_token=access_token, team_number=team_number, isAdmin=isAdmin), 200
 

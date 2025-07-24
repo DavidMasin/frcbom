@@ -7,3 +7,4 @@ onshape-client
 bcrypt
 flask_sqlalchemy
 flask-socketio==5.3.4
+psycopg2

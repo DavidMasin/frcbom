@@ -1056,3 +1056,69 @@ function handleLogout() {
     localStorage.clear();
     window.location.href = '/';
 }
+// Get modal and related elements
+const modal = document.getElementById('settingsModal');
+const settingsButton = document.getElementById('settingsButton');
+const closeButton = modal.querySelector('.close');  // the close span inside the modal
+
+// When the user clicks the Settings button, open the modal
+settingsButton.addEventListener('click', () => {
+  modal.style.display = 'flex';  // show the modal (flex centers it via CSS)
+});
+
+// When the user clicks the × button, close the modal
+closeButton.addEventListener('click', () => {
+  modal.style.display = 'none';
+});
+
+// (Optional) When the user clicks outside the modal content, close the modal
+window.addEventListener('click', (event) => {
+  if (event.target === modal) {
+    modal.style.display = 'none';
+  }
+});
+
+document.getElementById('fetchBOMButton').addEventListener('click', async () => {
+  const documentUrl = document.getElementById('onshapeDocumentUrl').value;
+  const accessKey   = document.getElementById('accessKey').value;
+  const secretKey   = document.getElementById('secretKey').value;
+  const system      = document.getElementById('systemSelect').value;  // current system selection
+  const teamNumber  = localStorage.getItem('team_number');
+  const robotName   = localStorage.getItem('robot_name');
+
+  // Basic validation for required fields
+  if (!documentUrl || !accessKey || !secretKey) {
+    alert('Document URL, Access Key, and Secret Key are required.');
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}api/bom`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        document_url: documentUrl,
+        team_number:  teamNumber,
+        system:       system,
+        access_key:   accessKey,
+        secret_key:   secretKey,
+        robot:        robotName
+      })
+    });
+    const data = await response.json();
+    if (response.ok) {
+      // Save and display the fetched BOM data
+      saveBOMDataToLocal(data.bom_data, robotName, system);
+      displayBOMAsButtons(data.bom_data);
+      // Close the modal now that BOM is fetched and displayed
+      modal.style.display = 'none';
+    } else {
+      console.error('Error fetching BOM:', data.error);
+      alert(`Error: ${data.error}`);
+    }
+  } catch (error) {
+    console.error('Fetch BOM Error:', error);
+    alert('An error occurred while fetching the BOM.');
+  }
+});
+

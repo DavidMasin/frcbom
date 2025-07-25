@@ -531,30 +531,30 @@ def download_cad():
     team = Team.query.filter_by(team_number=team_number).first()
     if not team:
         return jsonify({"error": "Team not found"}), 404
-    systems = System.query.filter_by(team_id=team.id).all()
-    found_entry = None
-    for sys_record in system:
-        if sys_record.bom_data:
-            for part in sys_record.bom_data:
-                if isinstance(part, dict) and part.get("ID") == part_id:
-                    found_entry = sys_record
-                    break
-        if found_entry:
-            break
-    if not found_entry:
-        return jsonify({"error": "Part ID not found in BOM data for team"}), 404
-
-    system_record = found_entry
-    print(system_record.access_key)
-    print(system_record.secret_key)
-    print(system_record.document_url)
-    if not system_record.access_key or not system_record.secret_key or not system_record.document_url:
+    # systems = System.query.filter_by(team_id=team.id).all()
+    # found_entry = None
+    # for sys_record in system:
+    #     if sys_record.bom_data:
+    #         for part in sys_record.bom_data:
+    #             if isinstance(part, dict) and part.get("ID") == part_id:
+    #                 found_entry = sys_record
+    #                 break
+    #     if found_entry:
+    #         break
+    # if not found_entry:
+    #     return jsonify({"error": "Part ID not found in BOM data for team"}), 404
+    #
+    # system_record = found_entry
+    print(system.access_key)
+    print(system.secret_key)
+    print(system.document_url)
+    if not system.access_key or not system.secret_key or not system.document_url:
         return jsonify({"error": "Onshape API credentials or document URL not configured for this system"}), 400
 
     # Look up Onshape credentials for this team and system
-    access_key = system_record.access_key
-    secret_key = system_record.secret_key
-    document_url = system_record.document_url
+    access_key = system.access_key
+    secret_key = system.secret_key
+    document_url = system.document_url
 
     from onshape_client.client import Client
     from onshape_client.onshape_url import OnshapeElement

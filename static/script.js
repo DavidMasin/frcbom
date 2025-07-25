@@ -190,27 +190,32 @@ function getPartStatus(part) {
     }
 }
 
-/**
- * Update the process completion progress flags for a BOM item (part).
- * Also calculates how many remain, marking processes complete if quantities met.
- */
+
 function checkProcessProgress(item) {
     const requiredQuantity = item.Quantity;
-    // If tracking quantities for processes, update completion flags
     if (requiredQuantity && !isNaN(requiredQuantity)) {
         const reqQty = parseInt(requiredQuantity);
-        // If the part has defined process quantities, determine what's completed
+        // Determine completion of each process stage based on quantities
         item.preProcessCompleted = item.preProcessQuantity ? (item.preProcessQuantity >= reqQty) : false;
         item.process1Completed = item.process1Quantity ? (item.process1Quantity >= reqQty) : false;
         item.process2Completed = item.process2Quantity ? (item.process2Quantity >= reqQty) : false;
     } else {
-        // If quantity isn't a number, mark all processes as not completed (unknown state)
+        // If total Quantity is not a number, mark all processes as not completed
         item.preProcessCompleted = false;
         item.process1Completed = false;
         item.process2Completed = false;
     }
-    // Optionally, determine the current process name and quantity remaining
-    // (This might be used in displayBOMAsButtons for "Current Process" and "Quantity Left")
+    // Mark processes with no defined stage as completed (skip unused stages)
+    if (!item.preProcess || item.preProcess === "Unknown") {
+        item.preProcessCompleted = true;
+    }
+    if (!item.Process1 || item.Process1 === "Unknown") {
+        item.process1Completed = true;
+    }
+    if (!item.Process2 || item.Process2 === "Unknown") {
+        item.process2Completed = true;
+    }
+    // Determine the current process and quantity remaining
     let remaining = item.Quantity;
     let currentProcess = null;
     if (!item.preProcessCompleted && item.preProcess) {
@@ -231,19 +236,15 @@ function checkProcessProgress(item) {
     return item;
 }
 
-/**
- * Filter the BOM data in localStorage according to a given filter string (e.g., "All", "COTS", "InHouse", etc.),
- * then update the BOM display.
- */
 function handleFilterBOM(filter) {
     const robotName = localStorage.getItem('robot_name');
-    const currentSystem = getCurrentSystem();
-
+    let currentSystem = "Main";
+    if (document.getElementById("systemSelect")) {
+        currentSystem = document.getElementById("systemSelect").value;
+    }
     const bomData = getBOMDataFromLocal(robotName, currentSystem) || [];
-    // Update process completion flags for each item
     bomData.forEach(item => checkProcessProgress(item));
-
-    localStorage.setItem('current_filter', filter);  // remember the chosen filter
+    localStorage.setItem('current_filter', filter);
     const normalized = filter.trim().toLowerCase();
     let filteredData;
     switch (normalized) {
@@ -251,14 +252,14 @@ function handleFilterBOM(filter) {
             filteredData = bomData;
             break;
         case 'cots':
-            // COTS parts: no custom processes defined (preProcess/Process1/Process2 are empty or "Unknown")
+            // COTS parts: no custom processes defined (all process fields empty or "Unknown")
             filteredData = bomData.filter(item =>
                 (!item.preProcess && !item.Process1 && !item.Process2) ||
                 (item.preProcess === "Unknown" && item.Process1 === "Unknown" && item.Process2 === "Unknown")
             );
             break;
         case 'inhouse':
-            // In-house parts: have at least one custom process defined
+            // In-house parts: at least one process defined (not all Unknown)
             filteredData = bomData.filter(item =>
                 (item.preProcess || item.Process1 || item.Process2) &&
                 !(item.preProcess === "Unknown" && item.Process1 === "Unknown" && item.Process2 === "Unknown")
@@ -271,25 +272,109 @@ function handleFilterBOM(filter) {
             break;
         case 'process1':
             filteredData = bomData.filter(item =>
-                item.Process1 && item.preProcessCompleted && !item.process1Completed
+                item.Process1 && (!item.preProcess || item.preProcessCompleted) && !item.process1Completed
             );
             break;
         case 'process2':
             filteredData = bomData.filter(item =>
-                item.Process2 && item.process1Completed && !item.process2Completed
+                item.Process2 && ((!item.Process1 && (!item.preProcess || item.preProcessCompleted)) || (item.Process1 && item.process1Completed)) && !item.process2Completed
             );
             break;
         default:
-            // Filter by specific process name (e.g., "CNC", "Lathe", etc.)
+            // Filter by specific process/machine name (e.g., "CNC", "Lathe", etc.)
             filteredData = bomData.filter(item =>
                 (item.preProcess && item.preProcess.toLowerCase() === normalized && !item.preProcessCompleted) ||
-                (item.Process1 && item.Process1.toLowerCase() === normalized && item.preProcessCompleted && !item.process1Completed) ||
-                (item.Process2 && item.Process2.toLowerCase() === normalized && item.process1Completed && !item.process2Completed)
+                (item.Process1 && item.Process1.toLowerCase() === normalized && (!item.preProcess || item.preProcessCompleted) && !item.process1Completed) ||
+                (item.Process2 && item.Process2.toLowerCase() === normalized && ((!item.Process1 && (!item.preProcess || item.preProcessCompleted)) || (item.Process1 && item.process1Completed)) && !item.process2Completed)
             );
             break;
     }
     displayBOMAsButtons(filteredData);
 }
+
+async function downloadPartCAD(part) {
+    const teamNum = localStorage.getItem('team_number');
+    const robotName = localStorage.getItem('robot_name');
+    let system = 'Main';
+    if (document.getElementById('systemSelect')) {
+        system = document.getElementById('systemSelect').value;
+    }
+    if (!teamNum || !part.ID) {
+        alert("Missing team or part identification for CAD download.");
+        return;
+    }
+    try {
+        const token = localStorage.getItem('jwt_token');
+        const response = await fetch(`${API_BASE_URL}api/download_cad`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ team_number: teamNum, robot: robotName, system: system, id: part.ID })
+        });
+        const data = await response.json();
+        if (response.ok && data.redirect_url) {
+            // Open the Parasolid file download in a new tab/window
+            window.open(data.redirect_url, '_blank');
+        } else {
+            alert(data.error || 'CAD download failed.');
+        }
+    } catch (error) {
+        console.error('Error downloading CAD:', error);
+        alert('Error downloading CAD file.');
+    }
+}
+
+function openEditModal(part) {
+    const modal = document.getElementById('editModal');
+    const modalBody = document.getElementById('modalBody');
+    const saveButton = document.getElementById('saveButton');
+    if (!modal || !modalBody || !saveButton) return;
+    // Populate modal inputs for each process
+    modalBody.innerHTML = '';
+    if (part.preProcess) {
+        modalBody.innerHTML += `
+            <label for="preProcessQty">Pre-Process (${part.preProcess}):</label>
+            <div class="quantity-counter">
+                <button class="decrement" data-target="preProcessQty">-</button>
+                <input type="number" id="preProcessQty" value="${part.preProcessQuantity || 0}" min="0">
+                <button class="increment" data-target="preProcessQty">+</button>
+            </div>
+        `;
+    }
+    if (part.Process1) {
+        modalBody.innerHTML += `
+            <label for="process1Qty">Process 1 (${part.Process1}):</label>
+            <div class="quantity-counter">
+                <button class="decrement" data-target="process1Qty">-</button>
+                <input type="number" id="process1Qty" value="${part.process1Quantity || 0}" min="0">
+                <button class="increment" data-target="process1Qty">+</button>
+            </div>
+        `;
+    }
+    if (part.Process2) {
+        modalBody.innerHTML += `
+            <label for="process2Qty">Process 2 (${part.Process2}):</label>
+            <div class="quantity-counter">
+                <button class="decrement" data-target="process2Qty">-</button>
+                <input type="number" id="process2Qty" value="${part.process2Quantity || 0}" min="0">
+                <button class="increment" data-target="process2Qty">+</button>
+            </div>
+        `;
+    }
+    attachCounterListeners();
+    // Attach Download CAD button handler
+    const downloadButton = document.getElementById('downloadCADButton');
+    if (downloadButton) {
+        downloadButton.onclick = () => downloadPartCAD(part);
+    }
+    // Show the modal
+    modal.style.display = 'flex';
+    // Save button updates the part quantities
+    saveButton.onclick = () => savePartQuantities(part);
+}
+
 
 /**
  * Validate password strength (minimum length and containing uppercase, lowercase, and number).
@@ -732,54 +817,6 @@ function attachCounterListeners() {
     });
 }
 
-/**
- * Open the part edit modal for a given part. Populates the modal with quantity inputs for each process.
- */
-function openEditModal(part) {
-    const modal = document.getElementById('editModal');
-    const modalBody = document.getElementById('modalBody');
-    const saveButton = document.getElementById('saveButton');
-    if (!modal || !modalBody || !saveButton) return;
-
-    // Populate modal with input fields for each process that has a name
-    modalBody.innerHTML = '';
-    if (part.preProcess) {
-        modalBody.innerHTML += `
-            <label for="preProcessQty">Pre-Process (${part.preProcess}):</label>
-            <div class="quantity-counter">
-                <button class="decrement" data-target="preProcessQty">-</button>
-                <input type="number" id="preProcessQty" value="${part.preProcessQuantity || 0}" min="0">
-                <button class="increment" data-target="preProcessQty">+</button>
-            </div>
-        `;
-    }
-    if (part.Process1) {
-        modalBody.innerHTML += `
-            <label for="process1Qty">Process 1 (${part.Process1}):</label>
-            <div class="quantity-counter">
-                <button class="decrement" data-target="process1Qty">-</button>
-                <input type="number" id="process1Qty" value="${part.process1Quantity || 0}" min="0">
-                <button class="increment" data-target="process1Qty">+</button>
-            </div>
-        `;
-    }
-    if (part.Process2) {
-        modalBody.innerHTML += `
-            <label for="process2Qty">Process 2 (${part.Process2}):</label>
-            <div class="quantity-counter">
-                <button class="decrement" data-target="process2Qty">-</button>
-                <input type="number" id="process2Qty" value="${part.process2Quantity || 0}" min="0">
-                <button class="increment" data-target="process2Qty">+</button>
-            </div>
-        `;
-    }
-    // Attach counter +/- button functionality
-    attachCounterListeners();
-    // Show the modal
-    modal.style.display = 'flex';
-    // Save button updates the part quantities
-    saveButton.onclick = () => savePartQuantities(part);
-}
 
 // Event Listeners and Initialization
 document.addEventListener('DOMContentLoaded', () => {

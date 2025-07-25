@@ -450,3 +450,24 @@ header button {
         height: 40px;
     }
 }
+/* System selector dropdown styles */
+.system-dropdown {
+    padding: 5px 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    font-size: 1rem;
+}
+.system-dropdown:focus {
+    border-color: #2563EB;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    outline: none;
+}
+.system-label {
+    margin-right: 8px;
+    font-weight: bold;
+}
+.system-selector {
+    display: flex;
+    align-items: center;
+}

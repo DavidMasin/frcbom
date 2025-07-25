@@ -953,27 +953,45 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     function openSettingsModal() {
-        const teamNumber = localStorage.getItem('team_number');
-        const robotName = localStorage.getItem('robot_name');
-        const system = localStorage.getItem('system') || 'Main';
+        const documentURLInput = document.getElementById("documentURLInput");
+        const accessKeyInput = document.getElementById("accessKeyInput");
+        const secretKeyInput = document.getElementById("secretKeyInput");
+        const settingsModal = document.getElementById("settingsModal");
 
-        fetch(`${API_BASE_URL}api/system_settings?team_number=${teamNumber}&robot_name=${robotName}&system_name=${system}`, {
-            method: 'GET',
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`
-            }
-        })
+        if (documentURLInput && accessKeyInput && secretKeyInput && settingsModal) {
+            // Show modal immediately for manual input
+            settingsModal.style.display = "block";
+
+            // Optionally clear previous values
+            documentURLInput.value = '';
+            accessKeyInput.value = '';
+            secretKeyInput.value = '';
+
+            // Try to fetch existing settings, but do not block modal
+            const teamNumber = localStorage.getItem('team_number');
+            const robotName = localStorage.getItem('robot_name');
+            const system = localStorage.getItem('system') || 'Main';
+            const token = localStorage.getItem('jwt_token');
+
+            fetch(`${API_BASE_URL}api/system_settings?team_number=${teamNumber}&robot_name=${robotName}&system_name=${system}`, {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
             .then(res => res.json())
             .then(data => {
-                document.getElementById("documentURLInput").value = data.document_url || '';
-                document.getElementById("accessKeyInput").value = data.access_key || '';
-                document.getElementById("secretKeyInput").value = data.secret_key || '';
-                document.getElementById("settingsModal").style.display = "block";
+                documentURLInput.value = data.document_url || '';
+                accessKeyInput.value = data.access_key || '';
+                secretKeyInput.value = data.secret_key || '';
             })
             .catch(err => {
-                alert("Failed to load settings.");
-                console.error(err);
+                // Modal is already open, just log error
+                console.error("Failed to load settings:", err);
             });
+        } else {
+            alert("Settings modal elements not found.");
+        }
     }
 
     document.getElementById("saveSettingsBtn").addEventListener("click", () => {

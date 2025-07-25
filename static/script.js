@@ -162,6 +162,17 @@ async function handleLogin(event) {
         document.getElementById('loginMessage').textContent = 'Login failed due to an error.';
     }
 }
+function handleLogout() {
+    localStorage.removeItem('jwt_token');
+    localStorage.removeItem('team_number');
+    localStorage.removeItem('robot_name');
+    localStorage.removeItem('system');
+    localStorage.removeItem('role');
+    localStorage.removeItem('bom_data');
+    localStorage.removeItem('current_filter');
+
+    window.location.href = '/';  // Redirect to login
+}
 
 /**
  * Determine the current status of a part based on its process completion flags.

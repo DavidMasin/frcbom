@@ -585,16 +585,12 @@ def download_cad():
         wid = element.wvmid
         eid = element.eid
         export_url = f"/api/v12/parts/d/{did}/w/{wid}/e/{eid}/partid/{part_id}/parasolid?version=0"
-        full_url = "https://cad.onshape.com" + export_url
-        print("Requesting:", full_url)
-
-        # Sign the request manually
-        signed_headers = {
-            'Accept': 'application/vnd.onshape.v1+json',
-            'Authorization': client._build_authorization_header("GET", export_url)
-        }
-
-        response = requests.get(full_url, headers=signed_headers, allow_redirects=False)
+        response = client.api_client.request(
+            "GET",
+            url="https://cad.onshape.com" + export_url,
+            headers={'Accept': 'application/vnd.onshape.v1+json'},
+            query_params={}  # ✅ Critical to prevent encoding error
+        )
         redirect_url = response.headers.get("Location")
         print("Redirect URL:", redirect_url)
 

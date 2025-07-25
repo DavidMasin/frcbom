@@ -216,7 +216,7 @@ header button {
     background-color: #2563EB;
     transform: translateY(-5px);
 }
-#settingsButton {
+#settingsBtn {
     background-color: #6C757D;
     color: #fff;
     border: none;
@@ -229,7 +229,7 @@ header button {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transition: background-color 0.3s ease;
 }
-#settingsButton:hover {
+#settingsBtn:hover {
     background-color: #5A6268;
 }
 
@@ -241,7 +241,7 @@ header button {
     .filter-button {
         flex: 1 1 calc(33.333% - 20px);
     }
-    #settingsButton {
+    #settingsBtn {
         margin-left: 0;
         flex: 1 1 100%;
         text-align: center;

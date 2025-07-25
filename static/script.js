@@ -1049,31 +1049,28 @@ function getBOMDataFromLocal(robotName, system) {
     return bomDict[teamNum]?.[robotName]?.[system] || [];
 }
 
-/**
- * Handle user logout: clear localStorage and redirect to home page.
- */
-function handleLogout() {
-    localStorage.clear();
-    window.location.href = '/';
-}
-// --- Modal open/close functionality ---
-const settingsModal = document.getElementById('settingsModal');
-const settingsButton = document.getElementById('settingsButton');
-const closeModalSpan = document.querySelector('.close');  // selects the first element with class "close"
+document.addEventListener("DOMContentLoaded", () => {
+  const settingsButton = document.getElementById("settingsButton");
+  const settingsModal = document.getElementById("settingsModal");
+  const closeButton = settingsModal.querySelector(".close");
 
-// Show modal when Settings button is clicked
-if (settingsButton && settingsModal) {
-  settingsButton.addEventListener('click', () => {
-    settingsModal.style.display = 'flex';  // reveal the modal (CSS .modal uses flex centering)
+  // Open the modal when the Settings button is clicked
+  settingsButton.addEventListener("click", () => {
+    settingsModal.style.display = "block";
   });
-}
 
-// Hide modal when the close (×) span is clicked
-if (closeModalSpan && settingsModal) {
-  closeModalSpan.addEventListener('click', () => {
-    settingsModal.style.display = 'none';  // hide the modal again
+  // Close the modal when the close button is clicked
+  closeButton.addEventListener("click", () => {
+    settingsModal.style.display = "none";
   });
-}
+
+  // Close the modal when clicking outside of it
+  window.addEventListener("click", (event) => {
+    if (event.target === settingsModal) {
+      settingsModal.style.display = "none";
+    }
+  });
+});
 
 // --- Fetch BOM functionality ---
 const fetchButton = document.getElementById('fetchBOMButton');

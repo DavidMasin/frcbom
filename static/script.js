@@ -1097,7 +1097,10 @@ if (fetchButton) {
             // Send a request to the server to fetch the BOM from Onshape
             const response = await fetch(`${API_BASE_URL}api/bom`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`    // include JWT for auth (see below)
+                },
                 body: JSON.stringify({
                     document_url: documentUrl,
                     team_number: teamNumber,

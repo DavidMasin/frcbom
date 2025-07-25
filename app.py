@@ -517,7 +517,8 @@ def download_cad():
     claims = get_jwt()
     data = request.get_json()
     team_number = data.get("team_number")
-    part_id = data.get("id")
+    # part_id = data.get("id")
+    part_id = 'JkD'
     if not team_number or not part_id:
         return jsonify({"error": "Missing part ID or team number"}), 400
 

@@ -851,6 +851,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('teamNumber')) {
         document.getElementById('teamNumber').textContent = teamNumber || '';
     }
+
     // System dropdown change handler (navigates to selected system view)
     document.getElementById('systemSelect')?.addEventListener('change', (event) => {
         const selectedSystem = event.target.value;

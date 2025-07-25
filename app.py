@@ -564,10 +564,12 @@ def download_cad():
         did = element.did
         wid = element.wvmid
         eid = element.eid
-        export_url = f"/api/v10/parts/d/{did}/w/{wid}/e/{eid}/partid/{part_id}/parasolid?version=0"
+        export_url = f"/api/v12/parts/d/{did}/w/{wid}/e/{eid}/partid/{part_id}/parasolid?version=0"
+        print(export_url)
         # First call to get the redirect URL
         initial_resp = client.api_client.request("GET", url="https://cad.onshape.com" + export_url, headers={'Accept': 'application/vnd.onshape.v1+json'})
         redirect_url = initial_resp.headers.get('Location')
+        print(redirect_url)
         if redirect_url:
             # Return the redirect URL to the client
             return jsonify({"redirect_url": redirect_url}), 200

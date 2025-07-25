@@ -544,7 +544,9 @@ def download_cad():
         return jsonify({"error": "Part ID not found in BOM data for team"}), 404
 
     system_record = found_entry
-    print(system_record)
+    print(system_record.access_key)
+    print(system_record.secret_key)
+    print(system_record.document_url)
     if not system_record.access_key or not system_record.secret_key or not system_record.document_url:
         return jsonify({"error": "Onshape API credentials or document URL not configured for this system"}), 400
 

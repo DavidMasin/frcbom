@@ -959,10 +959,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        modal.style.display = "block";  // ✅ Show the modal
+        modal.style.display = "block";  // ✅ Show modal
 
-        // Now fetch system settings
         const token = localStorage.getItem("token");
+
         fetch(`/api/system_settings?team_number=${teamNumber}&robot_name=${robotName}&system_name=${system}`, {
             method: "GET",
             headers: {
@@ -970,17 +970,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 "Content-Type": "application/json"
             }
         })
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) throw new Error(`Failed to fetch settings: ${res.status}`);
+                return res.json();
+            })
             .then(data => {
-                // Set input values ONLY if they exist
-                document.getElementById("accessKey")?.value = data.access_key || '';
-                document.getElementById("secretKey")?.value = data.secret_key || '';
-                document.getElementById("documentURL")?.value = data.document_url || '';
+                const accessKeyInput = document.getElementById("accessKey");
+                if (accessKeyInput) accessKeyInput.value = data.access_key || '';
+
+                const secretKeyInput = document.getElementById("secretKey");
+                if (secretKeyInput) secretKeyInput.value = data.secret_key || '';
+
+                const docURLInput = document.getElementById("documentURL");
+                if (docURLInput) docURLInput.value = data.document_url || '';
             })
             .catch(err => {
                 console.error("Error fetching system settings:", err);
             });
     }
+
 
 
     document.getElementById("saveSettingsBtn").addEventListener("click", () => {

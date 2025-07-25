@@ -1242,7 +1242,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const res = await fetch(`${API_BASE_URL}api/import_bom`, {
+            const res = await fetch(`${API_BASE_URL}api/bom`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,

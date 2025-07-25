@@ -4,6 +4,11 @@ from app import app, db, Team, System  # Robot removed
 
 DATA_DIR = os.path.join(os.getcwd(), "data")
 
+# Only run migration if legacy data directory exists
+if not os.path.isdir(DATA_DIR):
+    print("No legacy data directory found. Skipping migration.")
+    exit()
+
 with app.app_context():
     for team_folder in os.listdir(DATA_DIR):
         folder_path = os.path.join(DATA_DIR, team_folder)

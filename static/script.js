@@ -27,6 +27,12 @@ function parseURL() {
     }
     return params;
 }
+function getCurrentSystem() {
+    const path = window.location.pathname.split('/').filter(Boolean);
+    if (path[1] === 'Admin' && path.length >= 4) return path[3]; // /<team>/Admin/<robot>/<system>
+    if (path.length >= 3) return path[2];                        // /<team>/<robot>/<system>
+    return localStorage.getItem('system') || 'Main';
+}
 
 /**
  * Display a modal prompting the user for their password (used when accessing a dashboard via direct URL without a token).
@@ -220,10 +226,8 @@ function checkProcessProgress(item) {
  */
 function handleFilterBOM(filter) {
     const robotName = localStorage.getItem('robot_name');
-    let currentSystem = "Main";
-    if (document.getElementById("systemSelect")) {
-        currentSystem = document.getElementById("systemSelect").value;
-    }
+    const currentSystem = getCurrentSystem();
+
     const bomData = getBOMDataFromLocal(robotName, currentSystem) || [];
     // Update process completion flags for each item
     bomData.forEach(item => checkProcessProgress(item));
@@ -406,7 +410,9 @@ async function initializeDashboard() {
         // Set current robot and fetch its BOM data for the specified system
         localStorage.setItem('robot_name', robotName);
         document.getElementById('teamNumber').textContent = teamNumber;
-        await fetchBOMDataFromServer(robotName, system);
+        const currentSystem = getCurrentSystem();
+        localStorage.setItem('system', currentSystem);
+        await fetchBOMDataFromServer(robotName, currentSystem);
         // Apply the last used filter or default to 'All'
         const currentFilter = localStorage.getItem('current_filter') || 'All';
         handleFilterBOM(currentFilter);
@@ -770,6 +776,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('dashboard')) {
         initializeDashboard();
     }
+    const dropdown = document.getElementById("systemSelect");
+    if (dropdown) {
+        dropdown.value = getCurrentSystem();
+    }
+
     // Attach event handlers for login and registration forms if present
     const loginForm = document.getElementById('loginForm');
     if (loginForm) loginForm.addEventListener('submit', handleLogin);

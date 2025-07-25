@@ -1077,6 +1077,7 @@ function getBOMDataFromLocal(robotName, system) {
 }
 
 // --- Fetch BOM functionality ---
+const token = localStorage.getItem('jwt_token');
 const fetchButton = document.getElementById('fetchBOMButton');
 if (fetchButton) {
     fetchButton.addEventListener('click', async () => {

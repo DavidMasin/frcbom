@@ -812,70 +812,27 @@ def clear_bom():
 
     return jsonify({"message": f"BOM data for team '{team_number}' cleared successfully"}), 200
 
-@app.route('/api/system_settings', methods=['GET', 'POST'])
+@app.route('/api/system_settings', methods=['GET'])
 @jwt_required()
-def system_settings():
-    """GET or POST system-level Onshape credentials and document URL (admin only)."""
-    current_user = get_jwt_identity()
-    claims = get_jwt()
+def get_system_settings():
+    print("📥 GET system_settings request:", request.args)
+    team_number = request.args.get("team_number")
+    robot_name = request.args.get("robot_name")
+    system_name = request.args.get("system_name")
 
-    # Admins only
-    if not claims.get('is_team_admin') and not claims.get('is_global_admin'):
-        return jsonify({"error": "Unauthorized"}), 403
+    team = Team.query.filter_by(team_number=team_number).first()
+    if not team:
+        return jsonify({"error": "Team not found"}), 404
 
-    if request.method == 'GET':
-        team_number = request.args.get("team_number")
-        robot_name = request.args.get("robot_name")
-        system_name = request.args.get("system_name")
-        if not all([team_number, robot_name, system_name]):
-            return jsonify({"error": "Missing team_number, robot_name, or system_name"}), 400
+    system = System.query.filter_by(team_id=team.id, robot_name=robot_name, system_name=system_name).first()
+    if not system:
+        return jsonify({"error": "System not found"}), 404
 
-        team = Team.query.filter_by(team_number=team_number).first()
-        if not team:
-            return jsonify({"error": "Team not found"}), 404
-
-        system = System.query.filter_by(team_id=team.id, robot_name=robot_name, system_name=system_name).first()
-        if not system:
-            return jsonify({})  # Return empty settings if not configured yet
-
-        return jsonify({
-            "access_key": system.access_key or "",
-            "secret_key": system.secret_key or "",
-            "document_url": system.document_url or ""
-        }), 200
-
-    elif request.method == 'POST':
-        data = request.get_json()
-        team_number = data.get("team_number")
-        robot_name = data.get("robot_name")
-        system_name = data.get("system_name")
-        access_key = data.get("access_key")
-        secret_key = data.get("secret_key")
-        document_url = data.get("document_url")
-
-        if not all([team_number, robot_name, system_name]):
-            return jsonify({"error": "Missing fields"}), 400
-
-        team = Team.query.filter_by(team_number=team_number).first()
-        if not team:
-            return jsonify({"error": "Team not found"}), 404
-
-        system = System.query.filter_by(team_id=team.id, robot_name=robot_name, system_name=system_name).first()
-        if not system:
-            system = System(team_id=team.id, robot_name=robot_name, system_name=system_name, bom_data=[])
-            db.session.add(system)
-
-        system.access_key = access_key
-        system.secret_key = secret_key
-        system.document_url = document_url
-
-        try:
-            db.session.commit()
-            return jsonify({"message": "System settings updated"}), 200
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({"error": f"Failed to save: {str(e)}"}), 500
-
+    return jsonify({
+        "access_key": system.access_key or "",
+        "secret_key": system.secret_key or "",
+        "document_url": system.document_url or ""
+    })
 # SocketIO event handlers (for future real-time features, if any)
 @socketio.on('connect')
 def handle_connect():

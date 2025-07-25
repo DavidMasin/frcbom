@@ -828,7 +828,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (dropdown) {
         dropdown.value = getCurrentSystem();
     }
-
+    const settingsBtn = document.getElementById("settingsBtn");
+    if (settingsBtn) {
+        settingsBtn.addEventListener("click", openSettingsModal);
+    }
     // Attach event handlers for login and registration forms if present
     const loginForm = document.getElementById('loginForm');
     if (loginForm) loginForm.addEventListener('submit', handleLogin);

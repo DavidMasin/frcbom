@@ -227,6 +227,35 @@ def save_bom_for_robot_system():
     save_team_bom(team_number, team_bom)
     return jsonify({"message": f"BOM data saved for robot '{robot_name}', system '{system}'"}), 200
 
+@app.route('/api/import_bom', methods=['POST'])
+@jwt_required()
+def import_bom():
+    """
+    Accept BOM data in JSON format for a team, robot, and system, and save it to the team's BOM file.
+    Payload: { team_number, robot, system, bom_data }
+    Only team admins or global admin can perform this.
+    """
+    current_user = get_jwt_identity()
+    claims = get_jwt()
+    data = request.get_json()
+    team_number = data.get('team_number')
+    robot = data.get('robot')
+    system = data.get('system')
+    bom_data = data.get('bom_data')
+    if not all([team_number, robot, system, bom_data]):
+        return jsonify({"error": "Missing required fields"}), 400
+
+    # Authorization: only team admin of that team or global admin can import BOM data
+    if not (claims.get('is_team_admin') and current_user == team_number) and not claims.get('is_global_admin'):
+        return jsonify({"error": "Unauthorized"}), 403
+
+    team_bom = load_team_bom(team_number)
+    if robot not in team_bom:
+        team_bom[robot] = {}
+    team_bom[robot][system] = bom_data
+    save_team_bom(team_number, team_bom)
+    return jsonify({"message": f"BOM data imported for robot '{robot}', system '{system}'"}), 200
+
 @app.route('/api/new_robot', methods=['POST'])
 @jwt_required()
 def new_robot():
@@ -422,7 +451,6 @@ def fetch_bom():
     system = data.get("system", "Main")
     access_key = data.get("access_key")
     secret_key = data.get("secret_key")
-
     if not document_url or not team_number or not access_key or not secret_key:
         return jsonify({"error": "Document URL, team_number, access_key, and secret_key are required"}), 400
 

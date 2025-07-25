@@ -229,32 +229,120 @@ def save_bom_for_robot_system():
 
 @app.route('/api/import_bom', methods=['POST'])
 @jwt_required()
-def import_bom():
+def import_bom_from_onshape():
     """
-    Accept BOM data in JSON format for a team, robot, and system, and save it to the team's BOM file.
-    Payload: { team_number, robot, system, bom_data }
-    Only team admins or global admin can perform this.
+    Fetch BOM from Onshape using provided API keys and save it to the team's BOM.
+    Payload:
+    {
+        "team_number": "...",
+        "robot": "...",
+        "system": "...",
+        "access_key": "...",
+        "secret_key": "...",
+        "document_url": "..."
+    }
     """
+    from onshape_client.client import Client
+    from onshape_client.onshape_url import OnshapeElement
+
     current_user = get_jwt_identity()
     claims = get_jwt()
     data = request.get_json()
-    team_number = data.get('team_number')
-    robot = data.get('robot')
-    system = data.get('system')
-    bom_data = data.get('bom_data')
-    if not all([team_number, robot, system, bom_data]):
+
+    team_number = data.get("team_number")
+    robot = data.get("robot")
+    system = data.get("system", "Main")
+    access_key = data.get("access_key")
+    secret_key = data.get("secret_key")
+    document_url = data.get("document_url")
+
+    # Validate
+    if not all([team_number, robot, system, access_key, secret_key, document_url]):
         return jsonify({"error": "Missing required fields"}), 400
 
-    # Authorization: only team admin of that team or global admin can import BOM data
-    if not (claims.get('is_team_admin') and current_user == team_number) and not claims.get('is_global_admin'):
+    if not (claims.get("is_team_admin") and current_user == team_number) and not claims.get("is_global_admin"):
         return jsonify({"error": "Unauthorized"}), 403
 
-    team_bom = load_team_bom(team_number)
-    if robot not in team_bom:
-        team_bom[robot] = {}
-    team_bom[robot][system] = bom_data
-    save_team_bom(team_number, team_bom)
-    return jsonify({"message": f"BOM data imported for robot '{robot}', system '{system}'"}), 200
+    # Save credentials
+    settings = load_team_settings(team_number)
+    settings.update({
+        "accessKey": access_key,
+        "secretKey": secret_key,
+        "documentURL": document_url
+    })
+    save_team_settings(team_number, settings)
+
+    try:
+        element = OnshapeElement(document_url)
+    except Exception as e:
+        return jsonify({"error": f"Invalid Onshape document URL: {str(e)}"}), 400
+
+    try:
+        client = Client(configuration={
+            "base_url": "https://cad.onshape.com",
+            "access_key": access_key,
+            "secret_key": secret_key
+        })
+
+        did, wid, eid = element.did, element.wvmid, element.eid
+        bom_url = f"https://cad.onshape.com/api/v10/assemblies/d/{did}/w/{wid}/e/{eid}/bom"
+
+        headers = {
+            "Accept": "application/vnd.onshape.v1+json",
+            "Content-Type": "application/json"
+        }
+
+        response = client.api_client.request(
+            "GET", url=bom_url, query_params={"indented": False}, headers=headers, body={}
+        )
+
+        bom_dict = json.loads(response.data)
+    except Exception as e:
+        return jsonify({"error": f"Failed to fetch BOM from Onshape: {str(e)}"}), 500
+
+    # Extract field IDs
+    def find_id(name):
+        return next((h['id'] for h in bom_dict.get("headers", []) if h.get("name") == name), None)
+
+    def get_display(val):
+        if isinstance(val, dict):
+            return val.get("displayName", "Unknown")
+        return val or "Unknown"
+
+    part_name_id = find_id("Name")
+    description_id = find_id("Description")
+    quantity_id = find_id("Quantity")
+    material_id = find_id("Material")
+    bom_material_id = find_id("Bom Material") or material_id
+    pre_proc_id = find_id("Pre Process")
+    proc1_id = find_id("Process 1")
+    proc2_id = find_id("Process 2")
+
+    parts = []
+    for row in bom_dict.get("rows", []):
+        values = row.get("headerIdToValue", {})
+        part = {
+            "Part Name": values.get(part_name_id),
+            "Description": values.get(description_id),
+            "Quantity": int(values.get(quantity_id, 0)),
+            "Material": get_display(values.get(material_id)),
+            "materialBOM": get_display(values.get(bom_material_id)),
+            "preProcess": values.get(pre_proc_id),
+            "Process1": values.get(proc1_id),
+            "Process2": values.get(proc2_id),
+            "ID": row.get("itemSource", {}).get("partId")
+        }
+        parts.append(part)
+
+    # Save BOM
+    bom_all = load_team_bom(team_number)
+    if robot not in bom_all:
+        bom_all[robot] = {}
+    bom_all[robot][system] = parts
+    save_team_bom(team_number, bom_all)
+
+    return jsonify({"message": "BOM imported from Onshape", "bom_data": parts}), 200
+
 
 @app.route('/api/new_robot', methods=['POST'])
 @jwt_required()

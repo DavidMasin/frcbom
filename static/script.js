@@ -1227,52 +1227,48 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    const fetchBOMBtn = document.getElementById('fetchBOMButton');
-    if (fetchBOMBtn) {
-        fetchBOMBtn.addEventListener('click', async () => {
-            const docUrl = document.getElementById('onshapeDocumentUrl')?.value;
-            const accessKey = document.getElementById('accessKey')?.value;
-            const secretKey = document.getElementById('secretKey')?.value;
+    document.getElementById('fetchBOMButton')?.addEventListener('click', async () => {
+        const team_number = localStorage.getItem('team_number');
+        const robot = localStorage.getItem('robot_name');
+        const system = document.getElementById('systemSelect')?.value || 'Main';
+        const access_key = document.getElementById('accessKey')?.value;
+        const secret_key = document.getElementById('secretKey')?.value;
+        const document_url = document.getElementById('onshapeDocumentUrl')?.value;
+        const token = localStorage.getItem('jwt_token');
 
-            const teamNumber = getTeamNumber();
-            const robotName = getRobotName();
-            const system = getSelectedSystem();
-            const token = getAuthToken();
+        if (!team_number || !robot || !access_key || !secret_key || !document_url || !token) {
+            alert("Missing required fields");
+            return;
+        }
 
-            if (!docUrl || !accessKey || !secretKey || !teamNumber || !robotName || !system || !token) {
-                alert('Missing information. Make sure all fields are filled and you are logged in.');
-                return;
-            }
-
-            const response = await fetch(`${API_BASE_URL}api/import_bom`, {
+        try {
+            const res = await fetch(`${API_BASE_URL}api/import_bom`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    document_url: docUrl,
-                    access_key: accessKey,
-                    secret_key: secretKey,
-                    team_number: teamNumber,
-                    robot_name: robotName,
-                    system: system
+                    team_number,
+                    robot,
+                    system,
+                    access_key,
+                    secret_key,
+                    document_url
                 })
             });
 
-            // Try parsing JSON; if it fails, show raw HTML
-            let data;
-            try {
-                data = await response.json();
-                print(data);
-            } catch (err) {
-                const text = await response.text();
-                console.error("Server returned non-JSON:", text);
-                alert("Server error. See console for full response.");
-                return;
-            }
+            const data = await res.json();
 
-        });
-    }
+            if (!res.ok) throw new Error(data.error || 'Unknown error');
+
+            alert("Successfully imported BOM from Onshape");
+            displayBOMAsButtons(data.bom_data); // or reload from localStorage if saved
+        } catch (err) {
+            console.error("Import BOM failed:", err);
+            alert("Error importing BOM: " + err.message);
+        }
+    });
+
 
 });

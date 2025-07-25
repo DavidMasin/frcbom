@@ -1235,7 +1235,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('fetchBOMButton')?.addEventListener('click', async () => {
         const team_number = localStorage.getItem('team_number');
         const robot = localStorage.getItem('robot_name');
-        const system = document.getElementById('systemSelect')?.value || 'Main';
         const access_key = document.getElementById('accessKey')?.value;
         const secret_key = document.getElementById('secretKey')?.value;
         const document_url = document.getElementById('onshapeDocumentUrl')?.value;
@@ -1256,12 +1255,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
-                    document_url: url,
+                    document_url: document_url,
                     team_number: teamNumber,
                     robot: robotName,
                     system: system, // ✅ now included
-                    access_key: accessKey,
-                    secret_key: secretKey,
+                    access_key: access_key,
+                    secret_key: secret_key,
                 }),
             });
 

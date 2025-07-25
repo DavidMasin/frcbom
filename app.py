@@ -11,7 +11,7 @@ from werkzeug.utils import secure_filename
 # Initialize Flask app and configuration
 app = Flask(__name__)
 # Configure the database URI (use environment variable for Railway PostgreSQL, fallback to SQLite for local dev)
-db_uri = os.getenv('DATABASE_URL')
+db_uri = os.getenv("DATABASE_URL")
 if db_uri and db_uri.startswith("postgres://"):
     db_uri = db_uri.replace("postgres://", "postgresql://", 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = db_uri or 'sqlite:///teams.db'
@@ -252,7 +252,8 @@ def get_robots():
         return jsonify({"error": "Team not found"}), 404
 
     systems = System.query.filter_by(team_id=team.id).all()
-    robots = [sys.robot_name for sys in systems] if systems else []
+    robots = list(set(sys.robot_name for sys in systems))
+    print(robots)
     return jsonify({"robots": robots}), 200
 
 @app.route('/api/get_bom', methods=['GET'])

@@ -952,29 +952,36 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    function openSettingsModal() {
-        const teamNumber = localStorage.getItem('team_number');
-        const robotName = localStorage.getItem('robot_name');
-        const system = localStorage.getItem('system') || 'Main';
+    function openSettingsModal(teamNumber, robotName, system) {
+        const modal = document.getElementById("settingsModal");
+        if (!modal) {
+            console.error("Modal element #settingsModal not found");
+            return;
+        }
 
-        fetch(`${API_BASE_URL}api/system_settings?team_number=${teamNumber}&robot_name=${robotName}&system_name=${system}`, {
-            method: 'GET',
+        modal.style.display = "block";  // ✅ Show the modal
+
+        // Now fetch system settings
+        const token = localStorage.getItem("token");
+        fetch(`/api/system_settings?team_number=${teamNumber}&robot_name=${robotName}&system_name=${system}`, {
+            method: "GET",
             headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
             }
         })
             .then(res => res.json())
             .then(data => {
-                document.getElementById("documentURLInput").value = data.document_url || '';
-                document.getElementById("accessKeyInput").value = data.access_key || '';
-                document.getElementById("secretKeyInput").value = data.secret_key || '';
-                document.getElementById("settingsModal").style.display = "block";
+                // Set input values ONLY if they exist
+                document.getElementById("accessKey")?.value = data.access_key || '';
+                document.getElementById("secretKey")?.value = data.secret_key || '';
+                document.getElementById("documentURL")?.value = data.document_url || '';
             })
             .catch(err => {
-                alert("Failed to load settings.");
-                console.error(err);
+                console.error("Error fetching system settings:", err);
             });
     }
+
 
     document.getElementById("saveSettingsBtn").addEventListener("click", () => {
         const teamNumber = localStorage.getItem('team_number');

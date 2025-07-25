@@ -263,23 +263,28 @@ function handleLogout() {
  * Returns an object: { teamNumber, robotName, system, admin (boolean) }.
  */
 function parseURL() {
-    const segments = window.location.pathname.split('/').filter(seg => seg !== '');
-    const params = {teamNumber: null, robotName: null, system: 'Main', admin: false};
-    if (segments.length >= 1) {
-        params.teamNumber = segments[0];
+    const pathSegments = window.location.pathname.split('/').filter(Boolean);
+    const params = {
+        teamNumber: null,
+        robotName: null,
+        system: 'Main',
+        admin: false,
+    };
+
+    if (pathSegments.length >= 1) {
+        params.teamNumber = pathSegments[0];
     }
-    if (segments.length >= 2) {
-        if (segments[1] === "Admin") {
-            // URL format: /<team_number>/Admin/<robot_name>/<system>
+    if (pathSegments.length >= 2) {
+        if (pathSegments[1] === "Admin") {
             params.admin = true;
-            params.robotName = segments[2] || null;
-            params.system = segments[3] || 'Main';
+            params.robotName = pathSegments[2] || null;
+            params.system = pathSegments[3] || 'Main';
         } else {
-            // URL format: /<team_number>/<robot_name>/<system>
-            params.robotName = segments[1] || null;
-            params.system = segments[2] || 'Main';
+            params.robotName = pathSegments[1] || null;
+            params.system = pathSegments[2] || 'Main';
         }
     }
+
     return params;
 }
 
@@ -1242,21 +1247,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
+            const { teamNumber, robotName, system } = parseURL();
+
             const res = await fetch(`${API_BASE_URL}api/bom`, {
-                method: 'POST',
+                method: "POST",
                 headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
-                    team_number,
-                    robot,
-                    system,
-                    access_key,
-                    secret_key,
-                    document_url
-                })
+                    document_url: url,
+                    team_number: teamNumber,
+                    robot: robotName,
+                    system: system, // ✅ now included
+                    access_key: accessKey,
+                    secret_key: secretKey,
+                }),
             });
+
 
             const data = await res.json();
 

@@ -516,10 +516,12 @@ def download_cad():
         "system": "...",
         "id": "part_id"
     }
+    Returns a JSON object with a redirect_url for the Parasolid file.
     """
+    import traceback
+    import requests
     from onshape_client.client import Client
     from onshape_client.onshape_url import OnshapeElement
-    import traceback
 
     current_user = get_jwt_identity()
     claims = get_jwt()
@@ -577,20 +579,22 @@ def download_cad():
         print("Onshape client init error:", traceback.format_exc())
         return jsonify({"error": f"Failed to initialize Onshape client: {str(e)}"}), 500
 
-    # Construct and request export URL
+    # Build the export URL and request it manually
     try:
         did = element.did
         wid = element.wvmid
         eid = element.eid
         export_url = f"/api/v12/parts/d/{did}/w/{wid}/e/{eid}/partid/{part_id}/parasolid?version=0"
-        print("Requesting:", export_url)
+        full_url = "https://cad.onshape.com" + export_url
+        print("Requesting:", full_url)
 
-        response = client.api_client.request(
-            "GET",
-            url="https://cad.onshape.com" + export_url,
-            headers={'Accept': 'application/vnd.onshape.v1+json'}
-        )
+        # Sign the request manually
+        signed_headers = {
+            'Accept': 'application/vnd.onshape.v1+json',
+            'Authorization': client._build_authorization_header("GET", export_url)
+        }
 
+        response = requests.get(full_url, headers=signed_headers, allow_redirects=False)
         redirect_url = response.headers.get("Location")
         print("Redirect URL:", redirect_url)
 
@@ -602,6 +606,7 @@ def download_cad():
     except Exception as e:
         print("Onshape CAD download error:", traceback.format_exc())
         return jsonify({"error": f"Failed to get CAD download URL: {str(e)}"}), 500
+
 
 # ** Global Admin Endpoints **
 @app.route('/api/admin/get_bom', methods=['GET'])

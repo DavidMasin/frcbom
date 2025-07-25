@@ -1047,3 +1047,63 @@ if (fetchButton) {
         }
     });
 }
+function openSettingsModal() {
+    const teamNumber = localStorage.getItem('team_number');
+    const robotName = localStorage.getItem('robot_name');
+    const system = localStorage.getItem('system') || 'Main';
+
+    fetch(`${API_BASE_URL}api/system_settings?team_number=${teamNumber}&robot_name=${robotName}&system_name=${system}`, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+    })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById("documentURLInput").value = data.document_url || '';
+            document.getElementById("accessKeyInput").value = data.access_key || '';
+            document.getElementById("secretKeyInput").value = data.secret_key || '';
+            document.getElementById("settingsModal").style.display = "block";
+        })
+        .catch(err => {
+            alert("Failed to load settings.");
+            console.error(err);
+        });
+}
+
+document.getElementById("saveSettingsBtn").addEventListener("click", () => {
+    const teamNumber = localStorage.getItem('team_number');
+    const robotName = localStorage.getItem('robot_name');
+    const system = localStorage.getItem('system') || 'Main';
+
+    fetch(`${API_BASE_URL}api/system_settings`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify({
+            team_number: teamNumber,
+            robot_name: robotName,
+            system_name: system,
+            document_url: document.getElementById("documentURLInput").value,
+            access_key: document.getElementById("accessKeyInput").value,
+            secret_key: document.getElementById("secretKeyInput").value
+        })
+    }).then(res => res.json())
+        .then(data => {
+            alert("Settings saved.");
+            document.getElementById("settingsModal").style.display = "none";
+        }).catch(err => {
+        alert("Failed to save settings.");
+        console.error(err);
+    });
+});
+
+document.getElementById("closeSettingsModal").addEventListener("click", () => {
+    document.getElementById("settingsModal").style.display = "none";
+});
+
+// Hook the settings button (assuming it has id="settingsBtn")
+document.getElementById("settingsBtn").addEventListener("click", openSettingsModal);
+

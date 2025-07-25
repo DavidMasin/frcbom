@@ -510,77 +510,97 @@ def fetch_bom():
 def download_cad():
     """
     Provide a redirect URL to download a Parasolid CAD file for a specific part from Onshape.
-    Payload: {"team_number": "...", "id": partId}
-    Returns a redirect URL for the part's Parasolid file (if available).
+    Payload: {
+        "team_number": "...",
+        "robot": "...",
+        "system": "...",
+        "id": "part_id"
+    }
     """
+    from onshape_client.client import Client
+    from onshape_client.onshape_url import OnshapeElement
+    import traceback
+
     current_user = get_jwt_identity()
     claims = get_jwt()
     data = request.get_json()
-    team_number = data.get("team_number")
-    system=data.get("system")
-    # part_id = data.get("id")
-    part_id = 'JkD'
-    if not team_number or not part_id:
-        return jsonify({"error": "Missing part ID or team number"}), 400
 
-    # Authorization: must belong to team or be global admin
+    team_number = data.get("team_number")
+    robot_name = data.get("robot")
+    system_name = data.get("system")
+    part_id = data.get("id")
+
+    if not all([team_number, robot_name, system_name, part_id]):
+        return jsonify({"error": "Missing required fields (team_number, robot, system, or part id)"}), 400
+
+    # Authorization check
     if current_user != team_number and not claims.get('is_global_admin'):
         return jsonify({"error": "Unauthorized"}), 403
 
-    # Identify which robot and system this part belongs to via database
+    # Load team and system
     team = Team.query.filter_by(team_number=team_number).first()
     if not team:
         return jsonify({"error": "Team not found"}), 404
-    # systems = System.query.filter_by(team_id=team.id).all()
-    # found_entry = None
-    # for sys_record in system:
-    #     if sys_record.bom_data:
-    #         for part in sys_record.bom_data:
-    #             if isinstance(part, dict) and part.get("ID") == part_id:
-    #                 found_entry = sys_record
-    #                 break
-    #     if found_entry:
-    #         break
-    # if not found_entry:
-    #     return jsonify({"error": "Part ID not found in BOM data for team"}), 404
-    #
-    # system_record = found_entry
-    print(system.access_key)
-    print(system.secret_key)
-    print(system.document_url)
-    if not system.access_key or not system.secret_key or not system.document_url:
+
+    system_record = System.query.filter_by(
+        team_id=team.id,
+        robot_name=robot_name,
+        system_name=system_name
+    ).first()
+
+    if not system_record:
+        return jsonify({"error": "System not found for given team/robot/system"}), 404
+
+    # Validate credentials
+    if not all([system_record.access_key, system_record.secret_key, system_record.document_url]):
         return jsonify({"error": "Onshape API credentials or document URL not configured for this system"}), 400
 
-    # Look up Onshape credentials for this team and system
-    access_key = system.access_key
-    secret_key = system.secret_key
-    document_url = system.document_url
+    # Find the part in the BOM
+    part_found = False
+    if system_record.bom_data:
+        for part in system_record.bom_data:
+            if isinstance(part, dict) and part.get("ID") == part_id:
+                part_found = True
+                break
+    if not part_found:
+        return jsonify({"error": f"Part ID '{part_id}' not found in BOM data"}), 404
 
-    from onshape_client.client import Client
-    from onshape_client.onshape_url import OnshapeElement
+    # Initialize Onshape client
     try:
-        client = Client(configuration={"base_url": "https://cad.onshape.com", "access_key": access_key, "secret_key": secret_key})
-        element = OnshapeElement(document_url)
+        client = Client(configuration={
+            "base_url": "https://cad.onshape.com",
+            "access_key": system_record.access_key,
+            "secret_key": system_record.secret_key
+        })
+        element = OnshapeElement(system_record.document_url)
     except Exception as e:
-        return jsonify({"error": f"Onshape client initialization failed: {str(e)}"}), 500
+        print("Onshape client init error:", traceback.format_exc())
+        return jsonify({"error": f"Failed to initialize Onshape client: {str(e)}"}), 500
 
+    # Construct and request export URL
     try:
-        # Construct the Parasolid export endpoint
         did = element.did
         wid = element.wvmid
         eid = element.eid
         export_url = f"/api/v12/parts/d/{did}/w/{wid}/e/{eid}/partid/{part_id}/parasolid?version=0"
-        print(export_url)
-        # First call to get the redirect URL
-        initial_resp = client.api_client.request("GET", url="https://cad.onshape.com" + export_url, headers={'Accept': 'application/vnd.onshape.v1+json'})
-        redirect_url = initial_resp.headers.get('Location')
-        print(redirect_url)
+        print("Requesting:", export_url)
+
+        response = client.api_client.request(
+            "GET",
+            url="https://cad.onshape.com" + export_url,
+            headers={'Accept': 'application/vnd.onshape.v1+json'}
+        )
+
+        redirect_url = response.headers.get("Location")
+        print("Redirect URL:", redirect_url)
+
         if redirect_url:
-            # Return the redirect URL to the client
             return jsonify({"redirect_url": redirect_url}), 200
         else:
-            return jsonify({"error": "No redirect URL found for CAD download"}), 500
+            return jsonify({"error": "No redirect URL received from Onshape"}), 500
+
     except Exception as e:
+        print("Onshape CAD download error:", traceback.format_exc())
         return jsonify({"error": f"Failed to get CAD download URL: {str(e)}"}), 500
 
 # ** Global Admin Endpoints **

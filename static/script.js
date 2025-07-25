@@ -961,12 +961,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         modal.style.display = "block";  // ✅ Show modal
 
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("jwt_token");
 
-        fetch(`/api/system_settings?team_number=${teamNumber}&robot_name=${robotName}&system_name=${system}`, {
+        fetch(`${API_BASE_URL}api/system_settings?team_number=${teamNumber}&robot_name=${robotName}&system_name=${system}`, {
             method: "GET",
             headers: {
-                "Authorization": `Bearer ${token}`,
+                "Authorization": `Bearer ${localStorage.getItem("jwt_token")}`,
                 "Content-Type": "application/json"
             }
         })

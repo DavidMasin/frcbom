@@ -585,7 +585,8 @@ def download_cad():
             method="POST",
             url=export_url,
             headers={"Accept": "application/vnd.onshape.v1+json"},
-            body=export_body
+            body=export_body,
+            query_params={}  # ✅ prevents encoding error
         )
 
         download_url = response.get("href")

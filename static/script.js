@@ -17,11 +17,25 @@
 const API_BASE_URL = 'https://frcbom-production.up.railway.app/';
 
 // Convenience getters for frequently used localStorage values
-function getTeamNumber()  { return localStorage.getItem('team_number'); }
-function getRobotName()   { return localStorage.getItem('robot_name'); }
-function getAuthToken()   { return localStorage.getItem('jwt_token'); }
-function getUserRole()    { return localStorage.getItem('role'); }
-function isUserAdmin()    { return getUserRole() === 'Admin'; }
+function getTeamNumber() {
+    return localStorage.getItem('team_number');
+}
+
+function getRobotName() {
+    return localStorage.getItem('robot_name');
+}
+
+function getAuthToken() {
+    return localStorage.getItem('jwt_token');
+}
+
+function getUserRole() {
+    return localStorage.getItem('role');
+}
+
+function isUserAdmin() {
+    return getUserRole() === 'Admin';
+}
 
 // Get currently selected system from dropdown (defaults to "Main" if none or not present)
 function getSelectedSystem() {
@@ -79,8 +93,8 @@ function showPasswordPrompt() {
             try {
                 const response = await fetch(`${API_BASE_URL}api/login`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ team_number: teamNum, password: enteredPassword })
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({team_number: teamNum, password: enteredPassword})
                 });
                 const data = await response.json();
                 if (response.ok) {
@@ -112,7 +126,9 @@ function showPasswordPrompt() {
 
         // Event bindings for prompt
         submitBtn.addEventListener('click', handlePromptSubmit);
-        passwordInput.addEventListener('keydown', e => { if (e.key === 'Enter') handlePromptSubmit(); });
+        passwordInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter') handlePromptSubmit();
+        });
     });
 }
 
@@ -131,8 +147,8 @@ async function handleLogin(event) {
     try {
         const response = await fetch(`${API_BASE_URL}api/login`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ team_number: teamNumInput, password: passwordInput })
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({team_number: teamNumInput, password: passwordInput})
         });
         const data = await response.json();
         if (response.ok) {
@@ -215,8 +231,8 @@ async function handleRegister(event) {
     try {
         const response = await fetch(`${API_BASE_URL}api/register`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ team_number: teamNum, password: password, adminPassword: adminPassword })
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({team_number: teamNum, password: password, adminPassword: adminPassword})
         });
         const data = await response.json();
         if (response.ok) {
@@ -248,7 +264,7 @@ function handleLogout() {
  */
 function parseURL() {
     const segments = window.location.pathname.split('/').filter(seg => seg !== '');
-    const params = { teamNumber: null, robotName: null, system: 'Main', admin: false };
+    const params = {teamNumber: null, robotName: null, system: 'Main', admin: false};
     if (segments.length >= 1) {
         params.teamNumber = segments[0];
     }
@@ -305,7 +321,7 @@ async function createNewRobot(teamNum, robotName) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ team_number: teamNum, robot_name: robotName })
+            body: JSON.stringify({team_number: teamNum, robot_name: robotName})
         });
         const data = await response.json();
         if (response.ok) {
@@ -349,7 +365,7 @@ async function renameRobot(teamNum, oldName, newName) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ team_number: teamNum, old_robot_name: oldName, new_robot_name: newName })
+            body: JSON.stringify({team_number: teamNum, old_robot_name: oldName, new_robot_name: newName})
         });
         const data = await response.json();
         if (response.ok) {
@@ -376,7 +392,7 @@ async function deleteRobot(teamNum, robotName) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ team_number: teamNum, robot_name: robotName })
+            body: JSON.stringify({team_number: teamNum, robot_name: robotName})
         });
         const data = await response.json();
         if (response.ok) {
@@ -399,7 +415,7 @@ async function getTeamRobots(teamNum) {
     const token = getAuthToken();
     try {
         const response = await fetch(`${API_BASE_URL}api/get_robots?team_number=${teamNum}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: {'Authorization': `Bearer ${token}`}
         });
         const data = await response.json();
         return response.ok ? data.robots : [];
@@ -454,7 +470,7 @@ function showRobotSelectionDashboard(robotNames) {
  * - If a robot and system are specified in URL: fetches and displays that BOM.
  */
 async function initializeDashboard() {
-    const { teamNumber, robotName, system, admin } = parseURL();
+    const {teamNumber, robotName, system, admin} = parseURL();
     if (!teamNumber) {
         alert('Invalid team number in URL. Redirecting to home page.');
         window.location.href = '/';
@@ -722,12 +738,12 @@ function attachCounterListeners() {
  */
 async function savePartQuantities(part) {
     // Fetch updated values from modal inputs (if exist, otherwise keep current values)
-    const preQtyInput  = document.getElementById('preProcessQty');
-    const proc1Input   = document.getElementById('process1Qty');
-    const proc2Input   = document.getElementById('process2Qty');
-    part.preProcessQuantity  = preQtyInput ? parseInt(preQtyInput.value)  || 0 : (part.preProcessQuantity  || 0);
-    part.process1Quantity    = proc1Input ? parseInt(proc1Input.value)    || 0 : (part.process1Quantity    || 0);
-    part.process2Quantity    = proc2Input ? parseInt(proc2Input.value)    || 0 : (part.process2Quantity    || 0);
+    const preQtyInput = document.getElementById('preProcessQty');
+    const proc1Input = document.getElementById('process1Qty');
+    const proc2Input = document.getElementById('process2Qty');
+    part.preProcessQuantity = preQtyInput ? parseInt(preQtyInput.value) || 0 : (part.preProcessQuantity || 0);
+    part.process1Quantity = proc1Input ? parseInt(proc1Input.value) || 0 : (part.process1Quantity || 0);
+    part.process2Quantity = proc2Input ? parseInt(proc2Input.value) || 0 : (part.process2Quantity || 0);
 
     const robotName = getRobotName();
     const teamNum = getTeamNumber();
@@ -859,7 +875,7 @@ async function fetchBOMDataFromServer(robotName, system = 'Main') {
     if (!teamNum || !robotName) return;
     try {
         const response = await fetch(`${API_BASE_URL}api/get_bom?team_number=${teamNum}&robot=${robotName}&system=${system}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: {'Authorization': `Bearer ${token}`}
         });
         const data = await response.json();
         if (response.ok) {
@@ -920,7 +936,10 @@ function initializeSettingsModal() {
 async function uploadJsonFile(fileInputId, apiEndpoint, payloadKey) {
     const fileInput = document.getElementById(fileInputId);
     const file = fileInput?.files[0];
-    if (!file) { alert('Please select a file to upload.'); return; }
+    if (!file) {
+        alert('Please select a file to upload.');
+        return;
+    }
     try {
         const fileText = await file.text();
         const token = getAuthToken();
@@ -928,7 +947,7 @@ async function uploadJsonFile(fileInputId, apiEndpoint, payloadKey) {
         payload[payloadKey] = JSON.parse(fileText);
         const response = await fetch(`${API_BASE_URL}${apiEndpoint}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
             body: JSON.stringify(payload)
         });
         const result = await response.json();
@@ -949,14 +968,17 @@ async function uploadJsonFile(fileInputId, apiEndpoint, payloadKey) {
 async function uploadBinaryFile(fileInputId, apiEndpoint) {
     const fileInput = document.getElementById(fileInputId);
     const file = fileInput?.files[0];
-    if (!file) { alert('Please select a file to upload.'); return; }
+    if (!file) {
+        alert('Please select a file to upload.');
+        return;
+    }
     try {
         const formData = new FormData();
         formData.append('file', file);
         const token = getAuthToken();
         const response = await fetch(`${API_BASE_URL}${apiEndpoint}`, {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` },
+            headers: {'Authorization': `Bearer ${token}`},
             body: formData
         });
         const result = await response.json();
@@ -979,12 +1001,12 @@ async function downloadJsonData(apiEndpoint, dataKey, fileName) {
     const token = getAuthToken();
     try {
         const response = await fetch(`${API_BASE_URL}${apiEndpoint}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: {'Authorization': `Bearer ${token}`}
         });
         const data = await response.json();
         if (response.ok) {
             // Prepare file content and trigger download
-            const blob = new Blob([JSON.stringify(data[dataKey], null, 2)], { type: 'application/json' });
+            const blob = new Blob([JSON.stringify(data[dataKey], null, 2)], {type: 'application/json'});
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
@@ -1009,7 +1031,7 @@ async function downloadBinaryData(apiEndpoint, fileName) {
     const token = getAuthToken();
     try {
         const response = await fetch(`${API_BASE_URL}${apiEndpoint}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: {'Authorization': `Bearer ${token}`}
         });
         if (response.ok) {
             // Get the binary data as a Blob
@@ -1183,7 +1205,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const token = getAuthToken();
                 const response = await fetch(`${API_BASE_URL}api/admin/get_bom?team_number=${teamInput}&system=${systemSelected}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: {'Authorization': `Bearer ${token}`}
                 });
                 const data = await response.json();
                 if (response.ok) {
@@ -1206,23 +1228,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     const fetchBOMBtn = document.getElementById('fetchBOMButton');
-if (fetchBOMBtn) {
-    fetchBOMBtn.addEventListener('click', async () => {
-        const docUrl = document.getElementById('onshapeDocumentUrl')?.value;
-        const accessKey = document.getElementById('accessKey')?.value;
-        const secretKey = document.getElementById('secretKey')?.value;
+    if (fetchBOMBtn) {
+        fetchBOMBtn.addEventListener('click', async () => {
+            const docUrl = document.getElementById('onshapeDocumentUrl')?.value;
+            const accessKey = document.getElementById('accessKey')?.value;
+            const secretKey = document.getElementById('secretKey')?.value;
 
-        const teamNumber = getTeamNumber();
-        const robotName = getRobotName();
-        const system = getSelectedSystem();
-        const token = getAuthToken();
+            const teamNumber = getTeamNumber();
+            const robotName = getRobotName();
+            const system = getSelectedSystem();
+            const token = getAuthToken();
 
-        if (!docUrl || !accessKey || !secretKey || !teamNumber || !robotName || !system || !token) {
-            alert('Missing information. Make sure all fields are filled and you are logged in.');
-            return;
-        }
+            if (!docUrl || !accessKey || !secretKey || !teamNumber || !robotName || !system || !token) {
+                alert('Missing information. Make sure all fields are filled and you are logged in.');
+                return;
+            }
 
-        try {
             const response = await fetch(`${API_BASE_URL}api/import_bom`, {
                 method: 'POST',
                 headers: {
@@ -1239,19 +1260,19 @@ if (fetchBOMBtn) {
                 })
             });
 
-            const data = await response.json();
-
-            if (response.ok) {
-                alert('BOM successfully imported from Onshape!');
-                await fetchBOMDataFromServer(robotName, system);
-            } else {
-                alert(`Failed to import BOM: ${data.error}`);
+            // Try parsing JSON; if it fails, show raw HTML
+            let data;
+            try {
+                data = await response.json();
+                print(data);
+            } catch (err) {
+                const text = await response.text();
+                console.error("Server returned non-JSON:", text);
+                alert("Server error. See console for full response.");
+                return;
             }
-        } catch (error) {
-            console.error('Fetch BOM from Onshape failed:', error);
-            alert('Error fetching BOM from Onshape. See console for details.');
-        }
-    });
-}
+
+        });
+    }
 
 });

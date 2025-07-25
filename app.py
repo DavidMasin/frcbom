@@ -517,6 +517,7 @@ def download_cad():
     claims = get_jwt()
     data = request.get_json()
     team_number = data.get("team_number")
+    system=data.get("system")
     # part_id = data.get("id")
     part_id = 'JkD'
     if not team_number or not part_id:
@@ -532,7 +533,7 @@ def download_cad():
         return jsonify({"error": "Team not found"}), 404
     systems = System.query.filter_by(team_id=team.id).all()
     found_entry = None
-    for sys_record in systems:
+    for sys_record in system:
         if sys_record.bom_data:
             for part in sys_record.bom_data:
                 if isinstance(part, dict) and part.get("ID") == part_id:

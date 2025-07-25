@@ -1205,4 +1205,53 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+    const fetchBOMBtn = document.getElementById('fetchBOMButton');
+if (fetchBOMBtn) {
+    fetchBOMBtn.addEventListener('click', async () => {
+        const docUrl = document.getElementById('onshapeDocumentUrl')?.value;
+        const accessKey = document.getElementById('accessKey')?.value;
+        const secretKey = document.getElementById('secretKey')?.value;
+
+        const teamNumber = getTeamNumber();
+        const robotName = getRobotName();
+        const system = getSelectedSystem();
+        const token = getAuthToken();
+
+        if (!docUrl || !accessKey || !secretKey || !teamNumber || !robotName || !system || !token) {
+            alert('Missing information. Make sure all fields are filled and you are logged in.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}api/import_bom`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    document_url: docUrl,
+                    access_key: accessKey,
+                    secret_key: secretKey,
+                    team_number: teamNumber,
+                    robot_name: robotName,
+                    system: system
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert('BOM successfully imported from Onshape!');
+                await fetchBOMDataFromServer(robotName, system);
+            } else {
+                alert(`Failed to import BOM: ${data.error}`);
+            }
+        } catch (error) {
+            console.error('Fetch BOM from Onshape failed:', error);
+            alert('Error fetching BOM from Onshape. See console for details.');
+        }
+    });
+}
+
 });

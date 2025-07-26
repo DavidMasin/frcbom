@@ -579,7 +579,7 @@ def download_cad():
             "Content-Type": "application/json"
         },
         json={
-            "formatName": "PARASOLID",
+            "formatName": "STEP",
             "partIds": part_id,  # ✅ single string, not list
             "storeInDocument": False
         }

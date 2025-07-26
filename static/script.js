@@ -338,7 +338,7 @@ function openEditModal(part) {
             <label for="preProcessQty">Pre-Process (${part.preProcess}):</label>
             <div class="quantity-counter">
                 <button class="decrement" data-target="preProcessQty">-</button>
-                <input type="number" id="preProcessQty" value="${part.preProcessQuantity || 0}" min="0">
+                <input type="number" id="preProcessQty" value="${part.preProcessQuantity || 0}" min="0", max="${part.Quantity || 0}">
                 <button class="increment" data-target="preProcessQty">+</button>
             </div>
         `;
@@ -348,7 +348,7 @@ function openEditModal(part) {
             <label for="process1Qty">Process 1 (${part.Process1}):</label>
             <div class="quantity-counter">
                 <button class="decrement" data-target="process1Qty">-</button>
-                <input type="number" id="process1Qty" value="${part.process1Quantity || 0}" min="0">
+                <input type="number" id="process1Qty" value="${part.process1Quantity || 0}" min="0" max="${part.preProcessQuantity || part.Quantity || 0}">
                 <button class="increment" data-target="process1Qty">+</button>
             </div>
         `;
@@ -358,7 +358,7 @@ function openEditModal(part) {
             <label for="process2Qty">Process 2 (${part.Process2}):</label>
             <div class="quantity-counter">
                 <button class="decrement" data-target="process2Qty">-</button>
-                <input type="number" id="process2Qty" value="${part.process2Quantity || 0}" min="0">
+                <input type="number" id="process2Qty" value="${part.process2Quantity || 0}" min="0", max="${part.process1Quantity || part.Quantity || 0}">
                 <button class="increment" data-target="process2Qty">+</button>
             </div>
         `;

@@ -580,7 +580,7 @@ def download_cad():
         },
         json={
             "formatName": "PARASOLID",
-            "partIds": [part_id],
+            "partIds": part_id,
             "storeInDocument": False
         }
     )

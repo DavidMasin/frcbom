@@ -1,115 +1,62 @@
+
 <!DOCTYPE html>
 <html lang="en">
-<div id="dashboard">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>FRC BOM Dashboard</title>
-        <link rel="stylesheet" href="/static/style.css">
-    </head>
-    <body>
+<head>
+    <meta charset="UTF-8">
+    <title>FRC BOM Dashboard</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
 
-    <!-- Header Section -->
-    <header>
-        <h1>FRC BOM Dashboard</h1>
-        <h2>Welcome, Team <span id="teamNumber"></span></h2>
-        <button id="logoutButton" class="button-primary">Log Out</button>
-    </header>
-    <!-- Robot Selection Section -->
-    <section id="robotSelection" class="robot-selection" style="display: none;">
-        <h2>Select a Robot</h2>
-        <div id="robotList" class="robot-list">
-            <!-- Robots will be listed here -->
-        </div>
-    </section>
-    <!-- Dashboard Controls Section -->
-    <section class="dashboard-controls">
-        <!-- System Selection -->
-        <div class="system-selector">
-            <label for="systemSelect" class="system-label">Select System:</label>
-            <select id="systemSelect" class="system-dropdown">
-                <option value="Main" selected>Main</option>
-                <option value="System1">System 1</option>
-                <option value="System2">System 2</option>
-                <option value="System3">System 3</option>
-                <option value="System4">System 4</option>
-                <option value="System5">System 5</option>
-            </select>
-        </div>
-        <!-- Filter Buttons -->
-        <button class="filter-button" data-filter="All">
-            <img src="/pictures/all.png" alt="All">
-            <span>Show All</span>
-        </button>
-        <button class="filter-button" data-filter="InHouse">
-            <img src="/pictures/wrench-tool-in-a-hand-inside-a-house-shape.png" alt="In-House">
-            <span>In-House Parts</span>
-        </button>
-        <button class="filter-button" data-filter="COTS">
-            <img src="/pictures/cots.svg" alt="COTS">
-            <span>COTS Parts</span>
-        </button>
-        <button class="filter-button" data-filter="CNC">
-            <img src="/pictures/milling-machine.png" alt="CNC">
-            <span>CNC</span>
-        </button>
-        <button class="filter-button" data-filter="Lathe">
-            <img src="/pictures/lathe.png" alt="Lathe">
-            <span>Lathe</span>
-        </button>
-        <button class="filter-button" data-filter="3D Printer">
-            <img src="/pictures/3d-printer.png" alt="3D Printer">
-            <span>3D Printer</span>
-        </button>
-        <button class="filter-button" data-filter="Saw">
-            <img src="/pictures/miter-saw.png" alt="Saw">
-            <span>Saw</span>
-        </button>
-        <button class="filter-button" data-filter="Mill">
-            <img src="/pictures/mill.png" alt="Mill">
-            <span>Mill</span>
-        </button>
+<header>
+    <h1>FRC BOM Dashboard</h1>
+    <h2>Welcome, Team <span id="teamNumber"></span></h2>
+    <button id="logoutButton" class="button-primary">Log Out</button>
+</header>
 
-    </section>
+<section id="robotSelection" class="robot-selection" style="display: none;">
+    <h2>Select a Robot</h2>
+    <div id="robotList" class="robot-list"></div>
+</section>
 
-    <!-- BOM Parts Grid Section -->
-    <section id="bomTableContainer">
-        <h2>BOM Parts</h2>
-        <div id="bomPartsGrid" class="grid-layout">
-            <!-- Dynamically populated part buttons will appear here -->
-        </div>
-    </section>
+<section class="dashboard-controls">
+    <div class="system-selector">
+        <label for="systemSelect" class="system-label">Select System:</label>
+        <select id="systemSelect" class="system-dropdown">
+            <option value="Main" selected>Main</option>
+            <option value="System1">System 1</option>
+            <option value="System2">System 2</option>
+            <option value="System3">System 3</option>
+            <option value="System4">System 4</option>
+            <option value="System5">System 5</option>
+        </select>
+    </div>
+    <button class="filter-button" data-filter="All"><img src="/pictures/all.png" alt="All"><span>Show All</span></button>
+    <button class="filter-button" data-filter="InHouse"><img src="/pictures/wrench-tool-in-a-hand-inside-a-house-shape.png" alt="In-House"><span>In-House Parts</span></button>
+    <button class="filter-button" data-filter="COTS"><img src="/pictures/cots.svg" alt="COTS"><span>COTS Parts</span></button>
+    <button class="filter-button" data-filter="CNC"><img src="/pictures/milling-machine.png" alt="CNC"><span>CNC</span></button>
+    <button class="filter-button" data-filter="Lathe"><img src="/pictures/lathe.png" alt="Lathe"><span>Lathe</span></button>
+    <button class="filter-button" data-filter="3D Printer"><img src="/pictures/3d-printer.png" alt="3D Printer"><span>3D Printer</span></button>
+    <button class="filter-button" data-filter="Saw"><img src="/pictures/miter-saw.png" alt="Saw"><span>Saw</span></button>
+    <button class="filter-button" data-filter="Mill"><img src="/pictures/mill.png" alt="Mill"><span>Mill</span></button>
+</section>
 
+<section id="bomTableContainer">
+    <h2>BOM Parts</h2>
+    <div id="bomPartsGrid" class="grid-layout"></div>
+</section>
 
-
-    <!-- Modal for Editing Quantities -->
-    <div id="editModal" class="modal">
+<div id="editModal" class="modal">
     <div class="modal-content">
         <span id="closeModal" class="close">&times;</span>
         <button id="downloadCADButton" class="button-primary">Download CAD</button>
         <h2>Edit Quantities</h2>
-        <div id="modalBody" class="modal-body">
-            <!-- Content will be dynamically populated -->
-        </div>
+        <div id="modalBody" class="modal-body"></div>
         <button id="saveButton" class="button-primary">Save Changes</button>
     </div>
 </div>
 
-    <!-- Include External Libraries and Custom Script -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
-    <script src="/static/script.js"></script>
-    <!--<script>
-        const filterMachine = 'InHouse'; // Might be null if not provided
-
-        if (filterMachine) {
-            //console.log(`Filtering BOM for machine: ${filterMachine}`);
-            handleFilterBOM(filterMachine);
-        } else {
-            //console.log('Showing full dashboard');
-            handleFilterBOM('All');
-        }
-    </script>-->
-    </body>
-</div>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+<script src="/script.js"></script>
+</body>
 </html>

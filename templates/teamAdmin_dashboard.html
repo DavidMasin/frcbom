@@ -1,53 +1,39 @@
-<!-- templates/team_dashboard.html -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Team Admin Dashboard</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta charset="UTF-8">
+    <title>Team Admin Dashboard</title>
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <header class="dashboard-header">
-    <h1>Team {{ team_number }} Dashboard</h1>
-    <h2>Welcome, {{ team_name }} Team Admin</h2>
+<header>
+    <h1>Team Admin Dashboard</h1>
+    <a href="/{{ team_number }}/new_robot" class="add-robot-link">➕ Add New Robot</a>
     <button id="logoutButton" class="button-secondary">Log Out</button>
-  </header>
+</header>
 
-  <main>
-    <!-- Robots Gallery Section -->
-    <section class="robots-gallery">
-      <h2>Your Robots</h2>
-      <div class="cards-container">
-        {% for robot in robots %}
-          <div class="robot-card">
-            <!-- Robot image (use placeholder if none) -->
-            <img src="{{ robot.image_url or url_for('static', filename='images/robot_placeholder.png') }}"
-                 alt="{{ robot.name }} image" class="robot-image">
-            <div class="robot-card-body">
-              <h3 class="robot-name">{{ robot.name }}</h3>
-              <div class="robot-actions">
-                <!-- Edit: link to robot detail page -->
-                <a href="{{ url_for('robot_detail', team_id=team_id, robot_id=robot.id) }}"
-                   class="button-sm edit-button">Edit</a>
-                <!-- Delete: button triggers JS to call delete API -->
-                <button type="button" class="button-sm delete-button"
-                        data-robot-name="{{ robot.name }}">Delete</button>
-              </div>
-            </div>
-          </div>
-        {% endfor %}
-        <!-- Add Robot card -->
-        <div class="robot-card add-robot-card">
-          <a href="/{{ team_number }}/new_robot">
-            <div class="add-robot-icon">+</div>
-            <h3 class="robot-name">Add Robot</h3>
-          </a>
+<main>
+    <section class="robots-section">
+        <h2>Your Robots</h2>
+        <div class="robot-cards">
+            {% for robot in robots %}
+                <a href="/{{ team_number }}/Admin/{{ robot.name }}/Main" class="robot-card">
+                    <h3>{{ robot.name }}</h3>
+                    {% if robot.image %}
+                        <img src="{{ robot.image }}" alt="Robot Image" />
+                    {% endif %}
+                </a>
+            {% endfor %}
         </div>
-      </div>
     </section>
-  </main>
+</main>
 
-  <script src="{{ url_for('static', filename='script.js') }}"></script>
+<script>
+    document.getElementById('logoutButton').addEventListener('click', () => {
+        localStorage.clear();
+        window.location.href = '/';
+    });
+</script>
 </body>
 </html>

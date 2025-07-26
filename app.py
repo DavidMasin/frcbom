@@ -96,7 +96,6 @@ def team_admin_bom(team_number, robot_name, system):
     return render_template(
         "teamAdmin_dashboard.html",
         team_number=team_number,
-        team_name=team.name,
         team_id=team.id,
         robots=robots,
         current_robot=robot_name,

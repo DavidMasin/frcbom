@@ -304,7 +304,7 @@ function downloadPartCAD(part) {
     showLoadingBar();
 
     // Trigger the server-side export job
-    fetch("/api/download_cad", {
+    fetch(`${API_BASE_URL}api/download_cad`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

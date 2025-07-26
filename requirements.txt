@@ -10,3 +10,4 @@ flask-socketio==5.3.4
 psycopg2-binary
 Flask-Migrate
 gunicorn
+eventlet

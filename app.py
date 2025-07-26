@@ -3,6 +3,7 @@ from flask import Flask, request, jsonify, send_file, render_template
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, get_jwt, jwt_required
 from flask_cors import CORS
 from flask_socketio import SocketIO
+from onshape_client import OnshapeElement
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from flask_migrate import Migrate

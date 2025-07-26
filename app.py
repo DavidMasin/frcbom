@@ -565,6 +565,12 @@ def download_cad():
             "formatName": "PARASOLID",
             "storeInDocument": False
         }
+        print("📤 Exporting with:")
+        print("  documentId:", did)
+        print("  workspaceId:", wid)
+        print("  elementId:", eid)
+        print("  partId:", part_id)
+        print("  full URL:", system_record.document_url)
 
         start = client.api_client.request(
             "POST", url=translation_url, body=payload, query_params={}

@@ -8,8 +8,8 @@ with app.app_context():
     try:
         # Query legacy System data (including old robot_name and document_url fields)
         systems_data = db.session.execute(text(
-            "SELECT id, team_id, robot_name, system_name, document_url FROM system"
-        ))
+            "SELECT id, team_id, robot_name, document_url FROM system"
+        )).mappings()
     except Exception as e:
         print(f"❌ Migration failed: unable to query legacy data ({e})")
         exit(1)
@@ -38,8 +38,8 @@ with app.app_context():
 
     # Step 2: Assign robot_id to each System and copy assembly_url
     systems_data = db.session.execute(text(
-        "SELECT id, team_id, robot_name, document_url FROM system"
-    ))
+        "SELECT id, team_id, robot_name, system_name, document_url FROM system"
+    )).mappings()
     for row in systems_data:
         sys_id = row['id']
         team_id = row['team_id']

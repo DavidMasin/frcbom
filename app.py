@@ -580,7 +580,7 @@ def download_cad():
         },
         json={
             "formatName": "PARASOLID",
-            "partIds": part_id,
+            "partIds": part_id,  # ✅ single string, not list
             "storeInDocument": False
         }
     )
@@ -607,7 +607,9 @@ def download_cad():
             if not external_ids:
                 print("❌ DONE but no resultExternalDataIds")
                 return jsonify({"error": "Export completed but no download link returned"}), 500
-            download_url = external_ids[0].get("downloadUrl")
+
+            external_id = external_ids[0]
+            download_url = f"https://cad.onshape.com/api/documents/d/{did}/externaldata/{external_id}"
             print("✅ Download URL:", download_url)
             return jsonify({"redirect_url": download_url})
 

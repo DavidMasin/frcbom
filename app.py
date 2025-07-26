@@ -39,9 +39,29 @@ def home():
 def team_dashboard(team_number, robot_name):
     return render_template('dashboard.html', team_number=team_number, robot_name=robot_name)
 
-@app.route('/<team_number>/Admin')
+@app.route("/<team_number>/Admin")
+@jwt_required()
 def team_admin_dashboard(team_number):
-    return render_template('teamAdmin_dashboard.html', team_number=team_number)
+    current_user = get_jwt_identity()
+    claims = get_jwt()
+
+    if current_user != team_number and not claims.get("is_global_admin"):
+        return "Unauthorized", 403
+
+    team = Team.query.filter_by(team_number=team_number).first()
+    if not team:
+        return "Team not found", 404
+
+    robots = Robot.query.filter_by(team_id=team.id).all()
+
+    return render_template(
+        "team_dashboard.html",
+        team_number=team_number,
+        team_name=team.name,
+        team_id=team.id,  # Needed for url_for in the template
+        robots=robots,
+    )
+
 
 @app.route('/<team_number>/<robot_name>/<system>')
 def team_bom_filtered(team_number, robot_name, system):

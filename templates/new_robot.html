@@ -88,7 +88,7 @@
         if (response.ok) {
           alert(data.message || "Robot created successfully.");
           // Redirect to the new robot's detail page (main system view)
-          window.location.href = "{{ url_for('robot_detail', team_id=team_id, robot_name='') }}".replace('robot_name=', 'robot_name=' + encodeURIComponent(robotName));
+          window.location.href = "/{{ team_number }}/Admin/" + encodeURIComponent(robotName) + "/Main";
         } else {
           alert(data.error || "Failed to create robot.");
         }

@@ -39,7 +39,7 @@
         {% endfor %}
         <!-- Add Robot card -->
         <div class="robot-card add-robot-card">
-          <a href="{{ url_for('new_robot_form', team_id=team_id) }}" class="add-robot-link">
+          <a href="/{{ team_number }}/new_robot">
             <div class="add-robot-icon">+</div>
             <h3 class="robot-name">Add Robot</h3>
           </a>

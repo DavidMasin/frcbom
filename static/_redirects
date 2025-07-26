@@ -1,0 +1,29 @@
+# -------------------------------------
+# ✅ API requests — pass through
+# -------------------------------------
+/api/*                                  /api/:splat                     200
+
+# -------------------------------------
+# ✅ Team Admin dashboard routes
+# -------------------------------------
+/:team_number/Admin/:robot_name/:system /teamAdmin_dashboard.html       200
+/:team_number/Admin/:robot_name         /teamAdmin_dashboard.html       200
+/:team_number/Admin                     /teamAdmin_dashboard.html       200
+
+# -------------------------------------
+# ✅ Team dashboard routes
+# -------------------------------------
+/:team_number/:robot_name/:system       /dashboard.html                 200
+/:team_number/:robot_name               /dashboard.html                 200
+/:team_number                           /dashboard.html                 200
+
+# -------------------------------------
+# ✅ Other static routes
+# -------------------------------------
+/admin                                  /admin_dashboard.html           200
+/register                               /register.html                  200
+
+# -------------------------------------
+# ✅ Fallback — serve homepage
+# -------------------------------------
+/*                                      /index.html                     200

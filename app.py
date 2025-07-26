@@ -10,11 +10,14 @@ from flask_migrate import Migrate
 
 # Initialize Flask app and configuration
 app = Flask(__name__)
+print("✅ Flask app is starting up...")
 # Configure database URI (use env variable for Railway PostgreSQL, fallback to SQLite for local dev)
-db_uri = os.getenv("DATABASE_URL")
-if db_uri and db_uri.startswith("postgres://"):
-    db_uri = db_uri.replace("postgres://", "postgresql://", 1)
-app.config['SQLALCHEMY_DATABASE_URI'] = db_uri or 'sqlite:///teams.db'
+# db_uri = os.getenv("DATABASE_URL")
+# if db_uri and db_uri.startswith("postgres://"):
+#     db_uri = db_uri.replace("postgres://", "postgresql://", 1)
+# app.config['SQLALCHEMY_DATABASE_URI'] = db_uri or 'sqlite:///teams.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///teams.db'
+
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'super-secure-jwt-key')
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
 
@@ -33,10 +36,12 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # HTML page routes (for existing frontend templates)
-@app.route('/')
-def home():
-    return render_template("index.html")
-
+# @app.route('/')
+# def home():
+#     return render_template("index.html")
+@app.route("/")
+def hello():
+    return "Hello from Gunicorn!"
 @app.route('/<team_number>/<robot_name>')
 def team_dashboard(team_number, robot_name):
     return render_template('dashboard.html', team_number=team_number, robot_name=robot_name)
@@ -1278,6 +1283,7 @@ def handle_disconnect():
     app.logger.info('Client disconnected')
 
 if __name__ == "__main__":
+
     import os
     port = int(os.environ.get("PORT", 5000))
     from app import app  # if needed

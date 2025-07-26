@@ -509,14 +509,9 @@ def fetch_bom():
 @jwt_required()
 def download_cad():
     """
-    Export a specific part as a Parasolid file using Onshape's API.
-    Payload: {
-        "team_number": "...",
-        "robot": "...",
-        "system": "...",
-        "id": "part_id"
-    }
+    Export a specific part as a Parasolid file using Onshape's Translation API.
     """
+    import time
     import traceback
     from onshape_client.client import Client
     from onshape_client.onshape_url import OnshapeElement
@@ -541,28 +536,17 @@ def download_cad():
         return jsonify({"error": "Team not found"}), 404
 
     system_record = System.query.filter_by(
-        team_id=team.id,
-        robot_name=robot_name,
-        system_name=system_name
+        team_id=team.id, robot_name=robot_name, system_name=system_name
     ).first()
-    if not system_record:
-        return jsonify({"error": "System not found for given team/robot/system"}), 404
-
-    if not all([system_record.access_key, system_record.secret_key, system_record.document_url]):
+    if not system_record or not all([system_record.access_key, system_record.secret_key, system_record.document_url]):
         return jsonify({"error": "Onshape API credentials or document URL not configured for this system"}), 400
 
-    # Ensure part exists in BOM
-    part_found = False
-    if system_record.bom_data:
-        for part in system_record.bom_data:
-            if isinstance(part, dict) and part.get("ID") == part_id:
-                part_found = True
-                break
+    # Confirm part exists
+    part_found = any(p.get("ID") == part_id for p in system_record.bom_data or [])
     if not part_found:
         return jsonify({"error": f"Part ID '{part_id}' not found in BOM data"}), 404
 
     try:
-        # Init Onshape client
         client = Client(configuration={
             "base_url": "https://cad.onshape.com",
             "access_key": system_record.access_key,
@@ -571,34 +555,38 @@ def download_cad():
         element = OnshapeElement(system_record.document_url)
         did, wid, eid = element.did, element.wvmid, element.eid
 
-        # Build export URL (ABSOLUTE, not relative)
-        export_url = f"https://cad.onshape.com/api/partstudios/d/{did}/w/{wid}/e/{eid}/exports"
-        export_body = {
+        # Start translation job
+        translation_url = f"https://cad.onshape.com/api/translations"
+        payload = {
+            "documentId": did,
+            "workspaceId": wid,
+            "elementId": eid,
+            "partIds": [part_id],
             "formatName": "PARASOLID",
-            "version": "0",
-            "storeInDocument": False,
-            "partIds": [part_id]
+            "storeInDocument": False
         }
 
-        print("▶️ Exporting Parasolid for part ID:", part_id)
-        response = client.api_client.request(
-            method="POST",
-            url=export_url,                        # ✅ absolute URL
-            headers={"Accept": "application/vnd.onshape.v1+json"},
-            body=export_body,
-            query_params={}                        # ✅ avoid NoneType error
-        )
+        start = client.api_client.request("POST", url=translation_url, body=payload)
+        translation_id = start.get("id")
+        status_url = f"https://cad.onshape.com/api/translations/{translation_id}"
 
-        download_url = response.get("href")
-        print("✅ Export href:", download_url)
+        # Poll for completion
+        for _ in range(20):  # Max 10 seconds (20 * 0.5s)
+            status = client.api_client.request("GET", url=status_url)
+            if status.get("requestState") == "DONE":
+                download_url = status.get("resultExternalDataIds", [{}])[0].get("downloadUrl")
+                if download_url:
+                    return jsonify({"redirect_url": download_url}), 200
+                else:
+                    return jsonify({"error": "Export completed but download URL missing"}), 500
+            elif status.get("requestState") == "FAILED":
+                return jsonify({"error": "Onshape translation failed"}), 500
+            time.sleep(0.5)
 
-        if download_url:
-            return jsonify({"redirect_url": download_url}), 200
-        else:
-            return jsonify({"error": "Export succeeded but no download link received"}), 500
+        return jsonify({"error": "Export timed out"}), 504
 
     except Exception as e:
-        print("❌ Onshape export error:", traceback.format_exc())
+        print("❌ Export Error:", traceback.format_exc())
         return jsonify({"error": f"Failed to export CAD: {str(e)}"}), 500
 
 

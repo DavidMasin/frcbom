@@ -1282,10 +1282,9 @@ def handle_disconnect():
     app.logger.info('Client disconnected')
 
 
-if __name__ == "__main__":
+def run():
     import os
-    port = int(os.environ.get("PORT", 5000))  # MUST use Railway-injected port
-    print("✅ Flask app is starting up...")
-    print(f"✅ Running on port {port}")
+    port = int(os.environ.get("PORT", 5000))
+    print("✅ Flask app is starting via socketio.run() (Gunicorn)")
     socketio.run(app, host="0.0.0.0", port=port)
 

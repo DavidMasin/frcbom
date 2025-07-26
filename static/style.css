@@ -471,3 +471,265 @@ header button {
     display: flex;
     align-items: center;
 }
+/* static/style.css */
+
+/* Basic resets and typography */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f5f5f5;
+}
+h1, h2, h3 {
+    margin: 0.5em 0;
+}
+.dashboard-header {
+    background: #303f9f;  /* A dark blue header for contrast */
+    color: white;
+    padding: 1em;
+    text-align: center;
+}
+.dashboard-header h1 {
+    font-size: 1.5em;
+}
+.dashboard-header h2 {
+    font-size: 1em;
+    font-weight: normal;
+    margin-top: 0.2em;
+}
+
+/* Container sections */
+.robots-gallery, .machines-section, .systems-section, .system-detail-section {
+    margin: 1em 2em;
+}
+.robots-gallery h2, .machines-section h2, .systems-section h2 {
+    margin-bottom: 0.5em;
+    font-size: 1.2em;
+    color: #333;
+}
+
+/* Cards container for robots and systems */
+.cards-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1em;
+}
+.robot-card, .system-card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    width: 180px;
+    /* ensure consistent height if needed */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 1px 1px 5px rgba(0,0,0,0.1);
+    overflow: hidden;
+    text-align: center;
+}
+.robot-card:hover, .system-card:hover {
+    box-shadow: 1px 1px 8px rgba(0,0,0,0.15);
+}
+.robot-image, .system-image {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    background: #ececec;
+}
+.robot-card-body, .system-card-body {
+    padding: 0.5em;
+}
+.robot-name, .system-name {
+    margin: 0.5em 0;
+    font-size: 1.0em;
+    font-weight: bold;
+    color: #333;
+}
+.robot-actions, .system-actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.5em;
+    margin-bottom: 0.5em;
+}
+.add-robot-card, .add-system-card {
+    border: 2px dashed #aaa;
+    color: #666;
+    justify-content: center;
+    align-items: center;
+}
+.add-robot-card:hover, .add-system-card:hover {
+    background: #f0f0f0;
+}
+.add-robot-icon {
+    font-size: 3em;
+    line-height: 1;
+}
+.add-system-inner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+.add-system-button {
+    font-size: 1em;
+    padding: 1em;
+    background: none;
+    border: none;
+    color: #333;
+    cursor: pointer;
+}
+.add-system-button:hover {
+    text-decoration: underline;
+}
+
+/* Machine list styles */
+.machine-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    background: #fff;
+    padding: 0.5em;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+.machine-item {
+    background: #fafafa;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 0.3em 0.5em;
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
+    font-size: 0.9em;
+}
+.machine-item .machine-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+.machine-name {
+    font-weight: bold;
+    color: #333;
+}
+.machine-format {
+    color: #666;
+    font-size: 0.85em;
+}
+.add-machine-item {
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+.add-machine-item button {
+    font-size: 0.9em;
+    cursor: pointer;
+}
+.add-machine-item button:hover {
+    text-decoration: underline;
+}
+
+/* Buttons */
+.button-primary, .button-secondary, .button-sm {
+    cursor: pointer;
+    border: none;
+    border-radius: 4px;
+    padding: 0.5em 1em;
+    font-size: 0.9em;
+}
+.button-primary {
+    background-color: #303f9f;
+    color: #fff;
+}
+.button-primary:hover {
+    background-color: #3f51b5;
+}
+.button-secondary {
+    background-color: #eee;
+    color: #000;
+}
+.button-secondary:hover {
+    background-color: #ddd;
+}
+.button-sm {
+    font-size: 0.8em;
+    padding: 0.3em 0.6em;
+    background-color: #607d8b;
+    color: #fff;
+}
+.button-sm:hover {
+    background-color: #78909c;
+}
+.button-icon {
+    background: none;
+    border: none;
+    font-size: 1em;
+    line-height: 1;
+    cursor: pointer;
+}
+.button-icon:hover {
+    color: #000;
+}
+
+/* Forms */
+form {
+    margin: 1em 0;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 1em;
+}
+form h3 {
+    margin-top: 0;
+}
+.form-group {
+    margin-bottom: 1em;
+    display: flex;
+    flex-direction: column;
+}
+.form-group label {
+    font-size: 0.9em;
+    margin-bottom: 0.3em;
+    color: #555;
+}
+.form-group input[type=text],
+.form-group input[type=url],
+.form-group input[type=password],
+.form-group select {
+    padding: 0.4em;
+    font-size: 0.9em;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+.form-group input[type=file] {
+    font-size: 0.9em;
+}
+.form-actions {
+    display: flex;
+    gap: 1em;
+    align-items: center;
+}
+.form-actions .button-primary, .form-actions .button-secondary {
+    margin-top: 0.5em;
+}
+
+/* Thumbnail image in system detail */
+.thumb {
+    max-width: 100px;
+    max-height: 100px;
+    vertical-align: middle;
+    margin-left: 0.5em;
+    border: 1px solid #ccc;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .cards-container {
+        justify-content: center;
+    }
+    .robot-card, .system-card {
+        width: 45%;  /* two per row on narrow screens */
+    }
+    .machine-list {
+        flex-direction: column;
+    }
+}

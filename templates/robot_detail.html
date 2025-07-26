@@ -1,0 +1,129 @@
+<!-- templates/robot_detail.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Robot {{ robot.name }} - Details</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="dashboard-header">
+    <h1>Robot: {{ robot.name }}</h1>
+    <a href="{{ url_for('team_dashboard', team_id=team_id) }}" class="button-secondary">← All Robots</a>
+    <!-- Optionally, a button to delete or rename this robot could be here as well -->
+  </header>
+
+  <main>
+    <!-- Machines Section -->
+    <section class="machines-section">
+      <h2>Machines</h2>
+      <div class="machine-list">
+        {% for machine in machines %}
+          <div class="machine-item">
+            <img src="{{ machine.icon_url or url_for('static', filename='images/machine_placeholder.png') }}"
+                 alt="{{ machine.name }} icon" class="machine-icon">
+            <span class="machine-name">{{ machine.name }}</span>
+            <span class="machine-format">({{ machine.format }})</span>
+            <button type="button" class="button-icon edit-machine-btn" title="Edit Machine"
+                    data-machine-id="{{ machine.id }}">✎</button>
+            <button type="button" class="button-icon delete-machine-btn" title="Delete Machine"
+                    data-machine-id="{{ machine.id }}">🗑</button>
+          </div>
+        {% endfor %}
+        <!-- "Add Machine" button -->
+        <div class="machine-item add-machine-item">
+          <button type="button" id="addMachineBtn" class="button-primary">+ Add Machine</button>
+        </div>
+      </div>
+      <!-- Add Machine Form (hidden by default) -->
+      <form id="addMachineForm" class="add-machine-form" style="display: none;" enctype="multipart/form-data"
+            action="{{ url_for('add_machine', team_id=team_id, robot_id=robot.id) }}" method="POST">
+        <h3>New Machine</h3>
+        <div class="form-group">
+          <label for="machineName">Name:</label>
+          <input type="text" id="machineName" name="machine_name" placeholder="Machine name" required>
+        </div>
+        <div class="form-group">
+          <label for="machineIcon">Icon (optional):</label>
+          <input type="file" id="machineIcon" name="machine_icon" accept="image/*">
+        </div>
+        <div class="form-group">
+          <label for="machineFormat">CAD Export Format:</label>
+          <select id="machineFormat" name="machine_format">
+            <option value="STEP">STEP</option>
+            <option value="STL">STL</option>
+            <option value="Parasolid">Parasolid</option>
+            <option value="IGES">IGES</option>
+            <option value="SOLIDWORKS">SOLIDWORKS</option>
+            <!-- Add other formats as needed (Onshape supports Parasolid, ACIS, STEP AP242, IGES, etc.:contentReference[oaicite:3]{index=3}:contentReference[oaicite:4]{index=4}) -->
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="button-primary">Add Machine</button>
+          <button type="button" id="cancelAddMachine" class="button-secondary">Cancel</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Systems Section -->
+    <section class="systems-section">
+      <h2>Systems</h2>
+      <div class="cards-container system-cards">
+        {% for system in systems %}
+          <div class="system-card">
+            <img src="{{ system.image_url or url_for('static', filename='images/system_placeholder.png') }}"
+                 alt="{{ system.name }} image" class="system-image">
+            <div class="system-card-body">
+              <h3 class="system-name">{{ system.name }}</h3>
+              <div class="system-actions">
+                <a href="{{ url_for('system_detail', team_id=team_id, robot_id=robot.id, system_id=system.id) }}"
+                   class="button-sm edit-button">Edit</a>
+                <button type="button" class="button-sm delete-button delete-system-btn"
+                        data-system-id="{{ system.id }}">Delete</button>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+        <!-- Add System card -->
+        <div class="system-card add-system-card">
+          <div class="add-system-inner">
+            <button type="button" id="addSystemBtn" class="add-system-button">+ Add System</button>
+          </div>
+        </div>
+      </div>
+      <!-- Add System Form (hidden by default) -->
+      <form id="addSystemForm" class="add-system-form" style="display: none;"
+            action="{{ url_for('add_system', team_id=team_id, robot_id=robot.id) }}" method="POST">
+        <h3>New System</h3>
+        <div class="form-group">
+          <label for="systemName">System Name:</label>
+          <input type="text" id="systemName" name="system_name" placeholder="e.g. Drivetrain, Arm..." required>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="button-primary">Create System</button>
+          <button type="button" id="cancelAddSystem" class="button-secondary">Cancel</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <script>
+    // Toggle "Add Machine" form
+    document.getElementById('addMachineBtn').addEventListener('click', () => {
+      document.getElementById('addMachineForm').style.display = 'block';
+    });
+    document.getElementById('cancelAddMachine').addEventListener('click', () => {
+      document.getElementById('addMachineForm').style.display = 'none';
+    });
+    // Toggle "Add System" form
+    document.getElementById('addSystemBtn').addEventListener('click', () => {
+      document.getElementById('addSystemForm').style.display = 'block';
+    });
+    document.getElementById('cancelAddSystem').addEventListener('click', () => {
+      document.getElementById('addSystemForm').style.display = 'none';
+    });
+  </script>
+</body>
+</html>

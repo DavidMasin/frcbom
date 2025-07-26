@@ -1,0 +1,77 @@
+<!-- templates/system_detail.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit System - {{ system.name }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="dashboard-header">
+    <h1>Edit System: {{ system.name }}</h1>
+    <a href="{{ url_for('robot_detail', team_id=team_id, robot_id=robot.id) }}" class="button-secondary">← Back to Robot</a>
+  </header>
+
+  <main>
+    <section class="system-detail-section">
+      <form id="systemForm" class="system-form" action="{{ url_for('update_system', team_id=team_id, robot_id=robot.id, system_id=system.id) }}" method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+          <label for="systemNameInput">System Name:</label>
+          <input type="text" id="systemNameInput" name="system_name" value="{{ system.name }}" required>
+        </div>
+        <div class="form-group">
+          <label for="assemblyUrl">Assembly URL:</label>
+          <input type="url" id="assemblyUrl" name="assembly_url" value="{{ system.assembly_url or '' }}" placeholder="https://cad.onshape.com/documents/…/assembly/…">
+        </div>
+        <div class="form-group">
+          <label>Part Studio URL(s):</label>
+          <div id="partStudiosContainer">
+            {% for ps_url in system.part_studio_urls %}
+              <input type="url" name="part_studio_urls" class="part-studio-input" value="{{ ps_url }}" placeholder="https://cad.onshape.com/documents/…/partstudio/…">
+            {% endfor %}
+            {% if system.part_studio_urls|length == 0 %}
+              <!-- If no URLs yet, provide one input field -->
+              <input type="url" name="part_studio_urls" class="part-studio-input" placeholder="Part Studio URL">
+            {% endif %}
+          </div>
+          <button type="button" id="addPartStudioBtn" class="button-secondary">+ Add another Part Studio</button>
+        </div>
+        <div class="form-group">
+          <label for="sysAccessKey">Onshape Access Key:</label>
+          <input type="text" id="sysAccessKey" name="access_key" value="{{ system.access_key or '' }}">
+        </div>
+        <div class="form-group">
+          <label for="sysSecretKey">Onshape Secret Key:</label>
+          <input type="password" id="sysSecretKey" name="secret_key" value="{{ system.secret_key or '' }}">
+        </div>
+        <div class="form-group">
+          <label for="assemblyImage">Assembly Image (optional):</label>
+          <input type="file" id="assemblyImage" name="assembly_image" accept="image/*">
+          {% if system.image_url %}
+            <p>Current image: <img src="{{ system.image_url }}" alt="Assembly image" class="thumb"></p>
+          {% endif %}
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="button-primary">Save Changes</button>
+          <a href="{{ url_for('robot_detail', team_id=team_id, robot_id=robot.id) }}" class="button-secondary">Cancel</a>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <script>
+    // Add more Part Studio URL fields dynamically
+    document.getElementById('addPartStudioBtn').addEventListener('click', () => {
+      const container = document.getElementById('partStudiosContainer');
+      const input = document.createElement('input');
+      input.type = 'url';
+      input.name = 'part_studio_urls';
+      input.className = 'part-studio-input';
+      input.placeholder = 'Part Studio URL';
+      container.appendChild(input);
+    });
+  </script>
+</body>
+</html>

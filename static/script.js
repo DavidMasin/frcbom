@@ -1139,4 +1139,149 @@ if (fetchButton) {
         }
     });
 }
+function getAuthToken() {
+    return localStorage.getItem('jwt_token');
+}
 
+// Confirm and delete a robot
+document.querySelectorAll('.delete-button[data-robot-name]').forEach(button => {
+    button.addEventListener('click', async () => {
+        const robotName = button.getAttribute('data-robot-name');
+        if (!robotName) return;
+        if (!confirm(`Delete robot "${robotName}" and all its data?`)) {
+            return;
+        }
+        try {
+            const token = getAuthToken();
+            const response = await fetch(`${API_BASE_URL}api/delete_robot`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    team_number: "{{ team_number if team_number else '' }}",
+                    robot_name: robotName
+                })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                alert(data.message || `Robot "${robotName}" deleted.`);
+                // Remove robot card from the DOM or refresh the page
+                window.location.reload();
+            } else {
+                alert(data.error || 'Failed to delete robot.');
+            }
+        } catch (error) {
+            console.error('Error deleting robot:', error);
+            alert('An error occurred while deleting the robot.');
+        }
+    });
+});
+
+// Confirm and delete a machine
+document.querySelectorAll('.delete-machine-btn').forEach(button => {
+    button.addEventListener('click', async () => {
+        const machineId = button.getAttribute('data-machine-id');
+        if (!machineId) return;
+        if (!confirm("Delete this machine from the robot?")) {
+            return;
+        }
+        try {
+            const token = getAuthToken();
+            const response = await fetch(`${API_BASE_URL}api/delete_machine`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ machine_id: machineId })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                alert(data.message || "Machine deleted.");
+                window.location.reload();
+            } else {
+                alert(data.error || "Failed to delete machine.");
+            }
+        } catch (err) {
+            console.error('Error deleting machine:', err);
+            alert('An error occurred while deleting the machine.');
+        }
+    });
+});
+
+// Confirm and delete a system
+document.querySelectorAll('.delete-system-btn').forEach(button => {
+    button.addEventListener('click', async () => {
+        const systemId = button.getAttribute('data-system-id');
+        if (!systemId) return;
+        if (!confirm("Delete this system (this cannot be undone)?")) {
+            return;
+        }
+        try {
+            const token = getAuthToken();
+            const response = await fetch(`${API_BASE_URL}api/delete_system`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ system_id: systemId })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                alert(data.message || "System deleted.");
+                window.location.reload();
+            } else {
+                alert(data.error || "Failed to delete system.");
+            }
+        } catch (err) {
+            console.error('Error deleting system:', err);
+            alert('An error occurred while deleting the system.');
+        }
+    });
+});
+
+// [Optional] Handle add machine via AJAX instead of form submit
+const addMachineForm = document.getElementById('addMachineForm');
+if (addMachineForm) {
+    addMachineForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(addMachineForm);
+        if (!formData.get('machine_name')) {
+            alert("Machine name is required.");
+            return;
+        }
+        try {
+            const token = getAuthToken();
+            const response = await fetch(`${API_BASE_URL}api/add_machine`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                    // Note: Do NOT set Content-Type header for FormData; the browser will set it including boundaries
+                },
+                body: formData
+            });
+            const data = await response.json();
+            if (response.ok) {
+                alert(data.message || "Machine added.");
+                window.location.reload();
+            } else {
+                alert(data.error || "Failed to add machine.");
+            }
+        } catch (err) {
+            console.error('Error adding machine:', err);
+            alert('An error occurred while adding the machine.');
+        }
+    });
+}
+
+// [Optional] You could similarly handle add system via AJAX, but since that typically redirects to the new system page,
+// it might be simpler to let the form submit normally and have the server redirect to the new system's detail page.
+
+// Logout button functionality (clears token and returns to home/login page)
+document.getElementById('logoutButton')?.addEventListener('click', () => {
+    localStorage.clear();
+    window.location.href = "/";
+});

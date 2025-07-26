@@ -1,160 +1,53 @@
+<!-- templates/team_dashboard.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>FRC BOM Dashboard</title>
-    <link rel="stylesheet" href="/static/style.css"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team Admin Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-<!-- Wrap all content inside the #dashboard div -->
-<div id="dashboard">
-    <!-- Header Section -->
-    <header>
-        <h1>FRC BOM Dashboard</h1>
-        <h2>Welcome, Team <span id="teamNumber"></span></h2>
-        <button id="logoutButton" class="button-primary">Log Out</button>
-    </header>
+  <header class="dashboard-header">
+    <h1>Team {{ team_number }} Dashboard</h1>
+    <h2>Welcome, {{ team_name }} Team Admin</h2>
+    <button id="logoutButton" class="button-secondary">Log Out</button>
+  </header>
 
-    <!-- Robot Selection Section -->
-    <section id="robotSelection" class="robot-selection" style="display: none;">
-        <h2>Select a Robot</h2>
-        <div id="robotList" class="robot-list">
-            <!-- Robots will be listed here dynamically -->
-        </div>
-
-        <!-- Manage Robot: Rename and Delete -->
-        <div style="margin-top:20px;">
-            <h3>Manage Robot</h3>
-            <label for="oldRobotName">Old Robot Name:</label>
-            <input type="text" id="oldRobotName" placeholder="Existing Robot Name"/>
-            <label for="newRobotName">New Robot Name:</label>
-            <input type="text" id="newRobotName" placeholder="New Robot Name"/>
-            <button id="renameRobotButton" class="button-primary">Rename Robot</button>
-        </div>
-
-        <div style="margin-top:20px;">
-            <h3>Delete Robot</h3>
-            <label for="deleteRobotName">Robot Name to Delete:</label>
-            <input type="text" id="deleteRobotName" placeholder="Robot to Delete"/>
-            <button id="deleteRobotButton" class="button-primary" style="background-color:red;">
-                Delete Robot
-            </button>
-        </div>
-
-        <button id="createRobotButton" class="button-primary" style="margin-top:20px;">
-            Create New Robot
-        </button>
-    </section>
-
-    <!-- Dashboard Controls Section -->
-    <section class="dashboard-controls">
-        <!-- System Selection Dropdown -->
-        <div class="system-selector">
-            <label for="systemSelect" class="system-label">Select System:</label>
-            <select id="systemSelect" class="system-dropdown">
-                <option value="Main" selected>Main</option>
-                <option value="System1">System 1</option>
-                <option value="System2">System 2</option>
-                <option value="System3">System 3</option>
-                <option value="System4">System 4</option>
-                <option value="System5">System 5</option>
-            </select>
-        </div>
-        <!-- Filter Buttons -->
-        <button class="filter-button" data-filter="All">
-            <img src="/pictures/all.png" alt="All"/>
-            <span>Show All</span>
-        </button>
-        <button class="filter-button" data-filter="InHouse">
-            <img src="/pictures/wrench-tool-in-a-hand-inside-a-house-shape.png" alt="In-House"/>
-            <span>In-House Parts</span>
-        </button>
-        <button class="filter-button" data-filter="COTS">
-            <img src="/pictures/cots.svg" alt="COTS"/>
-            <span>COTS Parts</span>
-        </button>
-        <button class="filter-button" data-filter="CNC">
-            <img src="/pictures/milling-machine.png" alt="CNC"/>
-            <span>CNC</span>
-        </button>
-        <button class="filter-button" data-filter="Lathe">
-            <img src="/pictures/lathe.png" alt="Lathe"/>
-            <span>Lathe</span>
-        </button>
-        <button class="filter-button" data-filter="3D Printer">
-            <img src="/pictures/3d-printer.png" alt="3D Printer"/>
-            <span>3D Printer</span>
-        </button>
-        <button class="filter-button" data-filter="Saw">
-            <img src="/pictures/miter-saw.png" alt="Saw"/>
-            <span>Gerung</span>
-        </button>
-        <button class="filter-button" data-filter="Mill">
-            <img src="/pictures/mill.png" alt="Mill"/>
-            <span>Mill</span>
-        </button>
-
-        <!-- Settings Button -->
-        <button id="settingsBtn">Settings</button>
-    </section>
-
-    <!-- BOM Parts Grid Section -->
-    <section id="bomTableContainer">
-        <h2>BOM Parts</h2>
-        <div id="bomPartsGrid" class="grid-layout">
-            <!-- Part buttons will be dynamically populated here -->
-        </div>
-    </section>
-
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="modal">
-        <div class="modal-content">
-            <!-- Close button (X) -->
-            <span class="close">&times;</span>
-            <h2>Settings</h2>
-            <div class="modal-body">
-                <label for="onshapeDocumentUrl">Onshape Document URL:</label>
-                <input type="text" id="onshapeDocumentUrl" placeholder="Enter Onshape Document URL"/>
-
-                <label for="accessKey">Onshape Access Key:</label>
-                <input type="text" id="accessKey" placeholder="Enter Access Key"/>
-
-                <label for="secretKey">Onshape Secret Key:</label>
-                <input type="password" id="secretKey" placeholder="Enter Secret Key"/>
-
-                <button id="fetchBOMButton" class="button-primary" type="button">Fetch BOM</button>
+  <main>
+    <!-- Robots Gallery Section -->
+    <section class="robots-gallery">
+      <h2>Your Robots</h2>
+      <div class="cards-container">
+        {% for robot in robots %}
+          <div class="robot-card">
+            <!-- Robot image (use placeholder if none) -->
+            <img src="{{ robot.image_url or url_for('static', filename='images/robot_placeholder.png') }}"
+                 alt="{{ robot.name }} image" class="robot-image">
+            <div class="robot-card-body">
+              <h3 class="robot-name">{{ robot.name }}</h3>
+              <div class="robot-actions">
+                <!-- Edit: link to robot detail page -->
+                <a href="{{ url_for('robot_detail', team_id=team_id, robot_id=robot.id) }}"
+                   class="button-sm edit-button">Edit</a>
+                <!-- Delete: button triggers JS to call delete API -->
+                <button type="button" class="button-sm delete-button"
+                        data-robot-name="{{ robot.name }}">Delete</button>
+              </div>
             </div>
+          </div>
+        {% endfor %}
+        <!-- Add Robot card -->
+        <div class="robot-card add-robot-card">
+          <a href="{{ url_for('new_robot_form', team_id=team_id) }}" class="add-robot-link">
+            <div class="add-robot-icon">+</div>
+            <h3 class="robot-name">Add Robot</h3>
+          </a>
         </div>
-    </div>
+      </div>
+    </section>
+  </main>
 
-    <!-- Edit Part Modal (for editing quantities/processes) -->
-    <div id="editModal" class="modal">
-        <div class="modal-content">
-            <span id="closeModal" class="close">&times;</span>
-            <button id="downloadCADButton" class="button-primary">Download CAD</button>
-            <h2>Edit Part</h2>
-            <div id="modalBody" class="modal-body">
-                <!-- Content populated dynamically when a part is selected -->
-            </div>
-            <button id="saveButton" class="button-primary">Save Changes</button>
-        </div>
-    </div>
-
-
-    <!-- Include External Libraries and Scripts at end of body -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
-    <script src="/static/script.js"></script>
-    <script>
-        // Optionally, force a default filter on page load:
-        const filterMachine = 'InHouse';
-        if (filterMachine) {
-          handleFilterBOM(filterMachine);
-        } else {
-          handleFilterBOM('All');
-        }
-    </script>
-</div>
-
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

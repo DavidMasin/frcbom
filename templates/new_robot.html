@@ -1,0 +1,101 @@
+<!-- templates/new_robot.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add New Robot</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="dashboard-header">
+    <h1>Create a New Robot</h1>
+    <a href="{{ url_for('team_dashboard', team_id=team_id) }}" class="button-secondary">← Back to Dashboard</a>
+  </header>
+
+  <main>
+    <section class="new-robot-section">
+      <form id="newRobotForm" class="new-robot-form">
+        <div class="form-group">
+          <label for="robotName">Robot Name:</label>
+          <input type="text" id="robotName" name="robot_name" placeholder="Enter robot name" required>
+        </div>
+
+        <div class="form-group">
+          <label for="accessKey">Onshape Access Key:</label>
+          <input type="text" id="accessKey" name="access_key" placeholder="Enter Access Key">
+        </div>
+        <div class="form-group">
+          <label for="secretKey">Onshape Secret Key:</label>
+          <input type="password" id="secretKey" name="secret_key" placeholder="Enter Secret Key">
+        </div>
+
+        <!-- Hidden field to signal using default machines (set via JS) -->
+        <input type="hidden" id="useDefaultMachines" name="use_default_machines" value="0">
+
+        <div class="form-actions">
+          <!-- Use Defaults fills in default keys (and will include default machines) -->
+          <button type="button" id="useDefaultsBtn" class="button-secondary">Use Defaults</button>
+          <button type="submit" class="button-primary">Create Robot</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <script>
+    // Prefill the form with default config when "Use Defaults" is clicked
+    const defaultAccessKey = "{{ default_config.access_key if default_config else '' }}";
+    const defaultSecretKey = "{{ default_config.secret_key if default_config else '' }}";
+    document.getElementById('useDefaultsBtn').addEventListener('click', () => {
+      if (defaultAccessKey && defaultSecretKey) {
+        document.getElementById('accessKey').value = defaultAccessKey;
+        document.getElementById('secretKey').value = defaultSecretKey;
+      }
+      // Mark that default machines should be included for this robot
+      document.getElementById('useDefaultMachines').value = "1";
+    });
+
+    // Handle form submission via AJAX to create robot using API
+    document.getElementById('newRobotForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const robotName = document.getElementById('robotName').value.trim();
+      const accessKey = document.getElementById('accessKey').value;
+      const secretKey = document.getElementById('secretKey').value;
+      const includeMachines = document.getElementById('useDefaultMachines').value === "1";
+      if (!robotName) {
+        alert("Robot name is required.");
+        return;
+      }
+      try {
+        const token = localStorage.getItem('jwt_token');  /* assume JWT is stored */
+        const response = await fetch(`${API_BASE_URL}api/new_robot`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            team_number: "{{ team_number }}",
+            robot_name: robotName,
+            access_key: accessKey || null,
+            secret_key: secretKey || null,
+            use_default_machines: includeMachines
+          })
+        });
+        const data = await response.json();
+        if (response.ok) {
+          alert(data.message || "Robot created successfully.");
+          // Redirect to the new robot's detail page (main system view)
+          window.location.href = "{{ url_for('robot_detail', team_id=team_id, robot_name='') }}".replace('robot_name=', 'robot_name=' + encodeURIComponent(robotName));
+        } else {
+          alert(data.error || "Failed to create robot.");
+        }
+      } catch (err) {
+        console.error("Error creating robot:", err);
+        alert("An error occurred while creating the robot.");
+      }
+    });
+  </script>
+</body>
+</html>

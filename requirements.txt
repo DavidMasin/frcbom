@@ -6,7 +6,7 @@ requests
 onshape-client
 bcrypt
 flask_sqlalchemy
-flask-socketio==5.3.4
+flask_socketio
 psycopg2-binary
 Flask-Migrate
 gunicorn

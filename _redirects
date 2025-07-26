@@ -1,30 +1,29 @@
-# Redirect system-specific routes with robot name to dashboard.html
-/:team_number/Admin/:robot_name/:system    /teamAdmin_dashboard.html   200
+# -----------------------------------
+# ✅ API routes (let backend handle)
+# -----------------------------------
+/api/*     /api/:splat     200
 
-# Redirect team number and robot name routes to dashboard.html
-/:team_number/Admin/:robot_name    /teamAdmin_dashboard.html   200
+# -----------------------------------
+# ✅ Admin dashboard routes
+# -----------------------------------
+/admin                                  /admin_dashboard.html      200
+/:team_number/Admin/:robot_name/:system /teamAdmin_dashboard.html  200
+/:team_number/Admin/:robot_name         /teamAdmin_dashboard.html  200
+/:team_number/Admin                     /teamAdmin_dashboard.html  200
 
+# -----------------------------------
+# ✅ Team dashboard routes
+# -----------------------------------
+/:team_number/:robot_name/:system       /dashboard.html            200
+/:team_number/:robot_name               /dashboard.html            200
+/:team_number                           /dashboard.html            200
 
-/:team_number/Admin    /teamAdmin_dashboard.html   200
+# -----------------------------------
+# ✅ Other static pages
+# -----------------------------------
+/register    /register.html             200
 
-# Redirect system-specific routes with robot name to dashboard.html
-/:team_number/:robot_name/:system    /dashboard.html   200
-
-# Redirect team number and robot name routes to dashboard.html
-/:team_number/:robot_name    /dashboard.html   200
-
-# Redirect team number routes to dashboard.html (for compatibility)
-# Optionally, you can redirect to a robot selection page
-/:team_number    /dashboard.html   200
-
-
-# Proxy API requests to your Railway back-end
-/api/*  https://frcbom-production.up.railway.app/api/:splat  200
-
-/admin  /admin_dashboard.html  200
-
-# Serve the index.html for all other routes (fallback)
-/*      /index.html   200
-
-# Explicit redirect for register
-/register   /register.html  200
+# -----------------------------------
+# ✅ Fallback to landing page
+# -----------------------------------
+/*           /index.html                200

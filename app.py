@@ -1283,9 +1283,8 @@ def handle_disconnect():
     app.logger.info('Client disconnected')
 
 if __name__ == "__main__":
-
     import os
     port = int(os.environ.get("PORT", 5000))
-    from app import app  # if needed
-    app.run(host="0.0.0.0", port=port)
+    print("✅ Flask app is starting up...")
+    socketio.run(app, host="0.0.0.0", port=port)
 

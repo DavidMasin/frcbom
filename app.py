@@ -10,7 +10,6 @@ from flask_migrate import Migrate
 
 # Initialize Flask app and configuration
 app = Flask(__name__)
-print("✅ Flask app is starting up...")
 # Configure database URI (use env variable for Railway PostgreSQL, fallback to SQLite for local dev)
 # db_uri = os.getenv("DATABASE_URL")
 # if db_uri and db_uri.startswith("postgres://"):
@@ -1282,9 +1281,11 @@ def handle_connect():
 def handle_disconnect():
     app.logger.info('Client disconnected')
 
+
 if __name__ == "__main__":
     import os
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 5000))  # MUST use Railway-injected port
     print("✅ Flask app is starting up...")
+    print(f"✅ Running on port {port}")
     socketio.run(app, host="0.0.0.0", port=port)
 

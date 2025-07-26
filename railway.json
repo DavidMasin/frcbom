@@ -2,7 +2,7 @@
   "build": {
     "frontend": {
       "buildCommand": "cd frontend && npm install && npm run build",
-      "startCommand": "cd frontend && npm run serve"
+      "startCommand": "gunicorn app:app --bind 0.0.0.0:$PORT"
     },
     "backend": {
       "buildCommand": "pip install -r requirements.txt",

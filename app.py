@@ -578,6 +578,7 @@ def download_cad():
         translation_id = start.get("id")
         status_url = f"https://cad.onshape.com/api/translations/{translation_id}"
 
+        print("ENTERING LOOP!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         # Poll for completion
         for _ in range(100):  # Max 10 seconds (20 * 0.5s)
             status = client.api_client.request(

@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, jsonify, send_file, render_template
+from flask import Flask, request, jsonify, send_file, render_template, redirect
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, get_jwt, jwt_required
 from flask_cors import CORS
 from flask_socketio import SocketIO
@@ -45,29 +45,55 @@ def home():
 def team_dashboard(team_number, robot_name):
     return render_template('dashboard.html', team_number=team_number, robot_name=robot_name)
 
+@app.route('/<team_number>')
+def team_page(team_number):
+    team = Team.query.filter_by(team_number=team_number).first()
+    if not team:
+        return "Team not found", 404
+    return render_template('dashboard.html', team_number=team_number)
+# (New route for user dashboard with no robot specified)
+
 @app.route("/<team_number>/Admin")
-@jwt_required()
 def team_admin_dashboard(team_number):
-    current_user = get_jwt_identity()
-    claims = get_jwt()
-
-    # if current_user != claims and not claims.get("is_global_admin"):
-    #     return "Unauthorized", 403
-
     team = Team.query.filter_by(team_number=team_number).first()
     if not team:
         return "Team not found", 404
 
     robots = Robot.query.filter_by(team_id=team.id).all()
-
     return render_template(
         "teamAdmin_dashboard.html",
         team_number=team_number,
         team_name=team.name,
-        team_id=team.id,  # Needed for url_for in the template
+        team_id=team.id,
         robots=robots,
     )
+# (JWT requirement and identity checks removed from the admin route above)
 
+@app.route('/<team_number>/Admin/<robot_name>')
+def team_admin_robot(team_number, robot_name):
+    return redirect(f"/{team_number}/Admin/{robot_name}/Main")
+# (New route: ensure “Main” system in URL by redirecting)
+
+@app.route('/<team_number>/Admin/<robot_name>/<system>')
+def team_admin_bom(team_number, robot_name, system):
+    team = Team.query.filter_by(team_number=team_number).first()
+    if not team:
+        return "Team not found", 404
+    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
+    if not robot:
+        return "Robot not found", 404
+
+    robots = Robot.query.filter_by(team_id=team.id).all()
+    return render_template(
+        "teamAdmin_dashboard.html",
+        team_number=team_number,
+        team_name=team.name,
+        team_id=team.id,
+        robots=robots,
+        current_robot=robot_name,
+        filter_system=system
+    )
+# (New route: serves team admin dashboard for a specific robot & system)
 
 @app.route('/<team_number>/<robot_name>/<system>')
 def team_bom_filtered(team_number, robot_name, system):

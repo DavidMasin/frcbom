@@ -556,7 +556,7 @@ def download_cad():
         did, wid, eid = element.did, element.wvmid, element.eid
 
         # Start translation job
-        translation_url = f"https://cad.onshape.com/api/translations"
+        translation_url = "https://cad.onshape.com/api/translations"
         payload = {
             "documentId": did,
             "workspaceId": wid,
@@ -566,13 +566,17 @@ def download_cad():
             "storeInDocument": False
         }
 
-        start = client.api_client.request("POST", url=translation_url, body=payload)
+        start = client.api_client.request(
+            "POST", url=translation_url, body=payload, query_params={}
+        )
         translation_id = start.get("id")
         status_url = f"https://cad.onshape.com/api/translations/{translation_id}"
 
         # Poll for completion
         for _ in range(20):  # Max 10 seconds (20 * 0.5s)
-            status = client.api_client.request("GET", url=status_url)
+            status = client.api_client.request(
+                "GET", url=status_url, query_params={}
+            )
             if status.get("requestState") == "DONE":
                 download_url = status.get("resultExternalDataIds", [{}])[0].get("downloadUrl")
                 if download_url:

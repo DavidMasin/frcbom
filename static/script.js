@@ -292,39 +292,63 @@ function handleFilterBOM(filter) {
     displayBOMAsButtons(filteredData);
 }
 
-async function downloadPartCAD(part) {
-    const teamNum = localStorage.getItem('team_number');
-    const robotName = localStorage.getItem('robot_name');
-    let system = 'Main';
-    if (document.getElementById('systemSelect')) {
-        system = document.getElementById('systemSelect').value;
-    }
-    if (!teamNum || !part.ID) {
-        alert("Missing team or part identification for CAD download.");
-        return;
-    }
-    try {
-        const token = localStorage.getItem('jwt_token');
-        const response = await fetch(`${API_BASE_URL}api/download_cad`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ team_number: teamNum, robot: robotName, system: system, id: part.ID })
-        });
-        const data = await response.json();
-        if (response.ok && data.redirect_url) {
-            // Open the Parasolid file download in a new tab/window
-            window.open(data.redirect_url, '_blank');
+// Called when 'Download CAD' is triggered for a part
+function downloadPartCAD(part) {
+    const payload = {
+        team_number: localStorage.getItem("team_number"),
+        robot: localStorage.getItem("robot_name"),
+        system: localStorage.getItem("system_name") || "Main",
+        id: part.ID
+    };
+
+    showLoadingBar();
+
+    // Trigger the server-side export job
+    fetch("/api/download_cad", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("jwt_token")}`
+        },
+        body: JSON.stringify(payload)
+    });
+
+    const eventSource = new EventSource("/api/download_cad");
+
+    eventSource.onmessage = function (event) {
+        const data = JSON.parse(event.data);
+        if (data.status === "DONE" && data.download_url) {
+            window.location.href = data.download_url;
+            eventSource.close();
+            hideLoadingBar();
+        } else if (data.status === "FAILED" || data.status === "ERROR") {
+            alert("Export failed: " + (data.error || "Unknown error"));
+            eventSource.close();
+            hideLoadingBar();
         } else {
-            alert(data.error || 'CAD download failed.');
+            updateLoadingBar(data.progress || 0);
         }
-    } catch (error) {
-        console.error('Error downloading CAD:', error);
-        alert('Error downloading CAD file.');
-    }
+    };
 }
+
+function showLoadingBar() {
+    const bar = document.getElementById("loadingBar");
+    if (bar) bar.style.display = "block";
+}
+
+function hideLoadingBar() {
+    const bar = document.getElementById("loadingBar");
+    if (bar) bar.style.display = "none";
+    const fill = document.getElementById("loadingBarFill");
+    if (fill) fill.style.width = "0%";
+}
+
+function updateLoadingBar(percent) {
+    const fill = document.getElementById("loadingBarFill");
+    if (fill) fill.style.width = percent + "%";
+}
+
+
 
 function openEditModal(part) {
     const modal = document.getElementById('editModal');

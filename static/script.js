@@ -292,7 +292,6 @@ function handleFilterBOM(filter) {
     displayBOMAsButtons(filteredData);
 }
 
-// Called when 'Download CAD' is triggered for a part
 function downloadPartCAD(part) {
     const payload = {
         team_number: localStorage.getItem("team_number"),
@@ -301,52 +300,38 @@ function downloadPartCAD(part) {
         id: part.ID
     };
 
-    showLoadingBar();
+    const jwt = localStorage.getItem("jwt_token");
 
-    // Trigger the server-side export job
-    fetch(`${API_BASE_URL}api/download_cad`, {
+    if (!jwt) {
+        alert("You must be logged in to download CAD.");
+        return;
+    }
+
+    console.log("Sending payload:", payload);
+    console.log("JWT token:", jwt);
+
+    fetch("/api/download_cad", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("jwt_token")}`
+            "Authorization": `Bearer ${jwt}`
         },
         body: JSON.stringify(payload)
-    });
-
-    const eventSource = new EventSource("/api/download_cad");
-
-    eventSource.onmessage = function (event) {
-        const data = JSON.parse(event.data);
-        if (data.status === "DONE" && data.download_url) {
-            window.location.href = data.download_url;
-            eventSource.close();
-            hideLoadingBar();
-        } else if (data.status === "FAILED" || data.status === "ERROR") {
-            alert("Export failed: " + (data.error || "Unknown error"));
-            eventSource.close();
-            hideLoadingBar();
-        } else {
-            updateLoadingBar(data.progress || 0);
-        }
-    };
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.redirect_url) {
+                window.location.href = data.redirect_url;
+            } else if (data.error) {
+                alert("Export failed: " + data.error);
+            }
+        })
+        .catch(err => {
+            console.error("Error during CAD download:", err);
+            alert("An error occurred during CAD export.");
+        });
 }
 
-function showLoadingBar() {
-    const bar = document.getElementById("loadingBar");
-    if (bar) bar.style.display = "block";
-}
-
-function hideLoadingBar() {
-    const bar = document.getElementById("loadingBar");
-    if (bar) bar.style.display = "none";
-    const fill = document.getElementById("loadingBarFill");
-    if (fill) fill.style.width = "0%";
-}
-
-function updateLoadingBar(percent) {
-    const fill = document.getElementById("loadingBarFill");
-    if (fill) fill.style.width = percent + "%";
-}
 
 
 

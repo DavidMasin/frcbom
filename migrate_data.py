@@ -1,78 +1,67 @@
-import os
-import json
-from app import app, db, Team, System  # Robot removed
+from sqlalchemy import text
+from app import app
+from models import db, Team, Robot, System
 
-DATA_DIR = os.path.join(os.getcwd(), "data")
-
-# Only run migration if legacy data directory exists
-if not os.path.isdir(DATA_DIR):
-    print("No legacy data directory found. Skipping migration.")
-    exit()
-
+# Migration script: move legacy System data into the new Robot/System structure.
+# Run this after applying the new database schema via Flask-Migrate.
 with app.app_context():
-    for team_folder in os.listdir(DATA_DIR):
-        folder_path = os.path.join(DATA_DIR, team_folder)
-        bom_file = os.path.join(folder_path, "bom.json")
-        settings_file = os.path.join(folder_path, "settings.json")
+    try:
+        # Query legacy System data (including old robot_name and document_url fields)
+        systems_data = db.session.execute(text(
+            "SELECT id, team_id, robot_name, system_name, document_url FROM system"
+        ))
+    except Exception as e:
+        print(f"❌ Migration failed: unable to query legacy data ({e})")
+        exit(1)
 
-        if not os.path.isdir(folder_path):
+    robots_by_name = {}  # Map (team_id, robot_name) -> new Robot.id
+    # Step 1: Create Robot entries for each unique (team_id, robot_name)
+    for row in systems_data:
+        team_id = row['team_id']
+        robot_name = row['robot_name']
+        if not team_id or not robot_name:
             continue
-
-        team = Team.query.filter_by(team_number=team_folder).first()
+        key = (team_id, robot_name)
+        if key in robots_by_name:
+            continue
+        team = Team.query.get(team_id)
         if not team:
-            print(f"Skipping unknown team: {team_folder}")
             continue
+        existing_robot = Robot.query.filter_by(team_id=team_id, name=robot_name).first()
+        if existing_robot:
+            robots_by_name[key] = existing_robot.id
+        else:
+            new_robot = Robot(team_id=team_id, name=robot_name)
+            db.session.add(new_robot)
+            db.session.flush()
+            robots_by_name[key] = new_robot.id
 
-        # Load BOM JSON
-        try:
-            with open(bom_file, 'r') as bf:
-                bom_data = json.load(bf)
-        except (FileNotFoundError, json.JSONDecodeError):
-            bom_data = {}
-
-        # Load settings JSON
-        try:
-            with open(settings_file, 'r') as sf:
-                settings_data = json.load(sf)
-        except (FileNotFoundError, json.JSONDecodeError):
-            settings_data = {}
-
-        access_key = settings_data.get("accessKey")
-        secret_key = settings_data.get("secretKey")
-        document_url = settings_data.get("documentURL")
-
-        # Import robots and their systems
-        if isinstance(bom_data, dict):
-            for robot_name, systems_dict in bom_data.items():
-                if not isinstance(systems_dict, dict):
-                    continue
-                for system_name, parts_list in systems_dict.items():
-                    if not isinstance(parts_list, list):
-                        parts_list = []
-
-                    existing = System.query.filter_by(
-                        team_id=team.id,
-                        robot_name=robot_name,
-                        system_name=system_name
-                    ).first()
-
-                    if not existing:
-                        system = System(
-                            team_id=team.id,
-                            robot_name=robot_name,
-                            system_name=system_name,
-                            bom_data=parts_list,
-                            access_key=access_key,
-                            secret_key=secret_key,
-                            document_url=document_url
-                        )
-                        db.session.add(system)
-                    else:
-                        # Update existing
-                        existing.bom_data = parts_list
-                        existing.access_key = access_key
-                        existing.secret_key = secret_key
-                        existing.document_url = document_url
-
-    db.session.commit()
-    print("✅ Migration completed: BOM and settings data imported into System table.")
+    # Step 2: Assign robot_id to each System and copy assembly_url
+    systems_data = db.session.execute(text(
+        "SELECT id, team_id, robot_name, document_url FROM system"
+    ))
+    for row in systems_data:
+        sys_id = row['id']
+        team_id = row['team_id']
+        robot_name = row['robot_name']
+        assembly_url = row['document_url']
+        if not team_id or not robot_name:
+            continue
+        robot_id = robots_by_name.get((team_id, robot_name))
+        if not robot_id:
+            continue
+        system_obj = System.query.get(sys_id)
+        if not system_obj:
+            continue
+        system_obj.robot_id = robot_id
+        if assembly_url:
+            system_obj.assembly_url = assembly_url
+        if system_obj.partstudio_urls is None:
+            system_obj.partstudio_urls = []
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Migration failed during data update: {e}")
+    else:
+        print("✅ Migration completed: All robot and system data migrated to new structure.")

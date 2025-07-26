@@ -67,6 +67,10 @@ def team_admin_dashboard(team_number):
         robots=robots
     )
 # (JWT requirement and identity checks removed from the admin route above)
+@app.route("/<int:team_id>/new_robot", methods=["GET"])
+def new_robot_form(team_id):
+    team = Team.query.get_or_404(team_id)
+    return render_template("new_robot.html", team_id=team_id, team_number=team.team_number, default_config=None)
 
 @app.route('/<team_number>/Admin/<robot_name>')
 def team_admin_robot(team_number, robot_name):

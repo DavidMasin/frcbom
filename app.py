@@ -55,7 +55,7 @@ def team_admin_dashboard(team_number):
     robots = Robot.query.filter_by(team_id=team.id).all()
 
     return render_template(
-        "team_dashboard.html",
+        "teamAdmin_dashboard.html",
         team_number=team_number,
         team_name=team.name,
         team_id=team.id,  # Needed for url_for in the template

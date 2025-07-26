@@ -23,8 +23,10 @@ from models import db, Team, Robot, System, Machine
 db.init_app(app)
 migrate = Migrate(app, db)
 jwt = JWTManager(app)
-CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True,
-     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"], allow_headers=["Content-Type", "Authorization", "X-Requested-With"])
+CORS(app, supports_credentials=True,
+     origins=["https://acceptable-integrity-production.up.railway.app"],
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+     allow_headers=["Content-Type", "Authorization", "X-Requested-With"])
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Ensure base upload directory exists

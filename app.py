@@ -1,6 +1,6 @@
 import os
 import json
-from flask import Flask, request, jsonify, send_file, render_template, Response, stream_with_context
+from flask import Flask, request, jsonify, send_file, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, get_jwt, jwt_required
 from flask_cors import CORS
@@ -509,8 +509,7 @@ def fetch_bom():
 @jwt_required()
 def download_cad():
     """
-    Export a part as a Parasolid file from Onshape with live progress updates.
-    Uses Server-Sent Events (SSE) for real-time polling feedback.
+    Export a specific part as a Parasolid file using Onshape's Translation API.
     """
     import time
     import traceback
@@ -547,59 +546,52 @@ def download_cad():
     if not part_found:
         return jsonify({"error": f"Part ID '{part_id}' not found in BOM data"}), 404
 
-    def generate_progress():
-        try:
-            client = Client(configuration={
-                "base_url": "https://cad.onshape.com",
-                "access_key": system_record.access_key,
-                "secret_key": system_record.secret_key
-            })
-            element = OnshapeElement(system_record.document_url)
-            did, wid, eid = element.did, element.wvmid, element.eid
+    try:
+        client = Client(configuration={
+            "base_url": "https://cad.onshape.com",
+            "access_key": system_record.access_key,
+            "secret_key": system_record.secret_key
+        })
+        element = OnshapeElement(system_record.document_url)
+        did, wid, eid = element.did, element.wvmid, element.eid
 
-            yield f"data: Starting Onshape translation...\n\n"
+        # Start translation job
+        translation_url = "https://cad.onshape.com/api/translations"
+        payload = {
+            "documentId": did,
+            "workspaceId": wid,
+            "elementId": eid,
+            "partIds": [part_id],
+            "formatName": "PARASOLID",
+            "storeInDocument": False
+        }
 
-            translation_url = "https://cad.onshape.com/api/translations"
-            payload = {
-                "documentId": did,
-                "workspaceId": wid,
-                "elementId": eid,
-                "partIds": [part_id],
-                "formatName": "PARASOLID",
-                "storeInDocument": False
-            }
+        start = client.api_client.request(
+            "POST", url=translation_url, body=payload, query_params={}
+        )
+        translation_id = start.get("id")
+        status_url = f"https://cad.onshape.com/api/translations/{translation_id}"
 
-            start = client.api_client.request(
-                "POST", url=translation_url, body=payload, query_params={}
+        # Poll for completion
+        for _ in range(100):  # Max 10 seconds (20 * 0.5s)
+            status = client.api_client.request(
+                "GET", url=status_url, query_params={}
             )
-            translation_id = start.get("id")
-            status_url = f"https://cad.onshape.com/api/translations/{translation_id}"
+            if status.get("requestState") == "DONE":
+                download_url = status.get("resultExternalDataIds", [{}])[0].get("downloadUrl")
+                if download_url:
+                    return jsonify({"redirect_url": download_url}), 200
+                else:
+                    return jsonify({"error": "Export completed but download URL missing"}), 500
+            elif status.get("requestState") == "FAILED":
+                return jsonify({"error": "Onshape translation failed"}), 500
+            time.sleep(0.5)
 
-            for i in range(60):  # up to 30 seconds
-                status = client.api_client.request("GET", url=status_url, query_params={})
-                request_state = status.get("requestState")
-                percent = status.get("progressPercent", 0)
+        return jsonify({"error": "Export timed out"}), 504
 
-                yield f"data: {{\"status\": \"{request_state}\", \"progress\": {percent}}}\n\n"
-
-                if request_state == "DONE":
-                    download_url = status.get("resultExternalDataIds", [{}])[0].get("downloadUrl")
-                    if download_url:
-                        yield f"data: {{\"status\": \"DONE\", \"download_url\": \"{download_url}\"}}\n\n"
-                        break
-                    else:
-                        yield f"data: {{\"status\": \"DONE\", \"error\": \"No download URL returned\"}}\n\n"
-                        break
-                elif request_state == "FAILED":
-                    yield f"data: {{\"status\": \"FAILED\", \"error\": \"Translation failed\"}}\n\n"
-                    break
-                time.sleep(0.5)
-
-        except Exception as e:
-            error_message = str(e).replace('\\n', ' ').replace('\"', "'")
-            yield f"data: {{\"status\": \"ERROR\", \"error\": \"{error_message}\"}}\n\n"
-
-    return Response(stream_with_context(generate_progress()), mimetype='text/event-stream')
+    except Exception as e:
+        print("❌ Export Error:", traceback.format_exc())
+        return jsonify({"error": f"Failed to export CAD: {str(e)}"}), 500
 
 
 

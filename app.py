@@ -1275,6 +1275,6 @@ def handle_connect():
 def handle_disconnect():
     app.logger.info('Client disconnected')
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
     # Run the Flask development server (use a WSGI server in production)
-    app.run(host='0.0.0.0', port=5000)
+    # app.run(host='0.0.0.0', port=5000)

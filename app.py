@@ -63,9 +63,8 @@ def team_admin_dashboard(team_number):
     return render_template(
         "teamAdmin_dashboard.html",
         team_number=team_number,
-        team_name=team.name,
         team_id=team.id,
-        robots=robots,
+        robots=robots
     )
 # (JWT requirement and identity checks removed from the admin route above)
 

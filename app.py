@@ -80,21 +80,7 @@ def new_robot_form(team_number):
 
 @app.route('/<team_number>/Admin/<robot_name>')
 def team_admin_robot(team_number, robot_name):
-    team = Team.query.filter_by(team_number=team_number).first()
-    if not team:
-        return "Team not found", 404
-    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
-    if not robot:
-        return "Robot not found", 404
-
-    robots = Robot.query.filter_by(team_id=team.id).all()
-    return render_template(
-        "robot_detail.html",
-        team_number=team_number,
-        team_id=team.id,
-        robots=robots,
-        current_robot=robot_name,
-    )
+    return render_template("robot_detail.html")
 # (New route: ensure “Main” system in URL by redirecting)
 
 @app.route('/<team_number>/Admin/<robot_name>/<system>')

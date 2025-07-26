@@ -508,12 +508,7 @@ def fetch_bom():
 @app.route("/api/download_cad", methods=["POST"])
 @jwt_required()
 def download_cad():
-    """
-    Export a specific part as a Parasolid file using Onshape's Translation API.
-    """
-    import time
-    import traceback
-    from onshape_client.client import Client
+    import requests, time
     from onshape_client.onshape_url import OnshapeElement
 
     current_user = get_jwt_identity()
@@ -525,80 +520,105 @@ def download_cad():
     system_name = data.get("system")
     part_id = data.get("id")
 
+    print("🛠️ Received download request for part:", part_id)
+
     if not all([team_number, robot_name, system_name, part_id]):
+        print("❌ Missing fields")
         return jsonify({"error": "Missing required fields (team_number, robot, system, id)"}), 400
 
     if current_user != team_number and not claims.get("is_global_admin"):
+        print("❌ Unauthorized user")
         return jsonify({"error": "Unauthorized"}), 403
 
     team = Team.query.filter_by(team_number=team_number).first()
     if not team:
+        print("❌ Team not found")
         return jsonify({"error": "Team not found"}), 404
 
     system_record = System.query.filter_by(
         team_id=team.id, robot_name=robot_name, system_name=system_name
     ).first()
+
     if not system_record or not all([system_record.access_key, system_record.secret_key, system_record.document_url]):
+        print("❌ System record or Onshape credentials missing")
         return jsonify({"error": "Onshape API credentials or document URL not configured for this system"}), 400
 
-    # Confirm part exists
-    part_found = any(p.get("ID") == part_id for p in system_record.bom_data or [])
-    if not part_found:
-        return jsonify({"error": f"Part ID '{part_id}' not found in BOM data"}), 404
+    document_url = system_record.document_url
+    access_key = system_record.access_key
+    secret_key = system_record.secret_key
 
-    try:
-        client = Client(configuration={
-            "base_url": "https://cad.onshape.com",
-            "access_key": system_record.access_key,
-            "secret_key": system_record.secret_key
-        })
-        element = OnshapeElement(system_record.document_url)
-        did, wid, eid = element.did, element.wvmid, element.eid
+    print("🔗 Document URL:", document_url)
 
-        # Start translation job
-        translation_url = "https://cad.onshape.com/api/translations"
-        payload = {
-            "documentId": did,
-            "workspaceId": wid,
-            "elementId": eid,
-            "partIds": [part_id],
+    element = OnshapeElement(document_url)
+    did = element.did
+    wid = element.wvmid
+    eid = element.eid
+
+    print("📄 Onshape IDs => did:", did, "| wid:", wid, "| eid:", eid)
+
+    headers = {"Accept": "application/json"}
+    r = requests.get(
+        f"https://cad.onshape.com/api/parts/d/{did}/w/{wid}/e/{eid}",
+        auth=(access_key, secret_key),
+        headers=headers
+    )
+    parts = r.json()
+    valid_part_ids = [p["partId"] for p in parts]
+    print("✅ Found part IDs in Onshape element:", valid_part_ids)
+
+    if part_id not in valid_part_ids:
+        print(f"❌ Part ID '{part_id}' not found in element")
+        return jsonify({"error": f"Part ID '{part_id}' not found in Onshape element"}), 404
+
+    print("🚀 Starting translation for part:", part_id)
+    r = requests.post(
+        f"https://cad.onshape.com/api/partstudios/d/{did}/w/{wid}/e/{eid}/translations",
+        auth=(access_key, secret_key),
+        headers={
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+        },
+        json={
             "formatName": "PARASOLID",
+            "partIds": [part_id],
             "storeInDocument": False
         }
-        print("📤 Exporting with:")
-        print("  documentId:", did)
-        print("  workspaceId:", wid)
-        print("  elementId:", eid)
-        print("  partId:", part_id)
-        print("  full URL:", system_record.document_url)
+    )
 
-        start = client.api_client.request(
-            "POST", url=translation_url, body=payload, query_params={}
+    if r.status_code != 200:
+        print("❌ Translation start failed", r.text)
+        return jsonify({"error": "Failed to start Onshape translation"}), 500
+
+    translation_id = r.json()["id"]
+    print("🆔 Translation started, ID:", translation_id)
+
+    for attempt in range(30):
+        print(f"⏳ Polling translation status (try {attempt+1}/30)...")
+        r = requests.get(
+            f"https://cad.onshape.com/api/translations/{translation_id}",
+            auth=(access_key, secret_key),
+            headers=headers
         )
-        translation_id = start.get("id")
-        status_url = f"https://cad.onshape.com/api/translations/{translation_id}"
+        status = r.json()
+        print("🔄 Status:", status.get("requestState"))
 
-        print("ENTERING LOOP!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        # Poll for completion
-        for _ in range(100):  # Max 10 seconds (20 * 0.5s)
-            status = client.api_client.request(
-                "GET", url=status_url, query_params={}
-            )
-            if status.get("requestState") == "DONE":
-                download_url = status.get("resultExternalDataIds", [{}])[0].get("downloadUrl")
-                if download_url:
-                    return jsonify({"redirect_url": download_url}), 200
-                else:
-                    return jsonify({"error": "Export completed but download URL missing"}), 500
-            elif status.get("requestState") == "FAILED":
-                return jsonify({"error": "Onshape translation failed"}), 500
-            time.sleep(0.5)
+        if status.get("requestState") == "DONE":
+            external_ids = status.get("resultExternalDataIds")
+            if not external_ids:
+                print("❌ DONE but no resultExternalDataIds")
+                return jsonify({"error": "Export completed but no download link returned"}), 500
+            download_url = external_ids[0].get("downloadUrl")
+            print("✅ Download URL:", download_url)
+            return jsonify({"redirect_url": download_url})
 
-        return jsonify({"error": "Export timed out"}), 504
+        elif status.get("requestState") == "FAILED":
+            print("❌ Translation failed")
+            return jsonify({"error": "Onshape translation failed"}), 500
 
-    except Exception as e:
-        print("❌ Export Error:", traceback.format_exc())
-        return jsonify({"error": f"Failed to export CAD: {str(e)}"}), 500
+        time.sleep(0.5)
+
+    print("❌ Translation timed out")
+    return jsonify({"error": "Export timed out"}), 504
 
 
 

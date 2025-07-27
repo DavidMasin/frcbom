@@ -1,102 +1,39 @@
-<!-- templates/new_robot.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Add New Robot</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-  <header class="dashboard-header">
-    <h1>Create a New Robot</h1>
-    <a href="/{{ team_number }}/Admin" class="button-secondary">← Back to Dashboard</a>
+{% extends "team_base.html" %}
 
-  </header>
+{% block title %}Construct New Robot{% endblock %}
 
-  <main>
-    <section class="new-robot-section">
-      <form id="newRobotForm" class="new-robot-form">
-        <div class="form-group">
-          <label for="robotName">Robot Name:</label>
-          <input type="text" id="robotName" name="robot_name" placeholder="Enter robot name" required>
+{% block content %}
+<div class="max-w-3xl mx-auto">
+  <div class="bg-gray-800/50 border border-gray-700 rounded-2xl shadow-lg overflow-hidden">
+    <div class="p-8">
+      <div class="flex justify-between items-start mb-6">
+        <div>
+          <h1 class="text-3xl font-bold text-white">New Robot Construction</h1>
+          <p class="text-gray-400 mt-1">Define the specifications for your next build.</p>
         </div>
+        <a href="{{ url_for('teamAdmin_dashboard') }}" class="text-gray-400 hover:text-white transition-colors">&larr; Back to Fleet</a>
+      </div>
 
-        <div class="form-group">
-          <label for="accessKey">Onshape Access Key:</label>
-          <input type="text" id="accessKey" name="access_key" placeholder="Enter Access Key">
+      <form method="POST" enctype="multipart/form-data" class="space-y-6">
+        <div>
+          <label for="name" class="block text-sm font-medium text-gray-300 mb-1">Robot Name</label>
+          <input type="text" name="name" id="name" class="block w-full bg-gray-900 border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g., 'Valkyrie'" required>
         </div>
-        <div class="form-group">
-          <label for="secretKey">Onshape Secret Key:</label>
-          <input type="password" id="secretKey" name="secret_key" placeholder="Enter Secret Key">
+        <div>
+          <label for="year" class="block text-sm font-medium text-gray-300 mb-1">Competition Year</label>
+          <input type="number" name="year" id="year" value="{{ 2025 }}" class="block w-full bg-gray-900 border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
         </div>
-
-        <!-- Hidden field to signal using default machines (set via JS) -->
-        <input type="hidden" id="useDefaultMachines" name="use_default_machines" value="0">
-
-        <div class="form-actions">
-          <!-- Use Defaults fills in default keys (and will include default machines) -->
-          <button type="button" id="useDefaultsBtn" class="button-secondary">Use Defaults</button>
-          <button type="submit" class="button-primary">Create Robot</button>
+        <div>
+          <label for="image_file" class="block text-sm font-medium text-gray-300 mb-1">Robot Schematic (Image)</label>
+          <input type="file" name="image_file" id="image_file" accept="image/*" class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-500/20 file:text-indigo-300 hover:file:bg-indigo-500/30 cursor-pointer">
+        </div>
+        <div class="pt-4 flex justify-end">
+          <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg shadow-lg transition duration-300 transform hover:scale-105">
+            Create Robot
+          </button>
         </div>
       </form>
-    </section>
-  </main>
-
-  <script src="{{ url_for('static', filename='script.js') }}"></script>
-  <script>
-    // Prefill the form with default config when "Use Defaults" is clicked
-    const defaultAccessKey = "{{ default_config.access_key if default_config else '' }}";
-    const defaultSecretKey = "{{ default_config.secret_key if default_config else '' }}";
-    document.getElementById('useDefaultsBtn').addEventListener('click', () => {
-      if (defaultAccessKey && defaultSecretKey) {
-        document.getElementById('accessKey').value = defaultAccessKey;
-        document.getElementById('secretKey').value = defaultSecretKey;
-      }
-      // Mark that default machines should be included for this robot
-      document.getElementById('useDefaultMachines').value = "1";
-    });
-
-    // Handle form submission via AJAX to create robot using API
-    document.getElementById('newRobotForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const robotName = document.getElementById('robotName').value.trim();
-      const accessKey = document.getElementById('accessKey').value;
-      const secretKey = document.getElementById('secretKey').value;
-      const includeMachines = document.getElementById('useDefaultMachines').value === "1";
-      if (!robotName) {
-        alert("Robot name is required.");
-        return;
-      }
-      try {
-        const token = localStorage.getItem('jwt_token');  /* assume JWT is stored */
-        const response = await fetch(`${API_BASE_URL}api/new_robot`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            team_number: "{{ team_number }}",
-            robot_name: robotName,
-            access_key: accessKey || null,
-            secret_key: secretKey || null,
-            use_default_machines: includeMachines
-          })
-        });
-        const data = await response.json();
-        if (response.ok) {
-          alert(data.message || "Robot created successfully.");
-          // Redirect to the new robot's detail page (main system view)
-          window.location.href = "/{{ team_number }}/Admin/" + encodeURIComponent(robotName) + "/Main";
-        } else {
-          alert(data.error || "Failed to create robot.");
-        }
-      } catch (err) {
-        console.error("Error creating robot:", err);
-        alert("An error occurred while creating the robot.");
-      }
-    });
-  </script>
-</body>
-</html>
+    </div>
+  </div>
+</div>
+{% endblock %}

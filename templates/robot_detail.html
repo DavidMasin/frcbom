@@ -1,129 +1,123 @@
-<!-- templates/robot_detail.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Robot {{ robot.name }} - Details</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-  <header class="dashboard-header">
-    <h1>Robot: {{ robot.name }}</h1>
-    <a href="{{ url_for('team_dashboard', team_id=team_id) }}" class="button-secondary">← All Robots</a>
-    <!-- Optionally, a button to delete or rename this robot could be here as well -->
-  </header>
+{% extends "team_base.html" %}
 
-  <main>
-    <!-- Machines Section -->
-    <section class="machines-section">
-      <h2>Machines</h2>
-      <div class="machine-list">
-        {% for machine in machines %}
-          <div class="machine-item">
-            <img src="{{ machine.icon_url or url_for('static', filename='images/machine_placeholder.png') }}"
-                 alt="{{ machine.name }} icon" class="machine-icon">
-            <span class="machine-name">{{ machine.name }}</span>
-            <span class="machine-format">({{ machine.format }})</span>
-            <button type="button" class="button-icon edit-machine-btn" title="Edit Machine"
-                    data-machine-id="{{ machine.id }}">✎</button>
-            <button type="button" class="button-icon delete-machine-btn" title="Delete Machine"
-                    data-machine-id="{{ machine.id }}">🗑</button>
-          </div>
-        {% endfor %}
-        <!-- "Add Machine" button -->
-        <div class="machine-item add-machine-item">
-          <button type="button" id="addMachineBtn" class="button-primary">+ Add Machine</button>
+{% block title %}{{ robot.name }} - Details{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="relative rounded-2xl overflow-hidden p-8 md:p-12 mb-8 border border-gray-700 bg-gray-800" {% if robot.image_file %}style="background-image: url('{{ url_for('static', filename='uploads/robot_images/' ~ robot.image_file) }}'); background-size: cover; background-position: center;"{% endif %}>
+  <div class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+  <div class="relative z-10">
+    <a href="{{ url_for('teamAdmin_dashboard') }}" class="text-sm text-indigo-300 hover:underline mb-4 block">&larr; Back to Robot Fleet</a>
+    <h1 class="text-5xl md:text-6xl font-black text-white tracking-wider uppercase">{{ robot.name }}</h1>
+    <p class="text-xl text-gray-300 font-light">Competition Year: {{ robot.year }}</p>
+  </div>
+</div>
+
+<!-- Systems Section -->
+<div class="bg-gray-800/50 border border-gray-700 rounded-2xl shadow-lg p-6 sm:p-8">
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-3xl font-bold text-white">Robot Systems</h2>
+    <button onclick="toggleModal('addSystemModal', true)" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 flex items-center">
+      <i class="fas fa-plus mr-2"></i> Add System
+    </button>
+  </div>
+
+  {% if robot.systems %}
+  <div class="space-y-4">
+    {% for system in robot.systems %}
+    <a href="{{ url_for('system_detail', system_id=system.id) }}" class="group block bg-gray-900/70 hover:bg-gray-700/80 border border-gray-700 rounded-lg p-4 transition-all duration-200">
+      <div class="flex justify-between items-center">
+        <h3 class="text-lg font-semibold text-gray-200 group-hover:text-white">{{ system.name }}</h3>
+        <span class="text-indigo-400 group-hover:text-indigo-300 font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+                    Manage &rarr;
+                </span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center py-12 border-2 border-dashed border-gray-700 rounded-lg">
+    <i class="fas fa-puzzle-piece text-5xl text-gray-600 mb-4"></i>
+    <h3 class="text-xl font-semibold text-gray-300">No Systems Defined</h3>
+    <p class="text-gray-500 mt-1">Add a system to begin assembling your robot.</p>
+  </div>
+  {% endif %}
+</div>
+
+
+<!-- Add System Modal -->
+<div id="addSystemModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden items-center justify-center backdrop-blur-sm" onclick="toggleModal('addSystemModal', false)">
+  <div class="bg-gray-800 border border-gray-700 rounded-lg shadow-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-bold text-white">Add New System to {{ robot.name }}</h2>
+      <button onclick="toggleModal('addSystemModal', false)" class="text-gray-500 hover:text-white text-3xl">&times;</button>
+    </div>
+    <form action="{{ url_for('add_system', robot_id=robot.id) }}" method="POST" class="space-y-4">
+      <div>
+        <label for="name" class="block text-sm font-medium text-gray-300">System Name</label>
+        <input type="text" name="name" id="name" class="mt-1 block w-full bg-gray-900 border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g., Drivetrain" required>
+      </div>
+      <div>
+        <label for="assembly_url" class="block text-sm font-medium text-gray-300">Main Assembly URL</label>
+        <input type="url" name="assembly_url" id="assembly_url" class="mt-1 block w-full bg-gray-900 border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="https://cad.onshape.com/..." required>
+      </div>
+
+      <div id="part-studios-container">
+        <label class="block text-sm font-medium text-gray-300">Part Studio URLs</label>
+        <div class="flex items-center space-x-2 mb-2">
+          <input type="url" name="part_studio_urls[]" class="mt-1 block w-full bg-gray-900 border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="https://cad.onshape.com/..." required>
+          <button type="button" onclick="removePartStudio(this)" class="text-red-500 hover:text-red-400 p-2 hidden">&times;</button>
         </div>
       </div>
-      <!-- Add Machine Form (hidden by default) -->
-      <form id="addMachineForm" class="add-machine-form" style="display: none;" enctype="multipart/form-data"
-            action="{{ url_for('add_machine', team_id=team_id, robot_id=robot.id) }}" method="POST">
-        <h3>New Machine</h3>
-        <div class="form-group">
-          <label for="machineName">Name:</label>
-          <input type="text" id="machineName" name="machine_name" placeholder="Machine name" required>
-        </div>
-        <div class="form-group">
-          <label for="machineIcon">Icon (optional):</label>
-          <input type="file" id="machineIcon" name="machine_icon" accept="image/*">
-        </div>
-        <div class="form-group">
-          <label for="machineFormat">CAD Export Format:</label>
-          <select id="machineFormat" name="machine_format">
-            <option value="STEP">STEP</option>
-            <option value="STL">STL</option>
-            <option value="Parasolid">Parasolid</option>
-            <option value="IGES">IGES</option>
-            <option value="SOLIDWORKS">SOLIDWORKS</option>
-            <!-- Add other formats as needed (Onshape supports Parasolid, ACIS, STEP AP242, IGES, etc.:contentReference[oaicite:3]{index=3}:contentReference[oaicite:4]{index=4}) -->
-          </select>
-        </div>
-        <div class="form-actions">
-          <button type="submit" class="button-primary">Add Machine</button>
-          <button type="button" id="cancelAddMachine" class="button-secondary">Cancel</button>
-        </div>
-      </form>
-    </section>
+      <button type="button" onclick="addPartStudio()" class="text-sm text-indigo-400 hover:underline">+ Add another Part Studio</button>
 
-    <!-- Systems Section -->
-    <section class="systems-section">
-      <h2>Systems</h2>
-      <div class="cards-container system-cards">
-        {% for system in systems %}
-          <div class="system-card">
-            <img src="{{ system.image_url or url_for('static', filename='images/system_placeholder.png') }}"
-                 alt="{{ system.name }} image" class="system-image">
-            <div class="system-card-body">
-              <h3 class="system-name">{{ system.name }}</h3>
-              <div class="system-actions">
-                <a href="{{ url_for('system_detail', team_id=team_id, robot_id=robot.id, system_id=system.id) }}"
-                   class="button-sm edit-button">Edit</a>
-                <button type="button" class="button-sm delete-button delete-system-btn"
-                        data-system-id="{{ system.id }}">Delete</button>
-              </div>
-            </div>
-          </div>
-        {% endfor %}
-        <!-- Add System card -->
-        <div class="system-card add-system-card">
-          <div class="add-system-inner">
-            <button type="button" id="addSystemBtn" class="add-system-button">+ Add System</button>
-          </div>
+      <div class="pt-4">
+        <h3 class="text-lg font-semibold text-white border-b border-gray-600 pb-2 mb-4">Onshape API Credentials</h3>
+        <div>
+          <label for="onshape_access_key" class="block text-sm font-medium text-gray-300">Access Key</label>
+          <input type="text" name="onshape_access_key" id="onshape_access_key" class="mt-1 block w-full bg-gray-900 border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+        </div>
+        <div class="mt-4">
+          <label for="onshape_secret_key" class="block text-sm font-medium text-gray-300">Secret Key</label>
+          <input type="password" name="onshape_secret_key" id="onshape_secret_key" class="mt-1 block w-full bg-gray-900 border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
         </div>
       </div>
-      <!-- Add System Form (hidden by default) -->
-      <form id="addSystemForm" class="add-system-form" style="display: none;"
-            action="{{ url_for('add_system', team_id=team_id, robot_id=robot.id) }}" method="POST">
-        <h3>New System</h3>
-        <div class="form-group">
-          <label for="systemName">System Name:</label>
-          <input type="text" id="systemName" name="system_name" placeholder="e.g. Drivetrain, Arm..." required>
-        </div>
-        <div class="form-actions">
-          <button type="submit" class="button-primary">Create System</button>
-          <button type="button" id="cancelAddSystem" class="button-secondary">Cancel</button>
-        </div>
-      </form>
-    </section>
-  </main>
+      <div class="mt-8 flex justify-end space-x-4">
+        <button type="button" onclick="toggleModal('addSystemModal', false)" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Cancel</button>
+        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">Save System</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
 
-  <script src="{{ url_for('static', filename='script.js') }}"></script>
-  <script>
-    // Toggle "Add Machine" form
-    document.getElementById('addMachineBtn').addEventListener('click', () => {
-      document.getElementById('addMachineForm').style.display = 'block';
-    });
-    document.getElementById('cancelAddMachine').addEventListener('click', () => {
-      document.getElementById('addMachineForm').style.display = 'none';
-    });
-    // Toggle "Add System" form
-    document.getElementById('addSystemBtn').addEventListener('click', () => {
-      document.getElementById('addSystemForm').style.display = 'block';
-    });
-    document.getElementById('cancelAddSystem').addEventListener('click', () => {
-      document.getElementById('addSystemForm').style.display = 'none';
-    });
-  </script>
-</body>
-</html>
+{% block scripts %}
+<script>
+  function toggleModal(modalID, show) {
+    const modal = document.getElementById(modalID);
+    if (show) {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.body.classList.add('overflow-hidden');
+    } else {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      document.body.classList.remove('overflow-hidden');
+    }
+  }
+
+  document.addEventListener('keydown', (event) => event.key === "Escape" && toggleModal('addSystemModal', false));
+
+  function addPartStudio() {
+    const container = document.getElementById('part-studios-container');
+    const newField = container.children[1].cloneNode(true);
+    newField.querySelector('input').value = '';
+    newField.querySelector('button').classList.remove('hidden');
+    container.appendChild(newField);
+  }
+
+  function removePartStudio(button) {
+    button.parentElement.remove();
+  }
+</script>
+{% endblock %}

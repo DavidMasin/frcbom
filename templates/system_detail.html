@@ -1,77 +1,43 @@
-<!-- templates/system_detail.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Edit System - {{ system.name }}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-  <header class="dashboard-header">
-    <h1>Edit System: {{ system.name }}</h1>
-    <a href="{{ url_for('robot_detail', team_id=team_id, robot_id=robot.id) }}" class="button-secondary">← Back to Robot</a>
-  </header>
+{% extends "team_base.html" %}
 
-  <main>
-    <section class="system-detail-section">
-      <form id="systemForm" class="system-form" action="{{ url_for('update_system', team_id=team_id, robot_id=robot.id, system_id=system.id) }}" method="POST" enctype="multipart/form-data">
-        <div class="form-group">
-          <label for="systemNameInput">System Name:</label>
-          <input type="text" id="systemNameInput" name="system_name" value="{{ system.name }}" required>
-        </div>
-        <div class="form-group">
-          <label for="assemblyUrl">Assembly URL:</label>
-          <input type="url" id="assemblyUrl" name="assembly_url" value="{{ system.assembly_url or '' }}" placeholder="https://cad.onshape.com/documents/…/assembly/…">
-        </div>
-        <div class="form-group">
-          <label>Part Studio URL(s):</label>
-          <div id="partStudiosContainer">
-            {% for ps_url in system.part_studio_urls %}
-              <input type="url" name="part_studio_urls" class="part-studio-input" value="{{ ps_url }}" placeholder="https://cad.onshape.com/documents/…/partstudio/…">
-            {% endfor %}
-            {% if system.part_studio_urls|length == 0 %}
-              <!-- If no URLs yet, provide one input field -->
-              <input type="url" name="part_studio_urls" class="part-studio-input" placeholder="Part Studio URL">
-            {% endif %}
-          </div>
-          <button type="button" id="addPartStudioBtn" class="button-secondary">+ Add another Part Studio</button>
-        </div>
-        <div class="form-group">
-          <label for="sysAccessKey">Onshape Access Key:</label>
-          <input type="text" id="sysAccessKey" name="access_key" value="{{ system.access_key or '' }}">
-        </div>
-        <div class="form-group">
-          <label for="sysSecretKey">Onshape Secret Key:</label>
-          <input type="password" id="sysSecretKey" name="secret_key" value="{{ system.secret_key or '' }}">
-        </div>
-        <div class="form-group">
-          <label for="assemblyImage">Assembly Image (optional):</label>
-          <input type="file" id="assemblyImage" name="assembly_image" accept="image/*">
-          {% if system.image_url %}
-            <p>Current image: <img src="{{ system.image_url }}" alt="Assembly image" class="thumb"></p>
-          {% endif %}
-        </div>
-        <div class="form-actions">
-          <button type="submit" class="button-primary">Save Changes</button>
-          <a href="{{ url_for('robot_detail', team_id=team_id, robot_id=robot.id) }}" class="button-secondary">Cancel</a>
-        </div>
-      </form>
-    </section>
-  </main>
+{% block title %}{{ system.name }} - Details{% endblock %}
 
-  <script src="{{ url_for('static', filename='script.js') }}"></script>
-  <script>
-    // Add more Part Studio URL fields dynamically
-    document.getElementById('addPartStudioBtn').addEventListener('click', () => {
-      const container = document.getElementById('partStudiosContainer');
-      const input = document.createElement('input');
-      input.type = 'url';
-      input.name = 'part_studio_urls';
-      input.className = 'part-studio-input';
-      input.placeholder = 'Part Studio URL';
-      container.appendChild(input);
-    });
-  </script>
-</body>
-</html>
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <div class="mb-8">
+    <a href="{{ url_for('robot_detail', robot_id=system.robot.id) }}" class="text-sm text-indigo-300 hover:underline mb-2 block">&larr; Back to {{ system.robot.name }}</a>
+    <h1 class="text-4xl font-bold text-white">{{ system.name }}</h1>
+    <p class="text-gray-400 mt-1">Part of robot: {{ system.robot.name }} ({{ system.robot.year }})</p>
+  </div>
+
+  <div class="bg-gray-800/50 border border-gray-700 rounded-2xl shadow-lg p-6 sm:p-8">
+    <h2 class="text-2xl font-bold text-white mb-2">Download Assembly</h2>
+    <p class="text-gray-400 mb-6">Select a machine profile to download the assembly in its configured format.</p>
+
+    {% set machines = system.robot.team.machines %}
+    {% if machines %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {% for machine in machines %}
+      <a href="{{ url_for('download_cad_api') }}?system_id={{ system.id }}&format={{ machine.output_format }}"
+         class="group relative bg-gray-900/70 hover:bg-gray-700/80 border border-gray-700 hover:border-indigo-500 rounded-lg p-4 flex flex-col items-center justify-center text-center transition-all duration-200 transform hover:-translate-y-1">
+        <div class="bg-gray-800 rounded-lg p-3 w-20 h-20 flex items-center justify-center mb-4">
+          <img src="{{ url_for('static', filename='uploads/machine_icons/' + machine.icon_file) }}" alt="{{ machine.name }}" class="max-w-full max-h-full object-contain" onerror="this.onerror=null;this.src='https://placehold.co/64x64/4b5563/9ca3af?text=Icon';">
+        </div>
+        <h3 class="text-lg font-semibold text-white">{{ machine.name }}</h3>
+        <p class="text-sm text-indigo-400">Download as .{{ machine.output_format.lower() }}</p>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-12 border-2 border-dashed border-gray-700 rounded-lg">
+      <i class="fas fa-cogs text-5xl text-gray-600 mb-4"></i>
+      <h3 class="text-xl font-semibold text-gray-300">No Machines Configured</h3>
+      <p class="text-gray-500 mt-1">You must add machines to your workshop to see download options.</p>
+      <a href="{{ url_for('manage_machines') }}" class="mt-4 inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">
+        Manage Machines
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

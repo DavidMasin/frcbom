@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FRCBom Admin{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .flash-message {
+            transition: opacity 0.5s ease-in-out;
+        }
+        .bg-gradient-main {
+            background-color: #111827; /* fallback */
+            background-image: radial-gradient(at 47% 33%, hsl(210.00, 70%, 25%) 0, transparent 59%), radial-gradient(at 82% 65%, hsl(286.00, 35%, 25%) 0, transparent 55%);
+        }
+        .nav-link {
+            @apply px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors;
+        }
+        .nav-link.active {
+            @apply bg-gray-900 text-white;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+    <div id="app" class="min-h-screen flex flex-col">
+        <!-- Top Navigation Bar -->
+        <nav class="bg-gray-800/50 backdrop-blur-lg border-b border-gray-700 sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 text-white font-black text-xl tracking-wider">
+                            FRCB<i class="fas fa-atom fa-spin text-blue-400"></i>M
+                        </div>
+                        <div class="hidden md:block">
+                            <div class="ml-10 flex items-baseline space-x-4">
+                                <a href="{{ url_for('teamAdmin_dashboard') }}" class="nav-link {% if request.endpoint == 'teamAdmin_dashboard' %}active{% endif %}">Robots</a>
+                                <a href="{{ url_for('manage_machines') }}" class="nav-link {% if request.endpoint == 'manage_machines' %}active{% endif %}">Machines</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="hidden md:block">
+                        <div class="ml-4 flex items-center md:ml-6">
+                             <span class="text-gray-400 mr-4 text-sm">Team: {{ team.name if team else 'N/A' }}</span>
+                            <a href="{{ url_for('logout') }}" class="nav-link">
+                                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="flex-1">
+            <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+                 <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div id="flash-container" class="mb-4 px-4 sm:px-0">
+                        {% for category, message in messages %}
+                            <div class="flash-message p-4 rounded-md text-white shadow-lg {% if category == 'danger' %}bg-red-500/80 border border-red-400{% elif category == 'success' %}bg-green-500/80 border border-green-400{% else %}bg-blue-500/80 border border-blue-400{% endif %}" role="alert">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const flashContainer = document.getElementById('flash-container');
+            if (flashContainer) {
+                setTimeout(() => {
+                    flashContainer.style.opacity = '0';
+                    setTimeout(() => flashContainer.remove(), 500);
+                }, 5000);
+            }
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

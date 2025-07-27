@@ -1,74 +1,64 @@
+# models.py
+# No changes to imports are needed if they are already present
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import JSON
+import bcrypt
 
 db = SQLAlchemy()
 
-class Team(db.Model):
-    """Database model for a team (login credentials and team info)."""
+class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    team_number = db.Column(db.String(100), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)       # Hashed user password
-    adminPassword = db.Column(db.String(200), nullable=False)  # Hashed admin password
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128))
+    team_id = db.Column(db.Integer, db.ForeignKey('team.id'))
+    team = db.relationship('Team', back_populates='users')
+    role = db.Column(db.String(50), default='member')
 
-    # Relationship: one team can have multiple robots
-    robots = db.relationship('Robot', cascade='all, delete-orphan', back_populates='team')
+    def set_password(self, password):
+        self.password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
-    def __repr__(self):
-        return f"<Team {self.team_number}>"
+    def check_password(self, password):
+        return bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8'))
+
+class Team(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), unique=True, nullable=False)
+    team_number = db.Column(db.Integer, unique=True, nullable=False)
+    users = db.relationship('User', back_populates='team')
+    robots = db.relationship('Robot', back_populates='team', cascade="all, delete-orphan")
+    machines = db.relationship('Machine', back_populates='team', cascade="all, delete-orphan")
 
 class Robot(db.Model):
-    """Database model for a robot (with optional image and associated systems/machines)."""
     id = db.Column(db.Integer, primary_key=True)
-    team_id = db.Column(db.Integer, db.ForeignKey('team.id', ondelete='CASCADE'), nullable=False)
     name = db.Column(db.String(100), nullable=False)
-    image = db.Column(db.String(300), nullable=True)      # file path to robot image
-    is_template = db.Column(db.Boolean, default=False)    # if this robot is the default template for the team
-
+    year = db.Column(db.Integer, nullable=False)
+    team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)
     team = db.relationship('Team', back_populates='robots')
-    systems = db.relationship('System', cascade='all, delete-orphan', back_populates='robot')
-    machines = db.relationship('Machine', cascade='all, delete-orphan', back_populates='robot')
+    systems = db.relationship('System', back_populates='robot', cascade="all, delete-orphan")
+    # New field for the robot's image
+    image_file = db.Column(db.String(100), nullable=True, default='default_robot.png')
 
-    __table_args__ = (
-        db.UniqueConstraint('team_id', 'name', name='uq_robot_name_per_team'),
-    )
 
-    def __repr__(self):
-        return f"<Robot {self.name} (Team {self.team_id})>"
-
+# New Model for Robot Systems
 class System(db.Model):
-    """Database model for a robot's system (sub-assembly) with Onshape credentials and document references."""
     id = db.Column(db.Integer, primary_key=True)
-    robot_id = db.Column(db.Integer, db.ForeignKey('robot.id', ondelete='CASCADE'), nullable=False)
     name = db.Column(db.String(100), nullable=False)
-    assembly_url = db.Column(db.String(500), nullable=True)   # URL of the Onshape Assembly for this system
-    partstudio_urls = db.Column(JSON, nullable=True)          # List of Onshape Part Studio URLs for this system
-    access_key = db.Column(db.String(200), nullable=True)     # Onshape API access key for this system
-    secret_key = db.Column(db.String(200), nullable=True)     # Onshape API secret key for this system
-    image = db.Column(db.String(300), nullable=True)          # Optional image for the system (file path)
-    bom_data = db.Column(JSON, nullable=True)                 # BOM data stored as JSON (list of parts)
-
+    assembly_url = db.Column(db.String(500), nullable=False)
+    # Using JSON to store a list of part studio URLs
+    part_studio_urls = db.Column(JSON)
+    onshape_access_key = db.Column(db.String(100), nullable=False)
+    onshape_secret_key = db.Column(db.String(100), nullable=False)
+    robot_id = db.Column(db.Integer, db.ForeignKey('robot.id'), nullable=False)
     robot = db.relationship('Robot', back_populates='systems')
 
-    __table_args__ = (
-        db.UniqueConstraint('robot_id', 'name', name='uq_system_name_per_robot'),
-    )
-
-    def __repr__(self):
-        return f"<System {self.name} (Robot {self.robot_id})>"
-
+# New Model for Team Machines
 class Machine(db.Model):
-    """Database model for a machine used by the team (for manufacturing parts)."""
     id = db.Column(db.Integer, primary_key=True)
-    robot_id = db.Column(db.Integer, db.ForeignKey('robot.id', ondelete='CASCADE'), nullable=False)
     name = db.Column(db.String(100), nullable=False)
-    icon = db.Column(db.String(300), nullable=True)      # file path to icon image for this machine
-    cad_format = db.Column(db.String(10), nullable=False)  # CAD format for part downloads (e.g., "STEP", "STL")
+    # Field for the machine's icon
+    icon_file = db.Column(db.String(100), nullable=True, default='default_machine.png')
+    # The default CAD format for this machine (e.g., 'STL', 'STEP')
+    output_format = db.Column(db.String(20), nullable=False, default='STEP')
+    team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)
+    team = db.relationship('Team', back_populates='machines')
 
-    robot = db.relationship('Robot', back_populates='machines')
-
-    __table_args__ = (
-        db.UniqueConstraint('robot_id', 'name', name='uq_machine_name_per_robot'),
-    )
-
-    def __repr__(self):
-        return f"<Machine {self.name} (Robot {self.robot_id})>"

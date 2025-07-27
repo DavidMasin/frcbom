@@ -14,8 +14,8 @@ app = Flask(__name__)
 db_uri = os.getenv("DATABASE_URL")
 if db_uri and db_uri.startswith("postgres://"):
     db_uri = db_uri.replace("postgres://", "postgresql://", 1)
-app.config['SQLALCHEMY_DATABASE_URI'] = db_uri or 'sqlite:///teams.db'
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///teams.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+
 
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'super-secure-jwt-key')
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')

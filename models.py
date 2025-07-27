@@ -27,6 +27,9 @@ class Team(db.Model):
     users = db.relationship('User', back_populates='team')
     robots = db.relationship('Robot', back_populates='team', cascade="all, delete-orphan")
     machines = db.relationship('Machine', back_populates='team', cascade="all, delete-orphan")
+    password = db.Column(db.String, nullable=False)
+    adminPassword = db.Column(db.String, nullable=False)
+
 
 class Robot(db.Model):
     id = db.Column(db.Integer, primary_key=True)

@@ -103,42 +103,35 @@
         <div class="max-w-md mx-auto bg-gray-100 rounded-lg shadow-lg p-8">
             <h2 class="text-2xl font-bold text-center mb-6 text-gray-800">Sign In</h2>
             <form id="loginForm">
+                <!-- Team Number field -->
                 <div class="mb-4">
                     <label for="loginTeamNumber" class="block text-gray-700">Team Number</label>
-                    <input
-                            type="text"
-                            id="loginTeamNumber"
-                            class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Enter Team Number"
-                            required
-                    />
+                    <input type="text" id="loginTeamNumber"
+                           class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="Enter Team Number" required />
                 </div>
+                <!-- Password field with toggle -->
                 <div class="mb-4">
                     <label for="loginPassword" class="block text-gray-700">Password</label>
                     <div class="relative">
-                        <input
-                                type="password"
-                                id="loginPassword"
-                                class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Enter Password"
-                                required
-                        />
+                        <input type="password" id="loginPassword"
+                               class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               placeholder="Enter Password" required />
                         <span class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer">
-                <i class="fas fa-eye-slash text-gray-500" id="togglePassword"></i>
-              </span>
+                            <i class="fas fa-eye-slash text-gray-500" id="togglePassword"></i>
+                        </span>
                     </div>
                 </div>
-                <button
-                        type="submit"
-                        class="w-full bg-blue-500 text-white font-bold py-2 rounded hover:bg-blue-600 transition duration-300"
-                >
+                <!-- Sign In button -->
+                <button type="submit"
+                        class="w-full bg-blue-500 text-white font-bold py-2 rounded-full hover:bg-blue-600 transition duration-300 transform hover:scale-105">
                     Sign In
                 </button>
                 <p id="loginMessage" class="text-red-500 mt-4"></p>
             </form>
             <p class="text-center mt-4 text-gray-600">
                 Don't have an account?
-                <a href="register.html" class="text-blue-500 hover:underline">Register here</a>
+                <a href="{{ url_for('public.register_page') }}" class="text-blue-500 hover:underline">Register here</a>
             </p>
         </div>
     </div>

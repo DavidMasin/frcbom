@@ -1,0 +1,85 @@
+{% extends "team_base.html" %}
+{% block title %}Manage Machines{% endblock %}
+{% block content %}
+<div class="flex justify-between items-center mb-8">
+    <h1 class="text-4xl font-bold text-white tracking-tight">Machine Workshop</h1>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+    <!-- Add Machine Form (left column on desktop) -->
+    <div class="lg:col-span-1 sticky top-24">
+        <div class="bg-gray-800/50 border border-gray-700 rounded-2xl shadow-lg p-6">
+            <h2 class="text-2xl font-bold text-white mb-6">Add New Machine</h2>
+            <form action="{{ url_for('team_admin.manage_machines', team_number=team_number) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-300">Machine Name</label>
+                    <input type="text" name="name" id="name"
+                           class="mt-1 block w-full bg-gray-900 border-gray-600 rounded-md shadow-sm py-2 px-3 text-white
+                                  focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="e.g., CNC Mill" required>
+                </div>
+                <div>
+                    <label for="output_format" class="block text-sm font-medium text-gray-300">Default CAD Format</label>
+                    <select name="output_format" id="output_format"
+                            class="mt-1 block w-full bg-gray-900 border-gray-600 rounded-md shadow-sm py-2 px-3 text-white
+                                   focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                        <option value="STEP">STEP</option>
+                        <option value="STL">STL</option>
+                        <!-- ...other format options... -->
+                    </select>
+                </div>
+                <div>
+                    <label for="icon_file" class="block text-sm font-medium text-gray-300">Icon</label>
+                    <input type="file" name="icon_file" id="icon_file" accept="image/*"
+                           class="mt-1 block w-full text-sm text-gray-400
+                                  file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold
+                                  file:bg-blue-500/20 file:text-blue-300 hover:file:bg-blue-500/30 cursor-pointer">
+                </div>
+                <div class="pt-2">
+                    <button type="submit"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
+                        Add Machine
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Machine List (right column on desktop) -->
+    <div class="lg:col-span-2">
+        {% if machines %}
+        <div class="space-y-4">
+            {% for machine in machines %}
+            <div class="group bg-gray-800/50 border border-gray-700 hover:border-blue-500/50 rounded-lg p-4 flex justify-between items-center transition-colors">
+                <div class="flex items-center gap-4">
+                    <div class="bg-gray-700 rounded-lg p-2 w-16 h-16 flex items-center justify-center">
+                        <img src="{{ url_for('static', filename='uploads/machine_icons/' + machine.icon_file) }}"
+                             alt="{{ machine.name }}" class="max-w-full max-h-full object-contain"
+                             onerror="this.onerror=null; this.src='https://placehold.co/48x48/4b5563/9ca3af?text=Icon';">
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-white">{{ machine.name }}</h3>
+                        <p class="text-sm text-gray-400">Default Format:
+                            <span class="font-mono bg-gray-700 text-blue-300 rounded px-1.5 py-0.5 text-xs">{{ machine.output_format }}</span>
+                        </p>
+                    </div>
+                </div>
+                <!-- Delete Machine Button (visible on hover) -->
+                <form action="{{ url_for('team_admin.delete_machine_web', team_number=team_number, machine_id=machine.id) }}" method="POST"
+                      onsubmit="return confirm('Delete this machine?');">
+                    <button type="submit"
+                            class="text-gray-500 hover:text-red-500 text-lg px-3 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-20 px-6 bg-gray-800/50 border-2 border-dashed border-gray-700 rounded-2xl">
+            <i class="fas fa-tools text-6xl text-gray-600 mb-4"></i>
+            <h2 class="text-2xl font-bold text-white">Workshop is Empty</h2>
+            <p class="text-gray-400 mt-2">Add your manufacturing machines to streamline your CAD workflow.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

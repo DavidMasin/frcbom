@@ -1,43 +1,18 @@
 {% extends "team_base.html" %}
-
-{% block title %}{{ system.name }} - Details{% endblock %}
-
+{% block title %}System BOM - {{ current_robot }} {{ filter_system }}{% endblock %}
 {% block content %}
-<div class="max-w-4xl mx-auto">
-  <div class="mb-8">
-    <a href="{{ url_for('robot_detail', robot_id=system.robot.id) }}" class="text-sm text-indigo-300 hover:underline mb-2 block">&larr; Back to {{ system.robot.name }}</a>
-    <h1 class="text-4xl font-bold text-white">{{ system.name }}</h1>
-    <p class="text-gray-400 mt-1">Part of robot: {{ system.robot.name }} ({{ system.robot.year }})</p>
-  </div>
-
-  <div class="bg-gray-800/50 border border-gray-700 rounded-2xl shadow-lg p-6 sm:p-8">
-    <h2 class="text-2xl font-bold text-white mb-2">Download Assembly</h2>
-    <p class="text-gray-400 mb-6">Select a machine profile to download the assembly in its configured format.</p>
-
-    {% set machines = system.robot.team.machines %}
-    {% if machines %}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {% for machine in machines %}
-      <a href="{{ url_for('download_cad_api') }}?system_id={{ system.id }}&format={{ machine.output_format }}"
-         class="group relative bg-gray-900/70 hover:bg-gray-700/80 border border-gray-700 hover:border-indigo-500 rounded-lg p-4 flex flex-col items-center justify-center text-center transition-all duration-200 transform hover:-translate-y-1">
-        <div class="bg-gray-800 rounded-lg p-3 w-20 h-20 flex items-center justify-center mb-4">
-          <img src="{{ url_for('static', filename='uploads/machine_icons/' + machine.icon_file) }}" alt="{{ machine.name }}" class="max-w-full max-h-full object-contain" onerror="this.onerror=null;this.src='https://placehold.co/64x64/4b5563/9ca3af?text=Icon';">
-        </div>
-        <h3 class="text-lg font-semibold text-white">{{ machine.name }}</h3>
-        <p class="text-sm text-indigo-400">Download as .{{ machine.output_format.lower() }}</p>
-      </a>
-      {% endfor %}
-    </div>
-    {% else %}
-    <div class="text-center py-12 border-2 border-dashed border-gray-700 rounded-lg">
-      <i class="fas fa-cogs text-5xl text-gray-600 mb-4"></i>
-      <h3 class="text-xl font-semibold text-gray-300">No Machines Configured</h3>
-      <p class="text-gray-500 mt-1">You must add machines to your workshop to see download options.</p>
-      <a href="{{ url_for('manage_machines') }}" class="mt-4 inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">
-        Manage Machines
-      </a>
-    </div>
-    {% endif %}
-  </div>
+<div class="mb-6">
+  <a href="{{ url_for('team_admin.team_admin_robot', team_number=team_number, robot_name=current_robot) }}"
+     class="text-sm text-blue-300 hover:underline">&larr; Back to {{ current_robot }} Details</a>
+  <h1 class="text-3xl font-bold text-white mt-2">{{ filter_system }} BOM</h1>
 </div>
+
+<!-- BOM Parts Section -->
+<div class="mb-8">
+  <h2 class="text-2xl font-bold text-gray-100 mb-4">Parts in {{ filter_system }}</h2>
+  <div id="bomPartsGrid" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
+  <p id="noPartsMessage" class="text-center text-gray-500 mt-4">No parts to display.</p>
+</div>
+
+<!-- (Optional: could include controls to fetch/update BOM if needed) -->
 {% endblock %}

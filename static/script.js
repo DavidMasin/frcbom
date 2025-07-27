@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://frcbom.com/';  // Base URL for API requests
+const API_BASE_URL = 'https://frcbom-production.up.railway.app/';  // Base URL for API requests
 
 // Retrieve stored team number from localStorage (if any)
 let teamNumber = localStorage.getItem('team_number');

@@ -62,7 +62,8 @@ def team_admin_dashboard(team_number):
 @app.route("/<team_number>/new_robot")
 def new_robot_form(team_number):
     team = Team.query.filter_by(team_number=team_number).first_or_404()
-    return render_template("new_robot.html", team_id=team.id, team_number=team.team_number)
+    return render_template("new_robot.html", team=team, team_id=team.id, team_number=team.team_number)
+
 
 @app.route("/<team_number>/Admin/<robot_name>")
 def team_admin_robot(team_number, robot_name):

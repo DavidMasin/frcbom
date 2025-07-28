@@ -16,6 +16,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             const robotName = parseURL().robotName;
             const systemName = parseURL().system;
 
+            const documentUrl = document.getElementById("assemblyUrl")?.value;
+            const accessKey = document.getElementById("accessKey")?.value;
+            const secretKey = document.getElementById("secretKey")?.value;
+
             const res = await fetch(`${API_BASE_URL}api/bom`, {
                 method: "POST",
                 headers: {
@@ -26,19 +30,28 @@ document.addEventListener('DOMContentLoaded', async () => {
                     team_number: teamNumber,
                     robot: robotName,
                     system: systemName,
-                    access_key: document.getElementById("accessKey")?.value,
-                    secret_key: document.getElementById("secretKey")?.value,
-                    document_url: document.getElementById("documentUrl")?.value
+                    access_key: accessKey,
+                    secret_key: secretKey,
+                    document_url: documentUrl
                 })
             });
 
-            const data = await res.json();
+            let data;
+            try {
+                data = await res.json();
+            } catch (err) {
+                console.error("❌ Server response is not valid JSON:", err);
+                document.getElementById("settingsMessage").textContent = "⚠️ Unexpected server response.";
+                return;
+            }
+
             document.getElementById("settingsMessage").textContent =
                 data.msg || data.error || "✅ BOM fetched successfully!";
         });
     } else {
         console.warn("⚠️ fetchBom button NOT found on this page");
     }
+
     // Page-specific initializations
     if (document.getElementById('loginForm')) {
         document.getElementById('loginForm').addEventListener('submit', handleLogin);
@@ -521,25 +534,3 @@ document.getElementById("saveSystemSettings")?.addEventListener("click", async (
     document.getElementById("settingsMessage").textContent = data.msg || "Saved!";
 });
 
-document.getElementById("fetchBom")?.addEventListener("click", async () => {
-    const teamNumber = parseURL().teamNumber;
-    const robotName = parseURL().robotName;
-    const systemName = parseURL().system;
-
-    const res = await fetch(`${API_BASE_URL}api/fetch_bom`, {
-        method: "POST",
-        headers: {
-            "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            team_number: teamNumber,
-            robot_name: robotName,
-            system_name: systemName
-        })
-    });
-
-    const data = await res.json();
-    document.getElementById("settingsMessage").textContent =
-        data.msg || data.error || "✅ BOM fetched successfully!";
-});

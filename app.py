@@ -755,7 +755,7 @@ def save_bom_for_robot_system():
     return jsonify({"message": "BOM data saved successfully"}), 200
 
 
-@app.route("/api/fetch_bom", methods=["POST"])
+@app.route("/api/bom", methods=["POST"])
 @jwt_required()
 def fetch_bom():
     from onshape_client.client import Client
@@ -763,29 +763,45 @@ def fetch_bom():
 
     data = request.get_json()
     team_number = data.get("team_number")
-    robot_name = data.get("robot_name")
-    system_name = data.get("system_name")
+    robot_name = data.get("robot")
+    system_name = data.get("system")
+    access_key = data.get("access_key")
+    secret_key = data.get("secret_key")
+    document_url = data.get("document_url")
 
-    system = System.query.filter_by(
-        team_id=Team.query.filter_by(team_number=team_number).first().id,
-        robot_name=robot_name,
-        system_name=system_name
-    ).first()
+    if not all([team_number, robot_name, system_name, access_key, secret_key, document_url]):
+        return jsonify({"error": "Missing required fields (team_number, robot, system, access_key, secret_key, document_url)"}), 400
 
-    if not system or not system.assembly_url or not system.access_key or not system.secret_key:
-        return jsonify({"error": "Missing required Onshape credentials or assembly URL"}), 400
+    team = Team.query.filter_by(team_number=team_number).first()
+    if not team:
+        return jsonify({"error": "Team not found"}), 404
+
+    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
+    if not robot:
+        return jsonify({"error": "Robot not found"}), 404
+
+    system = System.query.filter_by(team_id=team.id, robot_name=robot_name, system_name=system_name).first()
+    if not system:
+        return jsonify({"error": "System not found"}), 404
 
     client = Client(configuration={
-        "access_key": system.access_key,
-        "secret_key": system.secret_key,
+        "access_key": access_key,
+        "secret_key": secret_key,
         "base_url": "https://cad.onshape.com"
     })
 
     try:
-        element = OnshapeElement(system.assembly_url)
-        # you should add your actual BOM fetching logic here
-        # mock result:
-        system.bom_data = {"fetched": True}
+        element = OnshapeElement(document_url)
+        did = element.did
+        wid = element.wvmid
+        eid = element.eid
+
+        bom_url = f"/api/v10/assemblies/d/{did}/w/{wid}/e/{eid}/bom"
+        headers = {'Accept': 'application/vnd.onshape.v1+json', 'Content-Type': 'application/json'}
+        response = client.api_client.request('GET', url="https://cad.onshape.com" + bom_url,
+                                             query_params={"indented": False}, headers=headers, body={})
+        import json as jsonlib
+        system.bom_data = response.data if isinstance(response.data, dict) else jsonlib.loads(response.data)
         db.session.commit()
         return jsonify({"msg": "✅ BOM successfully fetched and saved!"})
     except Exception as e:

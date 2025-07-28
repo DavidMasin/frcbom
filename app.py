@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, jsonify, send_file, render_template, redirect
+from flask import Flask, request, jsonify, send_file, render_template, redirect, session, flash, url_for
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, get_jwt, jwt_required
 from flask_cors import CORS
 from flask_socketio import SocketIO
@@ -109,6 +109,11 @@ def register():
     db.session.add(new_team)
     db.session.commit()
     return jsonify({"message": "Team registered successfully"}), 200
+@app.route("/logout")
+def logout():
+    session.clear()  # or remove JWT cookies if you use Flask-JWT-Extended
+    flash("You have been logged out.", "success")
+    return redirect(url_for("home"))
 
 @app.route('/api/login', methods=['POST'])
 def login():

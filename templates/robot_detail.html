@@ -4,7 +4,7 @@
 
 {% block content %}
 <!-- Header Section -->
-<div class="relative rounded-2xl overflow-hidden p-8 md:p-12 mb-8 border border-gray-700 bg-gray-800" {% if robot.image_file %}style="background-image: url('{{ url_for('static', filename=robot.image_file) }}'); background-size: cover; background-position: center;"{% endif %}>
+<div class="relative rounded-2xl overflow-hidden p-8 md:p-12 mb-8 border border-gray-700 bg-gray-800" {% if robot.image_text %}style="background-image: url('{{ url_for('static', filename=robot.image_text) }}'); background-size: cover; background-position: center;"{% endif %}>
   <div class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
   <div class="relative z-10">
     <a href="{{ url_for('team_admin_dashboard', team_number=team.team_number) }}" class="text-sm text-indigo-300 hover:underline mb-4 block">&larr; Back to Robot Fleet</a>

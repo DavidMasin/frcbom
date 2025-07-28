@@ -167,8 +167,8 @@ def list_robots():
     robot_list = []
     for robot in robots:
         robot_data = {"id": robot.id, "name": robot.name, "is_template": robot.is_template, "image": None}
-        if robot.image_file:
-            robot_data["image"] = "/static/" + robot.image_file
+        if robot.image_text:
+            robot_data["image"] = "/static/" + robot.image_text
         robot_list.append(robot_data)
     return jsonify({"robots": robot_list}), 200
 
@@ -184,7 +184,7 @@ def create_robot():
     else:
         team_number = request.form.get("team_number")
         robot_name = request.form.get("robot_name")
-    image_file = request.files.get('image')
+    image_text = request.files.get('image')
     if not team_number or not robot_name:
         return jsonify({"error": "Team number and robot name are required"}), 400
     if not (claims.get('is_team_admin') and current_user == team_number) and not claims.get('is_global_admin'):
@@ -200,18 +200,18 @@ def create_robot():
     db.session.add(new_robot)
     db.session.flush()  # assign ID
 
-    if image_file:
+    if image_text:
         team_dir = os.path.join(app.config['UPLOAD_FOLDER'], f"team_{team_number}", "robots")
         os.makedirs(team_dir, exist_ok=True)
         ext = ''
-        filename = secure_filename(image_file.filename)
+        filename = secure_filename(image_text.filename)
         if '.' in filename:
             ext = filename.rsplit('.', 1)[1].lower()
-        image_filename = f"robot_{new_robot.id}.{ext}" if ext else f"robot_{new_robot.id}"
-        image_path = os.path.join(team_dir, image_filename)
-        image_file.save(image_path)
+        image_textname = f"robot_{new_robot.id}.{ext}" if ext else f"robot_{new_robot.id}"
+        image_path = os.path.join(team_dir, image_textname)
+        image_text.save(image_path)
         # Store relative path in DB
-        new_robot.image_file = os.path.join("uploads", f"team_{team_number}", "robots", image_filename)
+        new_robot.image_text = os.path.join("uploads", f"team_{team_number}", "robots", image_textname)
 
     default_systems = ["Main", "System1", "System2", "System3", "System4", "System5"]
     for sys_name in default_systems:
@@ -253,7 +253,7 @@ def update_robot(robot_id):
     current_user = get_jwt_identity()
     claims = get_jwt()
     new_name = request.json.get("name") if request.is_json else request.form.get("name")
-    image_file = request.files.get("image")
+    image_text = request.files.get("image")
     robot = Robot.query.get(robot_id)
     if not robot:
         return jsonify({"error": "Robot not found"}), 404
@@ -270,24 +270,24 @@ def update_robot(robot_id):
             if Robot.query.filter_by(team_id=team.id, name=new_name).first():
                 return jsonify({"error": "Another robot with this name already exists"}), 400
             robot.name = new_name
-    if image_file:
+    if image_text:
         team_dir = os.path.join(app.config['UPLOAD_FOLDER'], f"team_{team.team_number}", "robots")
         os.makedirs(team_dir, exist_ok=True)
         ext = ''
-        filename = secure_filename(image_file.filename)
+        filename = secure_filename(image_text.filename)
         if '.' in filename:
             ext = filename.rsplit('.', 1)[1].lower()
-        image_filename = f"robot_{robot.id}.{ext}" if ext else f"robot_{robot.id}"
-        image_path = os.path.join(team_dir, image_filename)
-        if robot.image_file:
-            old_image_path = os.path.join(app.root_path, 'static', robot.image_file)
+        image_textname = f"robot_{robot.id}.{ext}" if ext else f"robot_{robot.id}"
+        image_path = os.path.join(team_dir, image_textname)
+        if robot.image_text:
+            old_image_path = os.path.join(app.root_path, 'static', robot.image_text)
             if os.path.isfile(old_image_path):
                 try:
                     os.remove(old_image_path)
                 except Exception as e:
                     print(f"Warning: could not remove old robot image: {e}")
-        image_file.save(image_path)
-        robot.image_file = os.path.join("uploads", f"team_{team.team_number}", "robots", image_filename)
+        image_text.save(image_path)
+        robot.image_text = os.path.join("uploads", f"team_{team.team_number}", "robots", image_textname)
     try:
         db.session.commit()
     except Exception as e:
@@ -310,8 +310,8 @@ def delete_robot_by_id(robot_id):
     if not (claims.get('is_team_admin') and current_user == team.team_number) and not claims.get('is_global_admin'):
         return jsonify({"error": "Unauthorized"}), 403
 
-    if robot.image_file:
-        old_image_path = os.path.join(app.root_path, 'static', robot.image_file)
+    if robot.image_text:
+        old_image_path = os.path.join(app.root_path, 'static', robot.image_text)
         if os.path.isfile(old_image_path):
             try:
                 os.remove(old_image_path)
@@ -453,8 +453,8 @@ def delete_robot_legacy():
     if not robot:
         return jsonify({"error": f"Robot '{robot_name}' not found"}), 404
     # Remove files for this robot
-    if robot.image_file:
-        old_image_path = os.path.join(app.root_path, 'static', robot.image_file)
+    if robot.image_text:
+        old_image_path = os.path.join(app.root_path, 'static', robot.image_text)
         if os.path.isfile(old_image_path):
             try:
                 os.remove(old_image_path)
@@ -937,7 +937,7 @@ def create_robot_web(team_number):
     team = Team.query.filter_by(team_number=team_number).first_or_404()
     name = request.form.get('name')
     year = request.form.get('year') or datetime.now().year
-    image_file = request.files.get('image_file')
+    image_text = request.files.get('image_text')
     if not name or not year:
         return redirect(request.referrer or f"/{team_number}/Admin")  # missing data
     if Robot.query.filter_by(team_id=team.id, name=name).first():
@@ -948,17 +948,17 @@ def create_robot_web(team_number):
     # Create default subsystems and machines as per template (simplified)
     for sys_name in ["Main", "System1", "System2", "System3", "System4", "System5"]:
         db.session.add(System(robot=new_robot, name=sys_name, bom_data=[]))
-    if image_file:
+    if image_text:
         team_dir = os.path.join(app.config['UPLOAD_FOLDER'], f"team_{team_number}", "robots")
         os.makedirs(team_dir, exist_ok=True)
         ext = ''
-        filename = secure_filename(image_file.filename)
+        filename = secure_filename(image_text.filename)
         if '.' in filename:
             ext = filename.rsplit('.', 1)[1].lower()
-        image_filename = f"robot_{new_robot.id}.{ext}" if ext else f"robot_{new_robot.id}"
-        image_path = os.path.join(team_dir, image_filename)
-        image_file.save(image_path)
-        new_robot.image_file = os.path.join("uploads", f"team_{team_number}", "robots", image_filename)
+        image_textname = f"robot_{new_robot.id}.{ext}" if ext else f"robot_{new_robot.id}"
+        image_path = os.path.join(team_dir, image_textname)
+        image_text.save(image_path)
+        new_robot.image_text = os.path.join("uploads", f"team_{team_number}", "robots", image_textname)
     db.session.commit()
     return redirect(f"/{team_number}/Admin")
 
@@ -967,8 +967,8 @@ def delete_robot(robot_id):
     robot = Robot.query.get_or_404(robot_id)
     team_number = robot.team.team_number
     # Remove associated files as in API
-    if robot.image_file:
-        file_path = os.path.join(app.root_path, 'static', robot.image_file)
+    if robot.image_text:
+        file_path = os.path.join(app.root_path, 'static', robot.image_text)
         if os.path.isfile(file_path):
             try:
                 os.remove(file_path)

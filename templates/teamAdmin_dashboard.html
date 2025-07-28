@@ -23,7 +23,7 @@
             <div class="absolute -inset-0.5 bg-gradient-to-r from-pink-600 to-purple-600 rounded-2xl blur opacity-0 group-hover:opacity-75 transition duration-500"></div>
             <div class="relative">
                 <a href="{{ url_for('team_admin_robot', team_number=team.team_number, robot_name=robot.name) }}">
-                    <img src="{{ url_for('static', filename=robot.image_file) }}"
+                    <img src="{{ url_for('static', filename=robot.image_text) }}"
                          alt="{{ robot.name }}"
                          class="w-full h-56 object-cover"
                          onerror="this.onerror=null;this.src='https://placehold.co/600x400/1f2937/9ca3af?text=No+Image';">

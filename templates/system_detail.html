@@ -2,8 +2,8 @@
 {% block title %}System BOM - {{ current_robot }} {{ filter_system }}{% endblock %}
 {% block content %}
 <div class="mb-6">
-    <a href="{{ url_for('team_admin.team_admin_robot', team_number=team_number, robot_name=current_robot) }}"
-       class="text-sm text-blue-300 hover:underline">&larr; Back to {{ current_robot }} Details</a>
+    <a href="{{ url_for('team_admin_robot', team_number=team_number, robot_name=current_robot) }}">
+    class="text-sm text-blue-300 hover:underline">&larr; Back to {{ current_robot }} Details</a>
     <h1 class="text-3xl font-bold text-white mt-2">{{ filter_system }} BOM</h1>
 </div>
 

@@ -1,4 +1,5 @@
 from sqlalchemy import text
+
 from app import app
 from models import db, Team, Robot, System
 

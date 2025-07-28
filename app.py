@@ -1,13 +1,13 @@
 import os
-from flask import Flask, request, jsonify, send_file, render_template, redirect, session, flash, url_for
-from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, get_jwt, jwt_required
+from datetime import datetime
+
+from flask import Flask, request, jsonify, render_template, redirect, session, flash, url_for
 from flask_cors import CORS
+from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, get_jwt, jwt_required
+from flask_migrate import Migrate
 from flask_socketio import SocketIO
-from onshape_client import OnshapeElement
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from flask_migrate import Migrate
-from datetime import datetime
 
 # Initialize Flask app and configuration
 app = Flask(__name__)
@@ -35,14 +35,17 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # Ensure base upload directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+
 # HTML page routes
 @app.route('/')
 def home():
     return render_template("index.html")
 
+
 @app.route('/<team_number>/<robot_name>')
 def team_dashboard(team_number, robot_name):
     return render_template('dashboard.html', team_number=team_number, robot_name=robot_name)
+
 
 @app.route('/<team_number>')
 def team_page(team_number):
@@ -51,6 +54,7 @@ def team_page(team_number):
         return "Team not found", 404
     return render_template('dashboard.html', team_number=team_number)
 
+
 @app.route("/<team_number>/Admin")
 def team_admin_dashboard(team_number):
     team = Team.query.filter_by(team_number=team_number).first()
@@ -58,6 +62,7 @@ def team_admin_dashboard(team_number):
         return "Team not found", 404
     robots = Robot.query.filter_by(team_id=team.id).all()
     return render_template("teamAdmin_dashboard.html", team=team, robots=robots)
+
 
 @app.route("/<team_number>/new_robot")
 def new_robot_form(team_number):
@@ -71,6 +76,7 @@ def team_admin_robot(team_number, robot_name):
     robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first_or_404()
     return render_template("robot_detail.html", robot=robot, team=team)
 
+
 @app.route('/<team_number>/Admin/<robot_name>/<system>')
 def team_admin_bom(team_number, robot_name, system):
     team = Team.query.filter_by(team_number=team_number).first()
@@ -83,13 +89,16 @@ def team_admin_bom(team_number, robot_name, system):
     return render_template("system_detail.html", team_number=team_number, team_id=team.id,
                            robots=robots, current_robot=robot_name, filter_system=system)
 
+
 @app.route('/<team_number>/<robot_name>/<system>')
 def team_bom_filtered(team_number, robot_name, system):
     return render_template('dashboard.html', team_number=team_number, robot_name=robot_name, filter_system=system)
 
+
 @app.route('/register')
 def register_page():
     return render_template('register.html')
+
 
 # Authentication endpoints
 @app.route('/api/register', methods=['POST'])
@@ -110,11 +119,14 @@ def register():
     db.session.add(new_team)
     db.session.commit()
     return jsonify({"message": "Team registered successfully"}), 200
+
+
 @app.route("/logout")
 def logout():
     session.clear()  # or remove JWT cookies if you use Flask-JWT-Extended
     flash("You have been logged out.", "success")
     return redirect(url_for("home"))
+
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -125,7 +137,8 @@ def login():
     if not team_number or not password:
         return jsonify({"error": "Team number and password are required"}), 400
     team = Team.query.filter_by(team_number=team_number).first()
-    if not team or not (check_password_hash(team.password, password) or check_password_hash(team.adminPassword, password)):
+    if not team or not (
+            check_password_hash(team.password, password) or check_password_hash(team.adminPassword, password)):
         return jsonify({"error": "Invalid credentials"}), 401
 
     is_admin = False
@@ -140,6 +153,7 @@ def login():
     access_token = create_access_token(identity=team_number, additional_claims=additional_claims)
     return jsonify(access_token=access_token, team_number=team_number, isAdmin=is_admin), 200
 
+
 @app.route('/api/team_exists', methods=['GET'])
 def team_exists():
     team_number = request.args.get('team_number')
@@ -148,9 +162,11 @@ def team_exists():
     exists = bool(Team.query.filter_by(team_number=team_number).first())
     return jsonify({"exists": exists}), 200
 
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({"status": "API is running"}), 200
+
 
 # ** Team Admin Protected Endpoints **
 @app.route('/api/robots', methods=['GET'])
@@ -177,6 +193,7 @@ def list_robots():
             robot_data["image"] = "/static/" + robot.image_text
         robot_list.append(robot_data)
     return jsonify({"robots": robot_list}), 200
+
 
 @app.route('/api/robots', methods=['POST'])
 @jwt_required()
@@ -252,6 +269,7 @@ def create_robot():
         return jsonify({"error": f"Failed to create robot: {str(e)}"}), 500
     return jsonify({"message": f"Robot '{robot_name}' created successfully", "robot_id": new_robot.id}), 200
 
+
 @app.route('/api/robots/<int:robot_id>', methods=['PUT'])
 @jwt_required()
 def update_robot(robot_id):
@@ -301,6 +319,7 @@ def update_robot(robot_id):
         return jsonify({"error": f"Failed to update robot: {str(e)}"}), 500
     return jsonify({"message": "Robot updated successfully"}), 200
 
+
 @app.route('/api/robots/<int:robot_id>', methods=['DELETE'])
 @jwt_required()
 def delete_robot_by_id(robot_id):
@@ -339,6 +358,7 @@ def delete_robot_by_id(robot_id):
         db.session.rollback()
         return jsonify({"error": f"Failed to delete robot: {str(e)}"}), 500
     return jsonify({"message": "Robot deleted successfully"}), 200
+
 
 # Legacy endpoints for compatibility
 @app.route('/api/new_robot', methods=['POST'])
@@ -395,6 +415,7 @@ def new_robot_legacy():
         return jsonify({"error": f"Failed to create robot: {str(e)}"}), 500
     return jsonify({"message": f"Robot '{robot_name}' created successfully"}), 200
 
+
 @app.route('/api/get_robots', methods=['GET'])
 @jwt_required()
 def get_robots_legacy():
@@ -410,6 +431,7 @@ def get_robots_legacy():
         return jsonify({"error": "Team not found"}), 404
     robot_names = [robot.name for robot in Robot.query.filter_by(team_id=team.id).all()]
     return jsonify({"robots": robot_names}), 200
+
 
 @app.route('/api/rename_robot', methods=['POST'])
 @jwt_required()
@@ -439,6 +461,7 @@ def rename_robot():
         db.session.rollback()
         return jsonify({"error": f"Failed to rename robot: {str(e)}"}), 500
     return jsonify({"message": f"Robot '{old_name}' renamed to '{new_name}'"}), 200
+
 
 @app.route('/api/delete_robot', methods=['DELETE'])
 @jwt_required()
@@ -482,6 +505,7 @@ def delete_robot_legacy():
         return jsonify({"error": f"Failed to delete robot: {str(e)}"}), 500
     return jsonify({"message": f"Robot '{robot_name}' deleted successfully"}), 200
 
+
 # Machine endpoints
 @app.route('/api/machines', methods=['GET'])
 @jwt_required()
@@ -508,6 +532,7 @@ def list_machines():
             machine_data["icon"] = "/static/" + m.icon_file
         machine_list.append(machine_data)
     return jsonify({"machines": machine_list}), 200
+
 
 @app.route('/api/machines', methods=['POST'])
 @jwt_required()
@@ -569,6 +594,7 @@ def add_machine():
         }
     }), 200
 
+
 @app.route('/api/machines/<int:machine_id>', methods=['PUT'])
 @jwt_required()
 def update_machine(machine_id):
@@ -629,6 +655,7 @@ def update_machine(machine_id):
         return jsonify({"error": f"Failed to update machine: {str(e)}"}), 500
     return jsonify({"message": "Machine updated successfully"}), 200
 
+
 @app.route('/api/machines/<int:machine_id>', methods=['DELETE'])
 @jwt_required()
 def delete_machine(machine_id):
@@ -659,6 +686,7 @@ def delete_machine(machine_id):
         db.session.rollback()
         return jsonify({"error": f"Failed to delete machine: {str(e)}"}), 500
     return jsonify({"message": "Machine deleted successfully"}), 200
+
 
 # BOM and Onshape integration endpoints
 @app.route('/api/get_bom', methods=['GET'])
@@ -692,6 +720,7 @@ def get_bom():
         bom_list = sys_record.bom_data if sys_record.bom_data is not None else []
         return jsonify({"bom_data": bom_list}), 200
 
+
 @app.route('/api/save_bom_for_robot_system', methods=['POST'])
 @jwt_required()
 def save_bom_for_robot_system():
@@ -724,6 +753,7 @@ def save_bom_for_robot_system():
         db.session.rollback()
         return jsonify({"error": f"Failed to save BOM data: {str(e)}"}), 500
     return jsonify({"message": "BOM data saved successfully"}), 200
+
 
 @app.route('/api/bom', methods=['POST'])
 @jwt_required()
@@ -771,7 +801,7 @@ def fetch_bom():
         bom_url = f"/api/v10/assemblies/d/{did}/w/{wid}/e/{eid}/bom"
         headers = {'Accept': 'application/vnd.onshape.v1+json', 'Content-Type': 'application/json'}
         response = client.api_client.request('GET', url="https://cad.onshape.com" + bom_url,
-                                            query_params={"indented": False}, headers=headers, body={})
+                                             query_params={"indented": False}, headers=headers, body={})
         bom_json = response.data
         if isinstance(bom_json, (bytes, bytearray)):
             import json as jsonlib
@@ -785,6 +815,7 @@ def fetch_bom():
             if header.get('name') == name:
                 return header.get('id')
         return None
+
     part_name_id = find_id_by_name(bom_json, "Name")
     desc_id = find_id_by_name(bom_json, "Description")
     qty_id = find_id_by_name(bom_json, "Quantity") or find_id_by_name(bom_json, "QTY")
@@ -829,6 +860,7 @@ def fetch_bom():
         return jsonify({"error": f"Failed to save BOM data: {str(e)}"}), 500
     return jsonify({"bom_data": bom_data_list}), 200
 
+
 # Global admin endpoints
 @app.route('/api/admin/get_bom', methods=['GET'])
 @jwt_required()
@@ -859,6 +891,7 @@ def admin_get_bom():
                     combined_parts.extend(sys.bom_data)
     return jsonify({"bom_data": combined_parts}), 200
 
+
 @app.route('/api/admin/download_bom_dict', methods=['GET'])
 @jwt_required()
 def download_bom_dict():
@@ -877,6 +910,7 @@ def download_bom_dict():
             team_dict[robot.name] = robot_dict
         bom_data_dict[team.team_number] = team_dict
     return jsonify({"bom_data_dict": bom_data_dict}), 200
+
 
 @app.route('/api/admin/download_settings_dict', methods=['GET'])
 @jwt_required()
@@ -901,6 +935,7 @@ def download_settings_dict():
                 team_settings[robot.name] = {"accessKey": "", "secretKey": "", "documentURL": ""}
         settings_data_dict[team.team_number] = team_settings
     return jsonify({"settings_data_dict": settings_data_dict}), 200
+
 
 # Update system Onshape settings (team admin/global admin)
 @app.route('/api/system_settings', methods=['POST'])
@@ -937,6 +972,7 @@ def update_system_settings():
         return jsonify({"error": f"Failed to update system settings: {str(e)}"}), 500
     return jsonify({"message": "Settings saved"}), 200
 
+
 # Web endpoints for form actions (for completeness)
 @app.route('/<team_number>/new_robot', methods=['POST'])
 def create_robot_web(team_number):
@@ -968,6 +1004,7 @@ def create_robot_web(team_number):
     db.session.commit()
     return redirect(f"/{team_number}/Admin")
 
+
 @app.route('/delete_robot/<int:robot_id>', methods=['POST'])
 def delete_robot(robot_id):
     robot = Robot.query.get_or_404(robot_id)
@@ -992,6 +1029,7 @@ def delete_robot(robot_id):
     db.session.commit()
     return redirect(f"/{team_number}/Admin")
 
+
 @app.route('/<team_number>/delete_machine/<int:machine_id>', methods=['POST'])
 def delete_machine_web(team_number, machine_id):
     machine = Machine.query.get_or_404(machine_id)
@@ -1006,14 +1044,17 @@ def delete_machine_web(team_number, machine_id):
     db.session.commit()
     return redirect(f"/{team_number}/manage_machines")
 
+
 # SocketIO events
 @socketio.on('connect')
 def handle_connect():
     app.logger.info('Client connected via SocketIO')
 
+
 @socketio.on('disconnect')
 def handle_disconnect():
     app.logger.info('Client disconnected')
+
 
 def run():
     port = int(os.environ.get("PORT", 5000))

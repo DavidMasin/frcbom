@@ -12,14 +12,19 @@
     <div class="lg:col-span-1 sticky top-24">
         <div class="bg-gray-800/50 border border-gray-700 rounded-2xl shadow-lg p-6">
             <h2 class="text-2xl font-bold text-white mb-6">Add New Machine</h2>
-            <form id="addMachineForm" action="{{ url_for('add_machine') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+            <form id="addMachineForm" action="{{ url_for('add_machine') }}" method="POST" enctype="multipart/form-data"
+                  class="space-y-4">
                 <div>
                     <label for="name" class="block text-sm font-medium text-gray-300">Machine Name</label>
-                    <input type="text" name="name" id="name" class="mt-1 block w-full bg-gray-900 border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g., CNC Mill" required>
+                    <input type="text" name="name" id="name"
+                           class="mt-1 block w-full bg-gray-900 border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                           placeholder="e.g., CNC Mill" required>
                 </div>
                 <div>
                     <label for="cad_format" class="block text-sm font-medium text-gray-300">Default CAD Format</label>
-                    <select name="cad_format" id="cad_format" class="mt-1 block w-full bg-gray-900 border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                    <select name="cad_format" id="cad_format"
+                            class="mt-1 block w-full bg-gray-900 border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            required>
                         <option value="STEP">STEP</option>
                         <option value="STL">STL</option>
                         <option value="IGES">IGES</option>
@@ -31,10 +36,12 @@
                 </div>
                 <div>
                     <label for="icon" class="block text-sm font-medium text-gray-300">Icon</label>
-                    <input type="file" name="icon" id="icon" accept="image/*" class="mt-1 block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-500/20 file:text-indigo-300 hover:file:bg-indigo-500/30 cursor-pointer">
+                    <input type="file" name="icon" id="icon" accept="image/*"
+                           class="mt-1 block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-500/20 file:text-indigo-300 hover:file:bg-indigo-500/30 cursor-pointer">
                 </div>
                 <div class="pt-2">
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
+                    <button type="submit"
+                            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
                         Add Machine
                     </button>
                 </div>
@@ -50,15 +57,21 @@
             <div class="group bg-gray-800/50 border border-gray-700 hover:border-indigo-500/50 rounded-lg p-4 flex justify-between items-center transition-colors">
                 <div class="flex items-center gap-4">
                     <div class="bg-gray-700 rounded-lg p-2 w-16 h-16 flex items-center justify-center">
-                        <img src="{{ url_for('static', filename=machine.icon_file) }}" alt="{{ machine.name }}" class="max-w-full max-h-full object-contain" onerror="this.onerror=null;this.src='https://placehold.co/48x48/4b5563/9ca3af?text=Icon';">
+                        <img src="{{ url_for('static', filename=machine.icon_file) }}" alt="{{ machine.name }}"
+                             class="max-w-full max-h-full object-contain"
+                             onerror="this.onerror=null;this.src='https://placehold.co/48x48/4b5563/9ca3af?text=Icon';">
                     </div>
                     <div>
                         <h3 class="text-lg font-semibold text-white">{{ machine.name }}</h3>
-                        <p class="text-sm text-gray-400">Default Format: <span class="font-mono bg-gray-700 text-indigo-300 rounded px-1.5 py-0.5 text-xs">{{ machine.output_format if machine.output_format else machine.cad_format }}</span></p>
+                        <p class="text-sm text-gray-400">Default Format: <span
+                                class="font-mono bg-gray-700 text-indigo-300 rounded px-1.5 py-0.5 text-xs">{{ machine.output_format if machine.output_format else machine.cad_format }}</span>
+                        </p>
                     </div>
                 </div>
-                <form action="{{ url_for('delete_machine_web', team_number=team.team_number, machine_id=machine.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this machine?');">
-                    <button type="submit" class="text-gray-500 hover:text-red-500 text-lg px-3 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
+                <form action="{{ url_for('delete_machine_web', team_number=team.team_number, machine_id=machine.id) }}"
+                      method="POST" onsubmit="return confirm('Are you sure you want to delete this machine?');">
+                    <button type="submit"
+                            class="text-gray-500 hover:text-red-500 text-lg px-3 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
                         <i class="fas fa-trash-alt"></i>
                     </button>
                 </form>

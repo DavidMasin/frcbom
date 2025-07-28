@@ -1,8 +1,9 @@
+import bcrypt
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import JSON
-import bcrypt
 
 db = SQLAlchemy()
+
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -18,6 +19,7 @@ class User(db.Model):
     def check_password(self, password):
         return bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8'))
 
+
 class Team(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), unique=True, nullable=False)
@@ -26,6 +28,7 @@ class Team(db.Model):
     adminPassword = db.Column(db.String(128))
     users = db.relationship('User', back_populates='team')
     robots = db.relationship('Robot', back_populates='team', cascade="all, delete-orphan")
+
 
 class Robot(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -38,6 +41,7 @@ class Robot(db.Model):
     machines = db.relationship('Machine', back_populates='robot', cascade="all, delete-orphan")
     image_text = db.Column(db.String(100), nullable=True, default='uploads/robot_images/default_robot.png')
 
+
 class System(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -48,6 +52,7 @@ class System(db.Model):
     bom_data = db.Column(JSON)
     robot_id = db.Column(db.Integer, db.ForeignKey('robot.id'), nullable=False)
     robot = db.relationship('Robot', back_populates='systems')
+
 
 class Machine(db.Model):
     id = db.Column(db.Integer, primary_key=True)

@@ -104,8 +104,8 @@ async function handleLogin(event) {
     try {
         const response = await fetch(`${API_BASE_URL}api/login`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ team_number: teamNum, password: password })
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({team_number: teamNum, password: password})
         });
         const data = await response.json();
         if (response.ok) {
@@ -139,7 +139,7 @@ async function handleRegister(event) {
     try {
         const response = await fetch(`${API_BASE_URL}api/register`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                 team_number: teamNum,
                 password: password,
@@ -273,7 +273,7 @@ function setupEventListeners(teamNumber) {
 async function getTeamRobots(teamNum) {
     try {
         const response = await fetch(`${API_BASE_URL}api/get_robots?team_number=${teamNum}`, {
-            headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+            headers: {'Authorization': `Bearer ${getAuthToken()}`}
         });
         if (!response.ok) throw new Error('Failed to fetch robots');
         const data = await response.json();
@@ -292,7 +292,7 @@ async function createNewRobot(teamNumber, robotName) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${getAuthToken()}`
             },
-            body: JSON.stringify({ team_number: teamNumber, robot_name: robotName })
+            body: JSON.stringify({team_number: teamNumber, robot_name: robotName})
         });
         const data = await response.json();
         if (response.ok) {
@@ -312,7 +312,7 @@ async function fetchBOMDataFromServer(robotName, system = 'Main') {
     if (!teamNum || !robotName) return null;
     try {
         const response = await fetch(`${API_BASE_URL}api/get_bom?team_number=${teamNum}&robot=${robotName}&system=${system}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: {'Authorization': `Bearer ${token}`}
         });
         const data = await response.json();
         if (response.ok) {
@@ -489,7 +489,7 @@ function attachCounterListeners() {
             if (target) {
                 let max = parseInt(target.max);
                 let currentVal = parseInt(target.value);
-                if(currentVal < max) target.value = currentVal + 1;
+                if (currentVal < max) target.value = currentVal + 1;
             }
         });
     });
@@ -499,7 +499,7 @@ function attachCounterListeners() {
             const target = document.getElementById(btn.dataset.target);
             if (target) {
                 let currentVal = parseInt(target.value);
-                if(currentVal > 0) target.value = currentVal - 1;
+                if (currentVal > 0) target.value = currentVal - 1;
             }
         });
     });
@@ -525,7 +525,7 @@ function getPartStatus(part) {
 function checkProcessProgress(item) {
     const qty = parseInt(item.Quantity, 10);
     if (isNaN(qty)) { // If quantity is not a number, can't determine progress
-        return { ...item, isCompleted: false, isNotStarted: true, currentProcess: "N/A", remaining: "N/A" };
+        return {...item, isCompleted: false, isNotStarted: true, currentProcess: "N/A", remaining: "N/A"};
     }
 
     const preProcessQty = parseInt(item.preProcessQuantity, 10) || 0;

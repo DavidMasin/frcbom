@@ -56,6 +56,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+
+function parseURL() {
+    const pathSegments = window.location.pathname.split('/').filter(Boolean);
+    const params = {
+        teamNumber: null,
+        robotName: null,
+        system: 'Main',
+        admin: false
+    };
+
+    if (pathSegments.length >= 1) {
+        params.teamNumber = pathSegments[0];
+    }
+
+    if (pathSegments.length >= 2) {
+        if (pathSegments[1] === 'Admin') {
+            params.admin = true;
+            params.robotName = pathSegments[2] || null;
+            params.system = pathSegments[3] || 'Main';
+        } else {
+            params.robotName = pathSegments[1];
+        }
+    }
+
+    return params;
+}
+
 /**
  * Initializes the main dashboard view.
  * It checks for user authentication, role, and fetches the necessary robot and BOM data.
@@ -171,67 +198,7 @@ function handleLogout() {
 }
 
 
-// --- Dashboard Setup and UI ---
 
-function showRobotSelectionDashboard(robots, teamNumber, isAdmin) {
-    const dashboard = document.getElementById('dashboard');
-    if (!dashboard) return;
-    dashboard.innerHTML = `
-        <div class="text-center">
-            <h2 class="text-2xl font-bold mb-4">Select a Robot</h2>
-            <div id="robot-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-            <h3 class="text-xl font-bold mt-8 mb-4">Or Create a New Robot</h3>
-            <div class="flex justify-center">
-                <input type="text" id="newRobotName" placeholder="New Robot Name" class="p-2 border rounded">
-                <button id="createRobotBtn" class="bg-green-500 text-white p-2 rounded ml-2">Create Robot</button>
-            </div>
-        </div>`;
-
-    const robotList = document.getElementById('robot-list');
-    robots.forEach(robot => {
-        const robotCard = document.createElement('div');
-        robotCard.className = 'p-4 border rounded shadow cursor-pointer hover:bg-gray-100';
-        robotCard.textContent = robot;
-        robotCard.onclick = () => {
-            const url = isAdmin ? `/${teamNumber}/Admin/${robot}` : `/${teamNumber}/${robot}`;
-            window.location.href = url;
-        };
-        robotList.appendChild(robotCard);
-    });
-
-    document.getElementById('createRobotBtn').addEventListener('click', async () => {
-        const newRobotName = document.getElementById('newRobotName').value.trim();
-        if (newRobotName) {
-            await createNewRobot(teamNumber, newRobotName);
-            const url = isAdmin ? `/${teamNumber}/Admin/${newRobotName}` : `/${teamNumber}/${newRobotName}`;
-            window.location.href = url;
-        } else {
-            alert('Please enter a name for the new robot.');
-        }
-    });
-}
-
-function promptNewRobotCreation(teamNumber) {
-    const robotName = prompt("No robots found for your team. Please enter a name for your first robot:");
-    if (robotName) {
-        createNewRobot(teamNumber, robotName).then(() => {
-            window.location.href = `/${teamNumber}/${robotName}`;
-        });
-    }
-}
-
-function setupSystemSelector(currentSystem, teamNumber, robotName, isAdmin) {
-    const dropdown = document.getElementById("systemSelect");
-    if (!dropdown) return;
-    dropdown.value = currentSystem;
-    dropdown.addEventListener('change', (event) => {
-        const selectedSystem = event.target.value;
-        const url = isAdmin ?
-            `/${teamNumber}/Admin/${robotName}/${selectedSystem}` :
-            `/${teamNumber}/${robotName}/${selectedSystem}`;
-        window.location.href = url;
-    });
-}
 
 async function setupBOMView(robotName, systemName) {
     const bomData = await fetchBOMDataFromServer(robotName, systemName);
@@ -242,75 +209,6 @@ async function setupBOMView(robotName, systemName) {
     }
 }
 
-function setupEventListeners(teamNumber) {
-    // Filter buttons
-    document.querySelectorAll('.filter-button').forEach(button => {
-        button.addEventListener('click', () => {
-            const filter = button.getAttribute('data-filter') || 'All';
-            handleFilterBOM(filter);
-        });
-    });
-
-    // Modal close buttons
-    document.querySelectorAll('.modal-close').forEach(button => {
-        button.addEventListener('click', () => {
-            button.closest('.modal').style.display = 'none';
-        });
-    });
-
-    // Settings and Upload buttons (if they exist)
-    const settingsBtn = document.getElementById('settingsButton');
-    if (settingsBtn) {
-        settingsBtn.addEventListener('click', () => {
-            document.getElementById('settingsModal').style.display = 'flex';
-        });
-    }
-    const uploadBtn = document.getElementById('uploadBOMButton');
-    if (uploadBtn) {
-        uploadBtn.addEventListener('click', () => {
-            document.getElementById('uploadModal').style.display = 'flex';
-        });
-    }
-}
-
-
-// --- API and Data Handling ---
-
-async function getTeamRobots(teamNum) {
-    try {
-        const response = await fetch(`${API_BASE_URL}api/get_robots?team_number=${teamNum}`, {
-            headers: {'Authorization': `Bearer ${getAuthToken()}`}
-        });
-        if (!response.ok) throw new Error('Failed to fetch robots');
-        const data = await response.json();
-        return data.robots || [];
-    } catch (error) {
-        console.error('Error getting robots:', error);
-        return [];
-    }
-}
-
-async function createNewRobot(teamNumber, robotName) {
-    try {
-        const response = await fetch(`${API_BASE_URL}api/create_robot`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${getAuthToken()}`
-            },
-            body: JSON.stringify({team_number: teamNumber, robot_name: robotName})
-        });
-        const data = await response.json();
-        if (response.ok) {
-            alert(data.message || `Robot "${robotName}" created successfully.`);
-        } else {
-            alert(data.error || 'Failed to create robot.');
-        }
-    } catch (error) {
-        console.error('Error creating robot:', error);
-        alert('An error occurred while creating the robot.');
-    }
-}
 
 async function fetchBOMDataFromServer(robotName, system = 'Main') {
     const teamNum = localStorage.getItem('team_number');

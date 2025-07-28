@@ -221,7 +221,7 @@ def create_robot():
 
     default_systems = ["Main", "System1", "System2", "System3", "System4", "System5"]
     for sys_name in default_systems:
-        sys_record = System(robot=new_robot, name=sys_name, assembly_url=None, part_studio_urls=[], bom_data=[])
+        sys_record = System(robot=new_robot, name=sys_name, assembly_url=None, partstudio_urls=[], bom_data=[])
         if template_robot:
             templ_sys = System.query.filter_by(robot_id=template_robot.id, name=sys_name).first()
             if templ_sys:
@@ -365,7 +365,7 @@ def new_robot_legacy():
     db.session.flush()
     default_systems = ["Main", "System1", "System2", "System3", "System4", "System5"]
     for sys_name in default_systems:
-        sys_record = System(robot=new_robot, name=sys_name, assembly_url=None, part_studio_urls=[], bom_data=[])
+        sys_record = System(robot=new_robot, name=sys_name, assembly_url=None, partstudio_urls=[], bom_data=[])
         if template_robot:
             templ_sys = System.query.filter_by(robot_id=template_robot.id, name=sys_name).first()
             if templ_sys:

@@ -23,7 +23,7 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=100), nullable=False),
     sa.Column('assembly_url', sa.String(length=500), nullable=False),
-    sa.Column('part_studio_urls', postgresql.JSON(astext_type=Text()), nullable=True),
+    sa.Column('partstudio_urls', postgresql.JSON(astext_type=Text()), nullable=True),
     sa.Column('onshape_access_key', sa.String(length=100), nullable=False),
     sa.Column('onshape_secret_key', sa.String(length=100), nullable=False),
     sa.Column('robot_id', sa.Integer(), nullable=False),

@@ -42,7 +42,7 @@ class System(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     assembly_url = db.Column(db.String(500), nullable=True)
-    part_studio_urls = db.Column(JSON)
+    partstudio_urls = db.Column(JSON)
     access_key = db.Column(db.String(100), nullable=True)
     secret_key = db.Column(db.String(100), nullable=True)
     bom_data = db.Column(JSON)

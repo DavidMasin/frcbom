@@ -5,6 +5,40 @@ const API_BASE_URL = '/'; // Use relative path for API requests
  * Sets up event listeners and handles page routing and data fetching.
  */
 document.addEventListener('DOMContentLoaded', async () => {
+    const fetchBomBtn = document.getElementById("fetchBom");
+    if (fetchBomBtn) {
+        console.log("✅ fetchBom button found and event listener attached");
+
+        fetchBomBtn.addEventListener("click", async () => {
+            console.log("🔄 Fetch BOM clicked");
+
+            const teamNumber = parseURL().teamNumber;
+            const robotName = parseURL().robotName;
+            const systemName = parseURL().system;
+
+            const res = await fetch(`${API_BASE_URL}api/bom`, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    team_number: teamNumber,
+                    robot: robotName,
+                    system: systemName,
+                    access_key: document.getElementById("accessKey")?.value,
+                    secret_key: document.getElementById("secretKey")?.value,
+                    document_url: document.getElementById("documentUrl")?.value
+                })
+            });
+
+            const data = await res.json();
+            document.getElementById("settingsMessage").textContent =
+                data.msg || data.error || "✅ BOM fetched successfully!";
+        });
+    } else {
+        console.warn("⚠️ fetchBom button NOT found on this page");
+    }
     // Page-specific initializations
     if (document.getElementById('loginForm')) {
         document.getElementById('loginForm').addEventListener('submit', handleLogin);

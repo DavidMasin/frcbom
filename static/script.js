@@ -451,60 +451,44 @@ async function handleRegister(event) {
         showRegisterMessage('Registration failed due to an error.', 'danger');
     }
 }
+// Define global state
+let currentBOM = [];
 
-/**
- * Initialize the dashboard page (user or team admin) after DOM is loaded.
- * Ensures the user is logged in (otherwise prompts for password), then loads robot list or BOM data.
- */
-async function initializeDashboard() {
-    const { teamNumber, robotName, system, admin } = parseURL();
-    if (!teamNumber) {
-        alert('Invalid team number in URL. Redirecting to home page.');
-        window.location.href = '/';
-        return;
-    }
-    // Check that the team exists (to catch any invalid URL with non-existent team)
-    const exists = await checkTeamExists(teamNumber);
-    if (!exists) {
-        alert('Team does not exist. Redirecting to home page.');
-        window.location.href = '/';
-        return;
-    }
-    // Save the team number in local storage for later use
-    localStorage.setItem('team_number', teamNumber);
+// Utility to get auth token
+function getAuthToken() {
+    return localStorage.getItem('jwt_token');
+}
 
-    // Ensure we have a valid JWT token; if not, prompt for password
-    let token = localStorage.getItem('jwt_token');
-    if (!token) {
-        try {
-            await showPasswordPrompt();
-            token = localStorage.getItem('jwt_token');
-        } catch {
-            alert('You must be logged in to access the dashboard.');
-            window.location.href = '/';
-            return;
-        }
-    }
-    // If this is a team admin URL, ensure the logged-in role is Admin
+// Handle login form submission
+const loginForm = document.getElementById('loginForm');
+if (loginForm) loginForm.addEventListener('submit', handleLogin);
+const registerForm = document.getElementById('registerForm');
+if (registerForm) registerForm.addEventListener('submit', handleRegister);
+
+// After DOM loaded, manage dashboard initialization
+document.addEventListener('DOMContentLoaded', async () => {
+    const teamNumber = localStorage.getItem('team_number');
+    const robotName = localStorage.getItem('robot_name');
+    const role = localStorage.getItem('role');
+    const admin = window.location.pathname.includes('/Admin');
+
+    if (!teamNumber) return;
     if (admin && localStorage.getItem('role') !== 'Admin') {
         alert('Admin access required for this page. Redirecting to user dashboard.');
         window.location.href = `/${teamNumber}`;
         return;
     }
 
-    // Load the list of robots for this team and handle accordingly
     const robots = await getTeamRobots(teamNumber);
     if (!robotName) {
-        // If no specific robot in URL, show robot selection or prompt to create one if none exist
         if (robots.length > 0) {
             showRobotSelectionDashboard(robots);
         } else {
             promptNewRobotCreation(teamNumber);
         }
     } else {
-        // If a robot is specified in URL, verify it exists or offer to create it
         if (!robots.includes(robotName)) {
-            const createRobot = confirm(`Robot "${robotName}" does not exist. Would you like to create it?`);
+            const createRobot = confirm(`Robot "${robotName}" does not exist. Create it?`);
             if (createRobot) {
                 await createNewRobot(teamNumber, robotName);
             } else {
@@ -512,28 +496,23 @@ async function initializeDashboard() {
                 return;
             }
         }
-        // Set current robot and fetch its BOM data for the specified system
         localStorage.setItem('robot_name', robotName);
-        document.getElementById('teamNumber').textContent = teamNumber;
-        const currentSystem = getCurrentSystem();
+        const el = document.getElementById('teamNumber');
+        if (el) el.textContent = teamNumber;
+        const currentSystem = document.getElementById("systemSelect") ? document.getElementById("systemSelect").value : 'Main';
         localStorage.setItem('system', currentSystem);
         await fetchBOMDataFromServer(robotName, currentSystem);
-        // Apply the last used filter or default to 'All'
         const currentFilter = localStorage.getItem('current_filter') || 'All';
         handleFilterBOM(currentFilter);
     }
-
-    // Attach logout button handler (if present)
     document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
-}
+});
 
-/**
- * Show the robot selection interface (when a user logs in and has multiple robots or none specified).
- */
+// Show robot selection list (if multiple robots)
 function showRobotSelectionDashboard(robots) {
     const selectionSection = document.getElementById('robotSelection');
     const robotListContainer = document.getElementById('robotList');
-    robotListContainer.innerHTML = '';  // clear any existing entries
+    robotListContainer.innerHTML = '';
     if (!robots || robots.length === 0) {
         robotListContainer.innerHTML = 'No robots available. Please create a new robot.';
     } else {
@@ -544,13 +523,11 @@ function showRobotSelectionDashboard(robots) {
             btn.addEventListener('click', async () => {
                 const teamNum = localStorage.getItem('team_number');
                 const role = localStorage.getItem('role');
-                // Redirect based on role
                 if (role === 'Admin') {
                     window.location.href = `/${teamNum}/Admin/${robot}/Main`;
                 } else {
                     window.location.href = `/${teamNum}/${robot}/Main`;
                 }
-                // Attempt to fetch BOM data for the robot's Main system (if this code executes before redirect)
                 await fetchBOMDataFromServer(robot, "Main");
             });
             robotListContainer.appendChild(btn);
@@ -559,12 +536,9 @@ function showRobotSelectionDashboard(robots) {
     selectionSection.style.display = 'block';
 }
 
-/**
- * Fetch the list of robots for a team from the server.
- * Returns an array of robot names.
- */
+// Fetch the list of robots for a team
 async function getTeamRobots(teamNum) {
-    const token = localStorage.getItem('jwt_token');
+    const token = getAuthToken();
     try {
         const response = await fetch(`${API_BASE_URL}api/get_robots?team_number=${teamNum}`, {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -577,24 +551,7 @@ async function getTeamRobots(teamNum) {
     }
 }
 
-/**
- * Check if a team exists on the server (for validation).
- * Returns true if team exists, false otherwise.
- */
-async function checkTeamExists(teamNum) {
-    try {
-        const response = await fetch(`${API_BASE_URL}api/team_exists?team_number=${teamNum}`);
-        const data = await response.json();
-        return response.ok ? data.exists : false;
-    } catch (error) {
-        console.error('Error checking team existence:', error);
-        return false;
-    }
-}
-
-/**
- * Prompt the user to enter a name for a new robot, then create it.
- */
+// Prompt user to create a new robot name
 function promptNewRobotCreation(teamNum) {
     const robotName = prompt('Please enter a name for your new robot:');
     if (!robotName) {
@@ -604,17 +561,13 @@ function promptNewRobotCreation(teamNum) {
     }
 }
 
-/**
- * Create a new robot for the team by calling the API.
- * If the user is not logged in (no token), it will prompt for login first.
- */
+// Create a new robot via API
 async function createNewRobot(teamNum, robotName) {
-    let token = localStorage.getItem('jwt_token');
+    let token = getAuthToken();
     if (!token) {
-        // Ensure user is logged in
         try {
             await showPasswordPrompt();
-            token = localStorage.getItem('jwt_token');
+            token = getAuthToken();
             if (!token) throw new Error("Login failed");
         } catch {
             alert('Login is required to create a new robot.');
@@ -624,16 +577,12 @@ async function createNewRobot(teamNum, robotName) {
     try {
         const response = await fetch(`${API_BASE_URL}api/new_robot`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ team_number: teamNum, robot_name: robotName })
         });
         const data = await response.json();
         if (response.ok) {
             alert(data.message);
-            // After creating, redirect to the new robot's dashboard
             if (localStorage.getItem('role') === 'Admin') {
                 window.location.href = `/${teamNum}/Admin/${robotName}/Main`;
             } else {
@@ -648,18 +597,13 @@ async function createNewRobot(teamNum, robotName) {
     }
 }
 
-/**
- * Rename a robot by calling the API.
- */
+// Rename a robot via API
 async function renameRobot(teamNum, oldName, newName) {
-    const token = localStorage.getItem('jwt_token');
+    const token = getAuthToken();
     try {
         const response = await fetch(`${API_BASE_URL}api/rename_robot`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ team_number: teamNum, old_robot_name: oldName, new_robot_name: newName })
         });
         const data = await response.json();
@@ -675,23 +619,18 @@ async function renameRobot(teamNum, oldName, newName) {
     }
 }
 
-/**
- * Delete a robot by calling the API.
- */
+// Delete a robot via API
 async function deleteRobot(teamNum, robotName) {
-    const token = localStorage.getItem('jwt_token');
+    const token = getAuthToken();
     try {
         const response = await fetch(`${API_BASE_URL}api/delete_robot`, {
             method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ team_number: teamNum, robot_name: robotName })
         });
         const data = await response.json();
         if (response.ok) {
-            alert(data.message);
+            alert(data.message || `Robot "${robotName}" deleted.`);
             window.location.reload();
         } else {
             alert(data.error || 'Failed to delete robot.');
@@ -702,11 +641,8 @@ async function deleteRobot(teamNum, robotName) {
     }
 }
 
-/**
- * Save updated part quantities from the edit modal and update the local BOM data and server.
- */
+// Save part quantities and update server
 async function savePartQuantities(part) {
-    // Get updated values from modal inputs (or use part's existing values if input not present)
     const updatedPreQty = document.getElementById('preProcessQty')?.value;
     const updatedProc1Qty = document.getElementById('process1Qty')?.value;
     const updatedProc2Qty = document.getElementById('process2Qty')?.value;
@@ -720,39 +656,29 @@ async function savePartQuantities(part) {
         console.error("Missing team or robot context for saving part quantities.");
         return;
     }
-    // Update the part in local BOM data
-    let currentSystem = "Main";
-    if (document.getElementById("systemSelect")) {
-        currentSystem = document.getElementById("systemSelect").value;
-    }
-    let bomData = getBOMDataFromLocal(robotName, currentSystem);
-    const idx = bomData.findIndex(item => item["Part Name"] === part["Part Name"]);
+    // Update the part in the current BOM data
+    const currentSystem = document.getElementById("systemSelect") ? document.getElementById("systemSelect").value : 'Main';
+    const idx = currentBOM.findIndex(item => item["Part Name"] === part["Part Name"]);
     if (idx !== -1) {
-        bomData[idx] = part;
+        currentBOM[idx] = part;
     } else {
-        console.error("Part not found in local BOM data:", part);
+        console.error("Part not found in current BOM data:", part);
         return;
     }
-    saveBOMDataToLocal(bomData, robotName, currentSystem);
-    // Re-apply the current filter to refresh the display
     const currentFilter = localStorage.getItem('current_filter') || 'All';
     handleFilterBOM(currentFilter);
     closeModal();
 
-    // Save the updated BOM data to the server
     try {
-        const token = localStorage.getItem('jwt_token');
+        const token = getAuthToken();
         const response = await fetch(`${API_BASE_URL}api/save_bom_for_robot_system`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({
                 team_number: teamNum,
                 robot_name: robotName,
-                system: currentSystem,
-                bom_data: bomData
+                system_name: currentSystem,
+                bom_data: currentBOM
             })
         });
         const data = await response.json();
@@ -767,6 +693,89 @@ async function savePartQuantities(part) {
         alert('An error occurred while saving BOM data to the server.');
     }
 }
+
+// Filter and display BOM parts based on filter criteria
+function handleFilterBOM(filter) {
+    const robotName = localStorage.getItem('robot_name');
+    let currentSystem = "Main";
+    if (document.getElementById("systemSelect")) {
+        currentSystem = document.getElementById("systemSelect").value;
+    }
+    const bomData = currentBOM || [];
+    bomData.forEach(item => checkProcessProgress(item));
+    localStorage.setItem('current_filter', filter);
+    const normalized = filter.trim().toLowerCase();
+    let filteredData;
+    switch (normalized) {
+        case 'all':
+            filteredData = bomData;
+            break;
+        case 'cots':
+            filteredData = bomData.filter(item =>
+                (!item.preProcess && !item["Process 1"] && !item["Process 2"]) ||
+                (item.preProcess === "Unknown" && item["Process 1"] === "Unknown" && item["Process 2"] === "Unknown")
+            );
+            break;
+        case 'inhouse':
+            filteredData = bomData.filter(item =>
+                (item.preProcess || item["Process 1"] || item["Process 2"]) &&
+                !(item.preProcess === "Unknown" && item["Process 1"] === "Unknown" && item["Process 2"] === "Unknown")
+            );
+            break;
+        case 'pre-process':
+            filteredData = bomData.filter(item => item.preProcess && !item.preProcessCompleted);
+            break;
+        case 'process1':
+            filteredData = bomData.filter(item =>
+                item["Process 1"] && (!item.preProcess || item.preProcessCompleted) && !item.process1Completed
+            );
+            break;
+        case 'process2':
+            filteredData = bomData.filter(item =>
+                item["Process 2"] && ((!item["Process 1"] && (!item.preProcess || item.preProcessCompleted)) ||
+                    (item["Process 1"] && item.process1Completed)) && !item.process2Completed
+            );
+            break;
+        default:
+            filteredData = bomData.filter(item =>
+                (item.preProcess && item.preProcess.toLowerCase() === normalized && !item.preProcessCompleted) ||
+                (item["Process 1"] && item["Process 1"].toLowerCase() === normalized && (!item.preProcess || item.preProcessCompleted) && !item.process1Completed) ||
+                (item["Process 2"] && item["Process 2"].toLowerCase() === normalized && ((!item["Process 1"] && (!item.preProcess || item.preProcessCompleted)) || (item["Process 1"] && item.process1Completed)) && !item.process2Completed)
+            );
+            break;
+    }
+    displayBOMAsButtons(filteredData);
+}
+
+// Fetch BOM data from server and update currentBOM
+async function fetchBOMDataFromServer(robotName, system = 'Main') {
+    const teamNum = localStorage.getItem('team_number');
+    const token = getAuthToken();
+    if (!teamNum || !robotName) return;
+    try {
+        const response = await fetch(`${API_BASE_URL}api/get_bom?team_number=${teamNum}&robot=${robotName}&system=${system}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        if (response.ok) {
+            currentBOM = data.bom_data;
+            // Optionally call displayBOMAsButtons here if needed
+        } else {
+            console.error(`Failed to retrieve BOM for ${robotName}/${system}:`, data.error);
+            alert(`Error: ${data.error}`);
+        }
+    } catch (error) {
+        console.error(`Fetch BOM Data Error for ${robotName}/${system}:`, error);
+    }
+}
+
+// ... (Download CAD and other modal handlers remain unchanged)
+
+// Logout functionality
+document.getElementById('logoutButton')?.addEventListener('click', () => {
+    localStorage.clear();
+    window.location.href = "/";
+});
 
 /**
  * Close the part edit modal.

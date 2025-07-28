@@ -1,49 +1,62 @@
 {% extends "team_base.html" %}
-{% block title %}Robot Dashboard - {{ team.name }}{% endblock %}
+
+{% block title %}Robot Dashboard - Team {{ team.team_number }}{% endblock %}
+
 {% block content %}
 <div class="px-4 sm:px-0">
     <div class="flex justify-between items-center mb-8">
         <h1 class="text-4xl font-bold text-white tracking-tight">Robot Fleet</h1>
-        <!-- New Robot button with hover effect -->
-        <a href="{{ url_for('team.new_robot', team_number=team.team_number) }}"
-           class="group relative inline-flex items-center justify-center px-5 py-2.5 overflow-hidden
-                  font-medium text-blue-300 transition-all duration-300 rounded-lg bg-gray-800 hover:bg-gray-700 shadow-lg">
-            <span class="absolute top-0 right-0 w-4 h-4 transition-all duration-500 ease-in-out
-                         bg-blue-500 rounded-full group-hover:w-full group-hover:h-full"></span>
-            <span class="relative group-hover:text-white flex items-center">
-                <i class="fas fa-plus mr-2"></i> New Robot
+        <a href="{{ url_for('new_robot_form', team_number=team.team_number) }}"
+           class="group relative inline-flex items-center justify-center px-5 py-2.5 overflow-hidden font-medium text-indigo-300 transition-all duration-300 rounded-lg bg-gray-800 hover:bg-gray-700 shadow-lg">
+            <span class="absolute top-0 right-0 inline-block w-4 h-4 transition-all duration-500 ease-in-out bg-indigo-500 rounded-full group-hover:w-full group-hover:h-full"></span>
+            <span class="absolute bottom-0 left-0 w-full h-1 transition-all duration-500 ease-in-out bg-indigo-500"></span>
+            <span class="relative flex items-center">
+                <i class="fas fa-plus mr-2"></i> Add New Robot
             </span>
         </a>
     </div>
+
     {% if robots %}
-    <!-- Robot list as cards -->
-    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {% for robot in robots %}
-        <div class="group bg-gray-800/50 border border-gray-700 hover:border-blue-500/50
-                    rounded-xl p-4 flex justify-between items-center transition-colors">
-            <!-- Robot info and link -->
-            <a href="{{ url_for('team_admin.team_admin_robot', team_number=team_number, robot_name=robot.name) }}"
-               class="flex items-center">
-                {% if robot.image_file and robot.image_file != 'default_robot.png' %}
-                <img src="{{ url_for('static', filename='uploads/robot_images/' ~ robot.image_file) }}"
-                     alt="{{ robot.name }}" class="w-12 h-12 object-contain mr-3 border border-gray-600 rounded">
-                {% endif %}
-                <div>
-                    <h3 class="text-lg font-semibold text-gray-200">{{ robot.name }}</h3>
-                    <p class="text-sm text-gray-400">Year: {{ robot.year or '—' }}</p>
+        <div class="group relative bg-gray-800/50 border border-gray-700 rounded-2xl shadow-lg overflow-hidden transform hover:-translate-y-2 transition-all duration-300">
+            <div class="absolute -inset-0.5 bg-gradient-to-r from-pink-600 to-purple-600 rounded-2xl blur opacity-0 group-hover:opacity-75 transition duration-500"></div>
+            <div class="relative">
+                <a href="{{ url_for('team_admin_robot', team_number=team.team_number, robot_name=robot.name) }}">
+                    <img src="{{ url_for('static', filename=robot.image_file) }}"
+                         alt="{{ robot.name }}"
+                         class="w-full h-56 object-cover"
+                         onerror="this.onerror=null;this.src='https://placehold.co/600x400/1f2937/9ca3af?text=No+Image';">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                </a>
+                <div class="absolute bottom-0 left-0 p-6 w-full">
+                    <h2 class="text-3xl font-black text-white tracking-wider uppercase">{{ robot.name }}</h2>
+                    <p class="text-indigo-300 font-semibold">Competition Year: {{ robot.year }}</p>
                 </div>
-            </a>
-            <!-- Delete Robot button (revealed on hover) -->
-            <button type="button" data-robot-id="{{ robot.id }}"
-                    class="delete-robot-btn text-gray-500 hover:text-red-500 text-lg px-3 py-1
-                           rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
-                <i class="fas fa-trash-alt"></i>
-            </button>
+                <div class="absolute top-4 right-4 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <a href="{{ url_for('team_admin_robot', team_number=team.team_number, robot_name=robot.name) }}" class="bg-blue-600/80 hover:bg-blue-500 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg backdrop-blur-sm">
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                    <form action="{{ url_for('delete_robot', robot_id=robot.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this robot and all its systems?');">
+                        <button type="submit" class="bg-red-600/80 hover:bg-red-500 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg backdrop-blur-sm">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
         {% endfor %}
     </div>
     {% else %}
-    <p class="text-gray-400">No robots have been created yet.</p>
+    <div class="text-center py-20 px-6 bg-gray-800/50 border-2 border-dashed border-gray-700 rounded-2xl">
+        <i class="fas fa-space-shuttle text-6xl text-gray-500 mb-4 transform -rotate-45"></i>
+        <h2 class="text-3xl font-bold text-white">The Hangar is Empty</h2>
+        <p class="text-gray-400 mt-2 max-w-md mx-auto">Your robot fleet awaits its first champion. Build a new robot to begin your journey to victory.</p>
+        <a href="{{ url_for('new_robot_form', team_number=team.team_number) }}"
+           class="mt-8 inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition duration-300 transform hover:scale-105">
+            Construct First Robot
+        </a>
+    </div>
     {% endif %}
 </div>
 {% endblock %}

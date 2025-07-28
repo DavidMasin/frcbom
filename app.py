@@ -7,6 +7,7 @@ from onshape_client import OnshapeElement
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from flask_migrate import Migrate
+from datetime import datetime
 
 # Initialize Flask app and configuration
 app = Flask(__name__)
@@ -14,8 +15,7 @@ app = Flask(__name__)
 db_uri = os.getenv("DATABASE_URL")
 if db_uri and db_uri.startswith("postgres://"):
     db_uri = db_uri.replace("postgres://", "postgresql://", 1)
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///app.db")
-
+app.config['SQLALCHEMY_DATABASE_URI'] = db_uri or 'sqlite:///teams.db'
 
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'super-secure-jwt-key')
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
@@ -35,7 +35,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # Ensure base upload directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# HTML page routes (for existing frontend templates)
+# HTML page routes
 @app.route('/')
 def home():
     return render_template("index.html")
@@ -57,16 +57,18 @@ def team_admin_dashboard(team_number):
     if not team:
         return "Team not found", 404
     robots = Robot.query.filter_by(team_id=team.id).all()
-    return render_template("teamAdmin_dashboard.html", team_number=team_number, team_id=team.id, robots=robots)
+    return render_template("teamAdmin_dashboard.html", team=team, robots=robots)
 
 @app.route("/<team_number>/new_robot")
 def new_robot_form(team_number):
     team = Team.query.filter_by(team_number=team_number).first_or_404()
-    return render_template("new_robot.html", team_id=team.id, team_number=team.team_number, default_config=None)
+    return render_template("new_robot.html", team_id=team.id, team_number=team.team_number)
 
-@app.route('/<team_number>/Admin/<robot_name>')
+@app.route("/<team_number>/Admin/<robot_name>")
 def team_admin_robot(team_number, robot_name):
-    return render_template("robot_detail.html")
+    team = Team.query.filter_by(team_number=team_number).first_or_404()
+    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first_or_404()
+    return render_template("robot_detail.html", robot=robot, team=team)
 
 @app.route('/<team_number>/Admin/<robot_name>/<system>')
 def team_admin_bom(team_number, robot_name, system):
@@ -77,7 +79,8 @@ def team_admin_bom(team_number, robot_name, system):
     if not robot:
         return "Robot not found", 404
     robots = Robot.query.filter_by(team_id=team.id).all()
-    return render_template("system_detail.html", team_number=team_number, team_id=team.id, robots=robots, current_robot=robot_name, filter_system=system)
+    return render_template("system_detail.html", team_number=team_number, team_id=team.id,
+                           robots=robots, current_robot=robot_name, filter_system=system)
 
 @app.route('/<team_number>/<robot_name>/<system>')
 def team_bom_filtered(team_number, robot_name, system):
@@ -99,6 +102,7 @@ def register():
         return jsonify({"error": "Team number, password, and adminPassword are required"}), 400
     if Team.query.filter_by(team_number=team_number).first():
         return jsonify({"error": "Team already exists"}), 400
+
     hashed_password = generate_password_hash(password)
     hashed_admin_password = generate_password_hash(admin_password)
     new_team = Team(team_number=team_number, password=hashed_password, adminPassword=hashed_admin_password)
@@ -108,7 +112,7 @@ def register():
 
 @app.route('/api/login', methods=['POST'])
 def login():
-    """Login a team (using user or admin password) and return a JWT token and role info."""
+    """Login a team (user or admin password) and return a JWT token and role info."""
     data = request.get_json()
     team_number = data.get('team_number')
     password = data.get('password')
@@ -117,14 +121,16 @@ def login():
     team = Team.query.filter_by(team_number=team_number).first()
     if not team or not (check_password_hash(team.password, password) or check_password_hash(team.adminPassword, password)):
         return jsonify({"error": "Invalid credentials"}), 401
+
     is_admin = False
     if check_password_hash(team.adminPassword, password):
         is_admin = True
     additional_claims = {"is_team_admin": False, "is_global_admin": False}
     if is_admin:
         additional_claims["is_team_admin"] = True
-        if team_number == "0000":
+        if team_number == "0000":  # global admin account
             additional_claims["is_global_admin"] = True
+
     access_token = create_access_token(identity=team_number, additional_claims=additional_claims)
     return jsonify(access_token=access_token, team_number=team_number, isAdmin=is_admin), 200
 
@@ -152,18 +158,17 @@ def list_robots():
         if not team_number:
             return jsonify({"error": "Team number is required"}), 400
     else:
-        team_number = current_user
+        team_number = current_user  # non-admin can only list their own team
     team = Team.query.filter_by(team_number=team_number).first()
     if not team:
         return jsonify({"error": "Team not found"}), 404
+
     robots = Robot.query.filter_by(team_id=team.id).all()
     robot_list = []
     for robot in robots:
         robot_data = {"id": robot.id, "name": robot.name, "is_template": robot.is_template, "image": None}
-        if robot.image:
-            img_path = robot.image
-            idx = img_path.find('/static/')
-            robot_data["image"] = img_path[idx:] if idx != -1 else robot.image
+        if robot.image_file:
+            robot_data["image"] = "/static/" + robot.image_file
         robot_list.append(robot_data)
     return jsonify({"robots": robot_list}), 200
 
@@ -189,11 +194,12 @@ def create_robot():
         return jsonify({"error": "Team not found"}), 404
     if Robot.query.filter_by(team_id=team.id, name=robot_name).first():
         return jsonify({"error": "Robot name already exists"}), 400
-    new_robot = Robot(name=robot_name, team_id=team.id)
+
+    new_robot = Robot(name=robot_name, team_id=team.id, year=datetime.now().year)
     template_robot = Robot.query.filter_by(team_id=team.id, is_template=True).first()
     db.session.add(new_robot)
-    db.session.flush()
-    # Save robot image if provided
+    db.session.flush()  # assign ID
+
     if image_file:
         team_dir = os.path.join(app.config['UPLOAD_FOLDER'], f"team_{team_number}", "robots")
         os.makedirs(team_dir, exist_ok=True)
@@ -204,11 +210,12 @@ def create_robot():
         image_filename = f"robot_{new_robot.id}.{ext}" if ext else f"robot_{new_robot.id}"
         image_path = os.path.join(team_dir, image_filename)
         image_file.save(image_path)
-        new_robot.image = image_path
-    # Create default systems for the new robot
+        # Store relative path in DB
+        new_robot.image_file = os.path.join("uploads", f"team_{team_number}", "robots", image_filename)
+
     default_systems = ["Main", "System1", "System2", "System3", "System4", "System5"]
     for sys_name in default_systems:
-        sys_record = System(robot=new_robot, name=sys_name, assembly_url=None, partstudio_urls=[], bom_data=[])
+        sys_record = System(robot=new_robot, name=sys_name, assembly_url=None, part_studio_urls=[], bom_data=[])
         if template_robot:
             templ_sys = System.query.filter_by(robot_id=template_robot.id, name=sys_name).first()
             if templ_sys:
@@ -218,19 +225,19 @@ def create_robot():
     if template_robot:
         for templ_machine in template_robot.machines:
             machine_copy = Machine(robot=new_robot, name=templ_machine.name, cad_format=templ_machine.cad_format)
-            if templ_machine.icon:
+            if templ_machine.icon_file:
                 machine_dir = os.path.join(app.config['UPLOAD_FOLDER'], f"team_{team_number}", "machines")
                 os.makedirs(machine_dir, exist_ok=True)
-                if os.path.isfile(templ_machine.icon):
-                    ext = templ_machine.icon.rsplit('.', 1)[-1] if '.' in templ_machine.icon else ''
+                if os.path.isfile(templ_machine.icon_file):
+                    ext = templ_machine.icon_file.rsplit('.', 1)[-1] if '.' in templ_machine.icon_file else ''
                     new_icon_filename = f"machine_{new_robot.id}_{secure_filename(templ_machine.name)}.{ext}" if ext else f"machine_{new_robot.id}_{secure_filename(templ_machine.name)}"
                     new_icon_path = os.path.join(machine_dir, new_icon_filename)
                     try:
-                        with open(templ_machine.icon, 'rb') as src, open(new_icon_path, 'wb') as dst:
+                        with open(templ_machine.icon_file, 'rb') as src, open(new_icon_path, 'wb') as dst:
                             dst.write(src.read())
-                        machine_copy.icon = new_icon_path
+                        machine_copy.icon_file = new_icon_path
                     except Exception:
-                        machine_copy.icon = None
+                        machine_copy.icon_file = None
             db.session.add(machine_copy)
     try:
         db.session.commit()
@@ -245,11 +252,7 @@ def update_robot(robot_id):
     """Update a robot's details (name or image)."""
     current_user = get_jwt_identity()
     claims = get_jwt()
-    new_name = None
-    if request.is_json:
-        new_name = request.json.get("name")
-    else:
-        new_name = request.form.get("name")
+    new_name = request.json.get("name") if request.is_json else request.form.get("name")
     image_file = request.files.get("image")
     robot = Robot.query.get(robot_id)
     if not robot:
@@ -276,13 +279,15 @@ def update_robot(robot_id):
             ext = filename.rsplit('.', 1)[1].lower()
         image_filename = f"robot_{robot.id}.{ext}" if ext else f"robot_{robot.id}"
         image_path = os.path.join(team_dir, image_filename)
-        if robot.image and os.path.isfile(robot.image):
-            try:
-                os.remove(robot.image)
-            except Exception as e:
-                print(f"Warning: could not remove old robot image: {e}")
+        if robot.image_file:
+            old_image_path = os.path.join(app.root_path, 'static', robot.image_file)
+            if os.path.isfile(old_image_path):
+                try:
+                    os.remove(old_image_path)
+                except Exception as e:
+                    print(f"Warning: could not remove old robot image: {e}")
         image_file.save(image_path)
-        robot.image = image_path
+        robot.image_file = os.path.join("uploads", f"team_{team.team_number}", "robots", image_filename)
     try:
         db.session.commit()
     except Exception as e:
@@ -304,23 +309,23 @@ def delete_robot_by_id(robot_id):
         return jsonify({"error": "Team not found"}), 404
     if not (claims.get('is_team_admin') and current_user == team.team_number) and not claims.get('is_global_admin'):
         return jsonify({"error": "Unauthorized"}), 403
-    if robot.image and os.path.isfile(robot.image):
-        try:
-            os.remove(robot.image)
-        except Exception as e:
-            print(f"Warning: could not delete robot image file: {e}")
-    for sys in robot.systems:
-        if sys.image and os.path.isfile(sys.image):
+
+    if robot.image_file:
+        old_image_path = os.path.join(app.root_path, 'static', robot.image_file)
+        if os.path.isfile(old_image_path):
             try:
-                os.remove(sys.image)
+                os.remove(old_image_path)
             except Exception as e:
-                print(f"Warning: could not delete system image file: {e}")
+                print(f"Warning: could not delete robot image file: {e}")
+    # (System image files not applicable, skipping)
     for mach in robot.machines:
-        if mach.icon and os.path.isfile(mach.icon):
-            try:
-                os.remove(mach.icon)
-            except Exception as e:
-                print(f"Warning: could not delete machine icon file: {e}")
+        if mach.icon_file:
+            icon_path = os.path.join(app.root_path, 'static', mach.icon_file)
+            if os.path.isfile(icon_path):
+                try:
+                    os.remove(icon_path)
+                except Exception as e:
+                    print(f"Warning: could not delete machine icon file: {e}")
     try:
         db.session.delete(robot)
         db.session.commit()
@@ -329,7 +334,7 @@ def delete_robot_by_id(robot_id):
         return jsonify({"error": f"Failed to delete robot: {str(e)}"}), 500
     return jsonify({"message": "Robot deleted successfully"}), 200
 
-# Legacy endpoints (for compatibility with existing frontend calls)
+# Legacy endpoints for compatibility
 @app.route('/api/new_robot', methods=['POST'])
 @jwt_required()
 def new_robot_legacy():
@@ -347,13 +352,14 @@ def new_robot_legacy():
         return jsonify({"error": "Team not found"}), 404
     if Robot.query.filter_by(team_id=team.id, name=robot_name).first():
         return jsonify({"error": "Robot name already exists"}), 400
-    new_robot = Robot(name=robot_name, team_id=team.id)
+
+    new_robot = Robot(name=robot_name, team_id=team.id, year=datetime.now().year)
     template_robot = Robot.query.filter_by(team_id=team.id, is_template=True).first()
     db.session.add(new_robot)
     db.session.flush()
     default_systems = ["Main", "System1", "System2", "System3", "System4", "System5"]
     for sys_name in default_systems:
-        sys_record = System(robot=new_robot, name=sys_name, assembly_url=None, partstudio_urls=[], bom_data=[])
+        sys_record = System(robot=new_robot, name=sys_name, assembly_url=None, part_studio_urls=[], bom_data=[])
         if template_robot:
             templ_sys = System.query.filter_by(robot_id=template_robot.id, name=sys_name).first()
             if templ_sys:
@@ -363,18 +369,18 @@ def new_robot_legacy():
     if template_robot:
         for templ_machine in template_robot.machines:
             machine_copy = Machine(robot=new_robot, name=templ_machine.name, cad_format=templ_machine.cad_format)
-            if templ_machine.icon and os.path.isfile(templ_machine.icon):
-                ext = templ_machine.icon.rsplit('.', 1)[-1] if '.' in templ_machine.icon else ''
+            if templ_machine.icon_file and os.path.isfile(templ_machine.icon_file):
+                ext = templ_machine.icon_file.rsplit('.', 1)[-1] if '.' in templ_machine.icon_file else ''
                 machine_dir = os.path.join(app.config['UPLOAD_FOLDER'], f"team_{team_number}", "machines")
                 os.makedirs(machine_dir, exist_ok=True)
                 new_icon_filename = f"machine_{new_robot.id}_{secure_filename(templ_machine.name)}.{ext}" if ext else f"machine_{new_robot.id}_{secure_filename(templ_machine.name)}"
                 new_icon_path = os.path.join(machine_dir, new_icon_filename)
                 try:
-                    with open(templ_machine.icon, 'rb') as src, open(new_icon_path, 'wb') as dst:
+                    with open(templ_machine.icon_file, 'rb') as src, open(new_icon_path, 'wb') as dst:
                         dst.write(src.read())
-                    machine_copy.icon = new_icon_path
+                    machine_copy.icon_file = new_icon_path
                 except Exception:
-                    machine_copy.icon = None
+                    machine_copy.icon_file = None
             db.session.add(machine_copy)
     try:
         db.session.commit()
@@ -447,23 +453,21 @@ def delete_robot_legacy():
     if not robot:
         return jsonify({"error": f"Robot '{robot_name}' not found"}), 404
     # Remove files for this robot
-    if robot.image and os.path.isfile(robot.image):
-        try:
-            os.remove(robot.image)
-        except Exception:
-            pass
-    for sys in robot.systems:
-        if sys.image and os.path.isfile(sys.image):
+    if robot.image_file:
+        old_image_path = os.path.join(app.root_path, 'static', robot.image_file)
+        if os.path.isfile(old_image_path):
             try:
-                os.remove(sys.image)
+                os.remove(old_image_path)
             except Exception:
                 pass
     for mach in robot.machines:
-        if mach.icon and os.path.isfile(mach.icon):
-            try:
-                os.remove(mach.icon)
-            except Exception:
-                pass
+        if mach.icon_file:
+            icon_path = os.path.join(app.root_path, 'static', mach.icon_file)
+            if os.path.isfile(icon_path):
+                try:
+                    os.remove(icon_path)
+                except Exception:
+                    pass
     try:
         db.session.delete(robot)
         db.session.commit()
@@ -471,101 +475,6 @@ def delete_robot_legacy():
         db.session.rollback()
         return jsonify({"error": f"Failed to delete robot: {str(e)}"}), 500
     return jsonify({"message": f"Robot '{robot_name}' deleted successfully"}), 200
-
-@app.route('/api/systems/<int:system_id>', methods=['PUT'])
-@jwt_required()
-def update_system(system_id):
-    """Update a system's details (name, assembly URL, part studios, API keys, image)."""
-    current_user = get_jwt_identity()
-    claims = get_jwt()
-    # Accept JSON or form data
-    data = request.get_json() if request.is_json else request.form
-    new_name = data.get('name')
-    assembly_url = data.get('assembly_url')
-    partstudio_list = data.get('partstudio_urls')
-    access_key = data.get('access_key')
-    secret_key = data.get('secret_key')
-    image_file = request.files.get('image')
-    system = System.query.get(system_id)
-    if not system:
-        return jsonify({"error": "System not found"}), 404
-    robot = Robot.query.get(system.robot_id)
-    team = Team.query.get(robot.team_id) if robot else None
-    if not robot or not team:
-        return jsonify({"error": "Associated robot/team not found"}), 404
-    if not (claims.get('is_team_admin') and current_user == team.team_number) and not claims.get('is_global_admin'):
-        return jsonify({"error": "Unauthorized"}), 403
-    if new_name:
-        new_name = new_name.strip()
-        if new_name == "":
-            return jsonify({"error": "System name cannot be empty"}), 400
-        if new_name != system.name:
-            if System.query.filter_by(robot_id=robot.id, name=new_name).first():
-                return jsonify({"error": "Another system with this name already exists"}), 400
-            system.name = new_name
-    if assembly_url is not None:
-        system.assembly_url = assembly_url.strip() if assembly_url != "" else None
-    if partstudio_list is not None:
-        # partstudio_urls might be JSON list or comma-separated string
-        if isinstance(partstudio_list, str):
-            urls = [u.strip() for u in partstudio_list.split(",") if u.strip()]
-            system.partstudio_urls = urls
-        elif isinstance(partstudio_list, list):
-            system.partstudio_urls = partstudio_list
-    if access_key is not None:
-        system.access_key = access_key if access_key != "" else None
-    if secret_key is not None:
-        system.secret_key = secret_key if secret_key != "" else None
-    if image_file:
-        system_dir = os.path.join(app.config['UPLOAD_FOLDER'], f"team_{team.team_number}", "systems")
-        os.makedirs(system_dir, exist_ok=True)
-        ext = ''
-        filename = secure_filename(image_file.filename)
-        if '.' in filename:
-            ext = filename.rsplit('.', 1)[1].lower()
-        image_filename = f"system_{system.id}.{ext}" if ext else f"system_{system.id}"
-        image_path = os.path.join(system_dir, image_filename)
-        if system.image and os.path.isfile(system.image):
-            try:
-                os.remove(system.image)
-            except Exception as e:
-                print(f"Warning: could not remove old system image: {e}")
-        image_file.save(image_path)
-        system.image = image_path
-    try:
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": f"Failed to update system: {str(e)}"}), 500
-    return jsonify({"message": "System updated successfully"}), 200
-
-@app.route('/api/systems/<int:system_id>', methods=['DELETE'])
-@jwt_required()
-def delete_system(system_id):
-    """Delete a system from a robot."""
-    current_user = get_jwt_identity()
-    claims = get_jwt()
-    system = System.query.get(system_id)
-    if not system:
-        return jsonify({"error": "System not found"}), 404
-    robot = Robot.query.get(system.robot_id)
-    team = Team.query.get(robot.team_id) if robot else None
-    if not robot or not team:
-        return jsonify({"error": "Associated robot/team not found"}), 404
-    if not (claims.get('is_team_admin') and current_user == team.team_number) and not claims.get('is_global_admin'):
-        return jsonify({"error": "Unauthorized"}), 403
-    if system.image and os.path.isfile(system.image):
-        try:
-            os.remove(system.image)
-        except Exception:
-            pass
-    try:
-        db.session.delete(system)
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": f"Failed to delete system: {str(e)}"}), 500
-    return jsonify({"message": "System deleted successfully"}), 200
 
 # Machine endpoints
 @app.route('/api/machines', methods=['GET'])
@@ -584,14 +493,13 @@ def list_machines():
     robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first() if team else None
     if not team or not robot:
         return jsonify({"error": "Team or robot not found"}), 404
+
     machines = Machine.query.filter_by(robot_id=robot.id).all()
     machine_list = []
     for m in machines:
         machine_data = {"id": m.id, "name": m.name, "cad_format": m.cad_format, "icon": None}
-        if m.icon:
-            icon_path = m.icon
-            idx = icon_path.find('/static/')
-            machine_data["icon"] = icon_path[idx:] if idx != -1 else m.icon
+        if m.icon_file:
+            machine_data["icon"] = "/static/" + m.icon_file
         machine_list.append(machine_data)
     return jsonify({"machines": machine_list}), 200
 
@@ -622,9 +530,11 @@ def add_machine():
         return jsonify({"error": "Team or robot not found"}), 404
     if Machine.query.filter_by(robot_id=robot.id, name=machine_name).first():
         return jsonify({"error": "Machine name already exists for this robot"}), 400
+
     new_machine = Machine(robot=robot, name=machine_name, cad_format=cad_format)
     db.session.add(new_machine)
-    db.session.flush()
+    db.session.flush()  # assign ID
+
     if icon_file:
         machine_dir = os.path.join(app.config['UPLOAD_FOLDER'], f"team_{team_number}", "machines")
         os.makedirs(machine_dir, exist_ok=True)
@@ -635,19 +545,21 @@ def add_machine():
         icon_filename = f"machine_{robot.id}_{secure_filename(machine_name)}.{ext}" if ext else f"machine_{robot.id}_{secure_filename(machine_name)}"
         icon_path = os.path.join(machine_dir, icon_filename)
         icon_file.save(icon_path)
-        new_machine.icon = icon_path
+        new_machine.icon_file = os.path.join("uploads", f"team_{team_number}", "machines", icon_filename)
+
     try:
         db.session.commit()
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"Failed to add machine: {str(e)}"}), 500
+
     return jsonify({
         "message": "Machine added successfully",
         "machine": {
             "id": new_machine.id,
             "name": new_machine.name,
             "cad_format": new_machine.cad_format,
-            "icon": (new_machine.icon[new_machine.icon.find('/static/'):] if new_machine.icon and new_machine.icon.find('/static/') != -1 else None)
+            "icon": ("/static/" + new_machine.icon_file if new_machine.icon_file else None)
         }
     }), 200
 
@@ -666,6 +578,7 @@ def update_machine(machine_id):
         return jsonify({"error": "Associated robot/team not found"}), 404
     if not (claims.get('is_team_admin') and current_user == team.team_number) and not claims.get('is_global_admin'):
         return jsonify({"error": "Unauthorized"}), 403
+
     if request.is_json:
         new_name = request.json.get("name")
         new_format = request.json.get("cad_format")
@@ -673,6 +586,7 @@ def update_machine(machine_id):
         new_name = request.form.get("name")
         new_format = request.form.get("cad_format")
     icon_file = request.files.get("icon")
+
     if new_name:
         new_name = new_name.strip()
         if new_name == "":
@@ -692,13 +606,16 @@ def update_machine(machine_id):
             ext = filename_secure.rsplit('.', 1)[1].lower()
         icon_filename = f"machine_{robot.id}_{secure_filename(machine.name)}.{ext}" if ext else f"machine_{robot.id}_{secure_filename(machine.name)}"
         icon_path = os.path.join(machine_dir, icon_filename)
-        if machine.icon and os.path.isfile(machine.icon):
-            try:
-                os.remove(machine.icon)
-            except Exception as e:
-                print(f"Warning: could not remove old machine icon: {e}")
+        if machine.icon_file:
+            old_icon_path = os.path.join(app.root_path, 'static', machine.icon_file)
+            if os.path.isfile(old_icon_path):
+                try:
+                    os.remove(old_icon_path)
+                except Exception as e:
+                    print(f"Warning: could not remove old machine icon: {e}")
         icon_file.save(icon_path)
-        machine.icon = icon_path
+        machine.icon_file = os.path.join("uploads", f"team_{team.team_number}", "machines", icon_filename)
+
     try:
         db.session.commit()
     except Exception as e:
@@ -721,11 +638,14 @@ def delete_machine(machine_id):
         return jsonify({"error": "Associated robot/team not found"}), 404
     if not (claims.get('is_team_admin') and current_user == team.team_number) and not claims.get('is_global_admin'):
         return jsonify({"error": "Unauthorized"}), 403
-    if machine.icon and os.path.isfile(machine.icon):
-        try:
-            os.remove(machine.icon)
-        except Exception:
-            pass
+
+    if machine.icon_file:
+        icon_path = os.path.join(app.root_path, 'static', machine.icon_file)
+        if os.path.isfile(icon_path):
+            try:
+                os.remove(icon_path)
+            except Exception:
+                pass
     try:
         db.session.delete(machine)
         db.session.commit()
@@ -734,7 +654,176 @@ def delete_machine(machine_id):
         return jsonify({"error": f"Failed to delete machine: {str(e)}"}), 500
     return jsonify({"message": "Machine deleted successfully"}), 200
 
-# Global admin endpoints (for data download/upload)
+# BOM and Onshape integration endpoints
+@app.route('/api/get_bom', methods=['GET'])
+@jwt_required()
+def get_bom():
+    """Retrieve BOM data for a specific team, robot, and system."""
+    current_user = get_jwt_identity()
+    claims = get_jwt()
+    team_number = request.args.get('team_number')
+    robot_name = request.args.get('robot')
+    system_name = request.args.get('system', 'Main')
+    if not team_number or not robot_name:
+        return jsonify({"error": "Team number and robot name are required"}), 400
+    if current_user != team_number and not claims.get('is_global_admin'):
+        return jsonify({"error": "Unauthorized"}), 403
+    team = Team.query.filter_by(team_number=team_number).first()
+    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first() if team else None
+    if not team or not robot:
+        return jsonify({"error": "Team or robot not found"}), 404
+
+    if system_name == "Main":
+        combined = []
+        for sys_record in robot.systems:
+            if sys_record.bom_data:
+                combined.extend(sys_record.bom_data)
+        return jsonify({"bom_data": combined}), 200
+    else:
+        sys_record = System.query.filter_by(robot_id=robot.id, name=system_name).first()
+        if not sys_record:
+            return jsonify({"error": "System not found"}), 404
+        bom_list = sys_record.bom_data if sys_record.bom_data is not None else []
+        return jsonify({"bom_data": bom_list}), 200
+
+@app.route('/api/save_bom_for_robot_system', methods=['POST'])
+@jwt_required()
+def save_bom_for_robot_system():
+    """Save provided BOM data for a given team, robot, and system."""
+    current_user = get_jwt_identity()
+    claims = get_jwt()
+    data = request.get_json()
+    team_number = data.get("team_number")
+    robot_name = data.get("robot_name")
+    system_name = data.get("system_name") or data.get("system")
+    bom_data = data.get("bom_data")
+    if not team_number or not robot_name or not system_name or bom_data is None:
+        return jsonify({"error": "Missing required data"}), 400
+    if current_user != team_number and not claims.get('is_global_admin'):
+        return jsonify({"error": "Unauthorized"}), 403
+
+    team = Team.query.filter_by(team_number=team_number).first()
+    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first() if team else None
+    if not team or not robot:
+        return jsonify({"error": "Team or robot not found"}), 404
+
+    system = System.query.filter_by(robot_id=robot.id, name=system_name).first()
+    if not system:
+        system = System(robot=robot, name=system_name)
+        db.session.add(system)
+    system.bom_data = bom_data
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Failed to save BOM data: {str(e)}"}), 500
+    return jsonify({"message": "BOM data saved successfully"}), 200
+
+@app.route('/api/bom', methods=['POST'])
+@jwt_required()
+def fetch_bom():
+    """
+    Fetch the Bill of Materials from Onshape for a given assembly URL and save it for a team/robot/system.
+    Requires Onshape API access key and secret. (Team admin or global admin only.)
+    Payload JSON: {document_url, team_number, robot, system, access_key, secret_key}
+    """
+    current_user = get_jwt_identity()
+    claims = get_jwt()
+    data = request.get_json()
+    document_url = data.get("document_url")
+    team_number = data.get("team_number")
+    robot_name = data.get("robot")
+    system_name = data.get("system", "Main")
+    access_key = data.get("access_key")
+    secret_key = data.get("secret_key")
+    if not document_url or not team_number or not access_key or not secret_key:
+        return jsonify({"error": "Document URL, team_number, access_key, and secret_key are required"}), 400
+    if not (claims.get('is_team_admin') and current_user == team_number) and not claims.get('is_global_admin'):
+        return jsonify({"error": "Unauthorized"}), 403
+
+    team = Team.query.filter_by(team_number=team_number).first()
+    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first() if team else None
+    if not team or not robot:
+        return jsonify({"error": "Team or robot not found"}), 404
+
+    # Initialize Onshape API client
+    from onshape_client.client import Client
+    from onshape_client.onshape_url import OnshapeElement
+    try:
+        element = OnshapeElement(document_url)
+    except Exception as e:
+        return jsonify({"error": f"Invalid Onshape document URL: {str(e)}"}), 400
+    client = Client(configuration={
+        "base_url": "https://cad.onshape.com",
+        "access_key": access_key,
+        "secret_key": secret_key
+    })
+    try:
+        did = element.did
+        wid = element.wvmid
+        eid = element.eid
+        bom_url = f"/api/v10/assemblies/d/{did}/w/{wid}/e/{eid}/bom"
+        headers = {'Accept': 'application/vnd.onshape.v1+json', 'Content-Type': 'application/json'}
+        response = client.api_client.request('GET', url="https://cad.onshape.com" + bom_url,
+                                            query_params={"indented": False}, headers=headers, body={})
+        bom_json = response.data
+        if isinstance(bom_json, (bytes, bytearray)):
+            import json as jsonlib
+            bom_json = jsonlib.loads(bom_json)
+    except Exception as e:
+        return jsonify({"error": f"Failed to fetch BOM from Onshape: {str(e)}"}), 500
+
+    # Extract relevant BOM fields
+    def find_id_by_name(bom_dict, name):
+        for header in bom_dict.get("headers", []):
+            if header.get('name') == name:
+                return header.get('id')
+        return None
+    part_name_id = find_id_by_name(bom_json, "Name")
+    desc_id = find_id_by_name(bom_json, "Description")
+    qty_id = find_id_by_name(bom_json, "Quantity") or find_id_by_name(bom_json, "QTY")
+    material_id = find_id_by_name(bom_json, "Material")
+    material_bom_id = find_id_by_name(bom_json, "Bom Material") or material_id
+    preproc_id = find_id_by_name(bom_json, "Pre Process")
+    proc1_id = find_id_by_name(bom_json, "Process 1")
+    proc2_id = find_id_by_name(bom_json, "Process 2")
+    bom_data_list = []
+    for row in bom_json.get("rows", []):
+        values = row.get("headerIdToValue", {})
+        part_entry = {
+            "Part Name": values.get(part_name_id, "Unknown") if part_name_id else "Unknown",
+            "Description": values.get(desc_id, "Unknown") if desc_id else "Unknown",
+            "Quantity": values.get(qty_id, "N/A") if qty_id else "N/A",
+            "Material": values.get(material_id, "Unknown") if material_id else "Unknown",
+            "materialBOM": values.get(material_bom_id, "Unknown") if material_bom_id else "Unknown",
+            "Pre Process": values.get(preproc_id, "Unknown") if preproc_id else "Unknown",
+            "Process 1": values.get(proc1_id, "Unknown") if proc1_id else "Unknown",
+            "Process 2": values.get(proc2_id, "Unknown") if proc2_id else "Unknown",
+            "partId": row.get("itemSource", {}).get("partId", "")
+        }
+        if isinstance(part_entry["Material"], dict):
+            part_entry["Material"] = part_entry["Material"].get("displayName", "Unknown")
+        if isinstance(part_entry["materialBOM"], dict):
+            part_entry["materialBOM"] = part_entry["materialBOM"].get("displayName", "Unknown")
+        bom_data_list.append(part_entry)
+
+    # Save BOM data and Onshape credentials in the database
+    system = System.query.filter_by(robot_id=robot.id, name=system_name).first()
+    if not system:
+        system = System(robot=robot, name=system_name)
+        db.session.add(system)
+    system.access_key = access_key
+    system.secret_key = secret_key
+    system.assembly_url = document_url
+    system.bom_data = bom_data_list
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Failed to save BOM data: {str(e)}"}), 500
+    return jsonify({"bom_data": bom_data_list}), 200
+
+# Global admin endpoints
 @app.route('/api/admin/get_bom', methods=['GET'])
 @jwt_required()
 def admin_get_bom():
@@ -750,6 +839,7 @@ def admin_get_bom():
     team = Team.query.filter_by(team_number=team_number).first()
     if not team:
         return jsonify({"error": "Team not found"}), 404
+
     combined_parts = []
     if system_name == "Main":
         for robot in team.robots:
@@ -806,161 +896,111 @@ def download_settings_dict():
         settings_data_dict[team.team_number] = team_settings
     return jsonify({"settings_data_dict": settings_data_dict}), 200
 
-@app.route('/api/admin/download_teams_db', methods=['GET'])
+# Update system Onshape settings (team admin/global admin)
+@app.route('/api/system_settings', methods=['POST'])
 @jwt_required()
-def download_teams_db():
-    """(Global Admin) Download the raw database file (if using SQLite)."""
-    current_user = get_jwt_identity()
-    claims = get_jwt()
-    if not claims.get('is_global_admin'):
-        return jsonify({"error": "Unauthorized"}), 403
-    db_url = app.config['SQLALCHEMY_DATABASE_URI']
-    if db_url.startswith("sqlite"):
-        db_path = db_url.replace("sqlite:///", "")
-        if os.path.isfile(db_path):
-            return send_file(db_path, as_attachment=True, download_name="teams.db")
-        else:
-            return jsonify({"error": "Database file not found"}), 400
-    else:
-        return jsonify({"error": "Direct DB download is not supported for PostgreSQL"}), 400
-
-@app.route('/api/admin/upload_bom_dict', methods=['POST'])
-@jwt_required()
-def upload_bom_dict():
-    """(Global Admin) Upload a BOM data dictionary (JSON file) to import BOM data for all teams."""
-    current_user = get_jwt_identity()
-    claims = get_jwt()
-    if not claims.get('is_global_admin'):
-        return jsonify({"error": "Unauthorized"}), 403
-    if 'file' not in request.files:
-        return jsonify({"error": "No file provided"}), 400
-    file = request.files['file']
-    import json
-    try:
-        data = json.loads(file.read().decode('utf-8'))
-    except Exception as e:
-        return jsonify({"error": f"Invalid JSON file: {e}"}), 400
-    # Clear existing BOM data
-    for sys in System.query.all():
-        sys.bom_data = []
-    # Import new BOM data
-    for team_num, team_data in data.items():
-        team = Team.query.filter_by(team_number=team_num).first()
-        if not team:
-            continue
-        for robot_name, systems_dict in team_data.items():
-            robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
-            if not robot:
-                robot = Robot(team_id=team.id, name=robot_name)
-                db.session.add(robot)
-                db.session.flush()
-            for system_name, parts_list in systems_dict.items():
-                system = System.query.filter_by(robot_id=robot.id, name=system_name).first()
-                if not system:
-                    system = System(robot=robot, name=system_name)
-                    db.session.add(system)
-                system.bom_data = parts_list if isinstance(parts_list, list) else []
-    try:
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": f"Failed to import BOM data: {str(e)}"}), 500
-    return jsonify({"message": "BOM data imported successfully"}), 200
-
-@app.route('/api/admin/upload_settings_dict', methods=['POST'])
-@jwt_required()
-def upload_settings_dict():
-    """(Global Admin) Upload Onshape settings (keys and assembly URLs) JSON to import for all teams."""
-    current_user = get_jwt_identity()
-    claims = get_jwt()
-    if not claims.get('is_global_admin'):
-        return jsonify({"error": "Unauthorized"}), 403
-    if 'file' not in request.files:
-        return jsonify({"error": "No file provided"}), 400
-    file = request.files['file']
-    import json
-    try:
-        data = json.loads(file.read().decode('utf-8'))
-    except Exception as e:
-        return jsonify({"error": f"Invalid JSON file: {e}"}), 400
-    for team_num, robots_dict in data.items():
-        team = Team.query.filter_by(team_number=team_num).first()
-        if not team:
-            continue
-        for robot_name, settings in robots_dict.items():
-            robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
-            if not robot:
-                robot = Robot(team_id=team.id, name=robot_name)
-                db.session.add(robot)
-                db.session.flush()
-            if robot.systems:
-                for sys in robot.systems:
-                    sys.access_key = settings.get("accessKey") or None
-                    sys.secret_key = settings.get("secretKey") or None
-                    sys.assembly_url = settings.get("documentURL") or None
-            else:
-                main_sys = System(robot=robot, name="Main",
-                                  access_key=settings.get("accessKey") or None,
-                                  secret_key=settings.get("secretKey") or None,
-                                  assembly_url=settings.get("documentURL") or None,
-                                  partstudio_urls=[])
-                db.session.add(main_sys)
-    try:
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": f"Failed to import settings data: {str(e)}"}), 500
-    return jsonify({"message": "Settings data imported successfully"}), 200
-
-@app.route('/api/clear_bom', methods=['POST'])
-@jwt_required()
-def clear_bom():
-    """Clear all BOM data for a given team (team admin or global admin)."""
+def update_system_settings():
+    """Update Onshape API keys and assembly URL for a given team, robot, and system."""
     current_user = get_jwt_identity()
     claims = get_jwt()
     data = request.get_json()
     team_number = data.get("team_number")
-    if not team_number:
-        return jsonify({"error": "Team number is required"}), 400
-    if not (claims.get('is_team_admin') and current_user == team_number) and not claims.get('is_global_admin'):
-        return jsonify({"error": "Unauthorized"}), 403
-    team = Team.query.filter_by(team_number=team_number).first()
-    if not team:
-        return jsonify({"error": "Team not found"}), 404
-    for robot in team.robots:
-        for sys in robot.systems:
-            sys.bom_data = []
-    try:
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": f"Failed to clear BOM data: {str(e)}"}), 500
-    return jsonify({"message": "BOM data cleared"}), 200
-
-@app.route('/api/system_settings', methods=['GET'])
-@jwt_required()
-def get_system_settings():
-    """Get Onshape API keys and assembly URL for a given team, robot, and system."""
-    team_number = request.args.get("team_number")
-    robot_name = request.args.get("robot_name")
-    system_name = request.args.get("system_name")
+    robot_name = data.get("robot_name")
+    system_name = data.get("system_name")
+    document_url = data.get("document_url")
+    access_key = data.get("access_key")
+    secret_key = data.get("secret_key")
     if not team_number or not robot_name or not system_name:
         return jsonify({"error": "Missing parameters"}), 400
-    current_user = get_jwt_identity()
-    claims = get_jwt()
     if current_user != team_number and not claims.get('is_global_admin'):
         return jsonify({"error": "Unauthorized"}), 403
+
     team = Team.query.filter_by(team_number=team_number).first()
     robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first() if team else None
     system = System.query.filter_by(robot_id=robot.id, name=system_name).first() if robot else None
     if not team or not robot or not system:
         return jsonify({"error": "Team, robot, or system not found"}), 404
-    return jsonify({
-        "access_key": system.access_key or "",
-        "secret_key": system.secret_key or "",
-        "document_url": system.assembly_url or ""
-    }), 200
 
+    system.access_key = access_key or system.access_key
+    system.secret_key = secret_key or system.secret_key
+    system.assembly_url = document_url or system.assembly_url
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Failed to update system settings: {str(e)}"}), 500
+    return jsonify({"message": "Settings saved"}), 200
+
+# Web endpoints for form actions (for completeness)
+@app.route('/<team_number>/new_robot', methods=['POST'])
+def create_robot_web(team_number):
+    team = Team.query.filter_by(team_number=team_number).first_or_404()
+    name = request.form.get('name')
+    year = request.form.get('year') or datetime.now().year
+    image_file = request.files.get('image_file')
+    if not name or not year:
+        return redirect(request.referrer or f"/{team_number}/Admin")  # missing data
+    if Robot.query.filter_by(team_id=team.id, name=name).first():
+        return redirect(request.referrer or f"/{team_number}/Admin")  # duplicate name
+    new_robot = Robot(name=name, year=int(year), team_id=team.id)
+    db.session.add(new_robot)
+    db.session.flush()
+    # Create default subsystems and machines as per template (simplified)
+    for sys_name in ["Main", "System1", "System2", "System3", "System4", "System5"]:
+        db.session.add(System(robot=new_robot, name=sys_name, bom_data=[]))
+    if image_file:
+        team_dir = os.path.join(app.config['UPLOAD_FOLDER'], f"team_{team_number}", "robots")
+        os.makedirs(team_dir, exist_ok=True)
+        ext = ''
+        filename = secure_filename(image_file.filename)
+        if '.' in filename:
+            ext = filename.rsplit('.', 1)[1].lower()
+        image_filename = f"robot_{new_robot.id}.{ext}" if ext else f"robot_{new_robot.id}"
+        image_path = os.path.join(team_dir, image_filename)
+        image_file.save(image_path)
+        new_robot.image_file = os.path.join("uploads", f"team_{team_number}", "robots", image_filename)
+    db.session.commit()
+    return redirect(f"/{team_number}/Admin")
+
+@app.route('/delete_robot/<int:robot_id>', methods=['POST'])
+def delete_robot(robot_id):
+    robot = Robot.query.get_or_404(robot_id)
+    team_number = robot.team.team_number
+    # Remove associated files as in API
+    if robot.image_file:
+        file_path = os.path.join(app.root_path, 'static', robot.image_file)
+        if os.path.isfile(file_path):
+            try:
+                os.remove(file_path)
+            except Exception:
+                pass
+    for mach in robot.machines:
+        if mach.icon_file:
+            icon_path = os.path.join(app.root_path, 'static', mach.icon_file)
+            if os.path.isfile(icon_path):
+                try:
+                    os.remove(icon_path)
+                except Exception:
+                    pass
+    db.session.delete(robot)
+    db.session.commit()
+    return redirect(f"/{team_number}/Admin")
+
+@app.route('/<team_number>/delete_machine/<int:machine_id>', methods=['POST'])
+def delete_machine_web(team_number, machine_id):
+    machine = Machine.query.get_or_404(machine_id)
+    if machine.icon_file:
+        file_path = os.path.join(app.root_path, 'static', machine.icon_file)
+        if os.path.isfile(file_path):
+            try:
+                os.remove(file_path)
+            except Exception:
+                pass
+    db.session.delete(machine)
+    db.session.commit()
+    return redirect(f"/{team_number}/manage_machines")
+
+# SocketIO events
 @socketio.on('connect')
 def handle_connect():
     app.logger.info('Client connected via SocketIO')
@@ -969,6 +1009,7 @@ def handle_connect():
 def handle_disconnect():
     app.logger.info('Client disconnected')
 
-if __name__ == "__main__":
+def run():
     port = int(os.environ.get("PORT", 5000))
+    print("✅ Flask app is starting via socketio.run() (Gunicorn)")
     socketio.run(app, host="0.0.0.0", port=port)

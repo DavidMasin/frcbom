@@ -760,54 +760,58 @@ def save_bom_for_robot_system():
 def fetch_bom():
     from onshape_client.client import Client
     from onshape_client.onshape_url import OnshapeElement
+    import json as jsonlib
 
     data = request.get_json()
     team_number = data.get("team_number")
     robot_name = data.get("robot")
     system_name = data.get("system")
-    access_key = data.get("access_key")
-    secret_key = data.get("secret_key")
-    document_url = data.get("document_url")
 
-    if not all([team_number, robot_name, system_name, access_key, secret_key, document_url]):
-        return jsonify({"error": "Missing required fields (team_number, robot, system, access_key, secret_key, document_url)"}), 400
-
+    # Find team and system
     team = Team.query.filter_by(team_number=team_number).first()
     if not team:
         return jsonify({"error": "Team not found"}), 404
 
-    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
-    if not robot:
-        return jsonify({"error": "Robot not found"}), 404
+    system = System.query.filter_by(
+        team_id=team.id,
+        robot_name=robot_name,
+        system_name=system_name
+    ).first()
 
-    system = System.query.filter_by(team_id=team.id, robot_name=robot_name, system_name=system_name).first()
-    if not system:
-        return jsonify({"error": "System not found"}), 404
-
-    client = Client(configuration={
-        "access_key": access_key,
-        "secret_key": secret_key,
-        "base_url": "https://cad.onshape.com"
-    })
+    if not system or not system.assembly_url or not system.access_key or not system.secret_key:
+        return jsonify({"error": "Missing required Onshape credentials or assembly URL"}), 400
 
     try:
-        element = OnshapeElement(document_url)
+        client = Client()
+        client.configuration.access_key = system.access_key
+        client.configuration.secret_key = system.secret_key
+        client.configuration.base_url = "https://cad.onshape.com"
+    except Exception as e:
+        return jsonify({"error": f"Onshape client init failed: {str(e)}"}), 500
+
+    # Fetch the BOM from Onshape
+    try:
+        element = OnshapeElement(system.assembly_url)
         did = element.did
         wid = element.wvmid
         eid = element.eid
 
         bom_url = f"/api/v10/assemblies/d/{did}/w/{wid}/e/{eid}/bom"
         headers = {'Accept': 'application/vnd.onshape.v1+json', 'Content-Type': 'application/json'}
-        response = client.api_client.request('GET', url="https://cad.onshape.com" + bom_url,
-                                             query_params={"indented": False}, headers=headers, body={})
-        import json as jsonlib
-        system.bom_data = response.data if isinstance(response.data, dict) else jsonlib.loads(response.data)
-        db.session.commit()
-        return jsonify({"msg": "✅ BOM successfully fetched and saved!"})
+        response = client.api_client.request(
+            'GET',
+            url="https://cad.onshape.com" + bom_url,
+            query_params={"indented": False},
+            headers=headers,
+            body={}
+        )
+        bom_json = response.data
+        if isinstance(bom_json, (bytes, bytearray)):
+            bom_json = jsonlib.loads(bom_json)
     except Exception as e:
         return jsonify({"error": f"❌ Failed to fetch BOM: {str(e)}"}), 500
 
-    # Extract relevant BOM fields
+    # Extract relevant fields from BOM
     def find_id_by_name(bom_dict, name):
         for header in bom_dict.get("headers", []):
             if header.get('name') == name:
@@ -822,6 +826,7 @@ def fetch_bom():
     preproc_id = find_id_by_name(bom_json, "Pre Process")
     proc1_id = find_id_by_name(bom_json, "Process 1")
     proc2_id = find_id_by_name(bom_json, "Process 2")
+
     bom_data_list = []
     for row in bom_json.get("rows", []):
         values = row.get("headerIdToValue", {})
@@ -842,22 +847,14 @@ def fetch_bom():
             part_entry["materialBOM"] = part_entry["materialBOM"].get("displayName", "Unknown")
         bom_data_list.append(part_entry)
 
-    # Save BOM data and Onshape credentials in the database
-    system = System.query.filter_by(robot_id=robot.id, name=system_name).first()
-    if not system:
-        system = System(robot=robot, name=system_name)
-        db.session.add(system)
-    system.access_key = access_key
-    system.secret_key = secret_key
-    system.assembly_url = document_url
+    # Save parsed BOM to the system
     system.bom_data = bom_data_list
     try:
         db.session.commit()
+        return jsonify({"msg": "✅ BOM successfully fetched and saved!", "bom_data": bom_data_list}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"Failed to save BOM data: {str(e)}"}), 500
-    return jsonify({"bom_data": bom_data_list}), 200
-
 
 # Global admin endpoints
 @app.route('/api/admin/get_bom', methods=['GET'])
@@ -936,39 +933,41 @@ def download_settings_dict():
 
 
 # Update system Onshape settings (team admin/global admin)
-@app.route('/api/system_settings', methods=['POST'])
+@app.route("/api/system_settings", methods=["POST"])
 @jwt_required()
 def update_system_settings():
-    """Update Onshape API keys and assembly URL for a given team, robot, and system."""
-    current_user = get_jwt_identity()
-    claims = get_jwt()
     data = request.get_json()
     team_number = data.get("team_number")
     robot_name = data.get("robot_name")
     system_name = data.get("system_name")
-    document_url = data.get("document_url")
     access_key = data.get("access_key")
     secret_key = data.get("secret_key")
-    if not team_number or not robot_name or not system_name:
-        return jsonify({"error": "Missing parameters"}), 400
-    if current_user != team_number and not claims.get('is_global_admin'):
-        return jsonify({"error": "Unauthorized"}), 403
+    assembly_url = data.get("assembly_url")
+    partstudio_urls = data.get("partstudio_urls")
 
     team = Team.query.filter_by(team_number=team_number).first()
-    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first() if team else None
-    system = System.query.filter_by(robot_id=robot.id, name=system_name).first() if robot else None
-    if not team or not robot or not system:
-        return jsonify({"error": "Team, robot, or system not found"}), 404
+    if not team:
+        return jsonify({"error": "Team not found"}), 404
 
-    system.access_key = access_key or system.access_key
-    system.secret_key = secret_key or system.secret_key
-    system.assembly_url = document_url or system.assembly_url
+    system = System.query.filter_by(
+        team_id=team.id,
+        robot_name=robot_name,
+        system_name=system_name
+    ).first()
+    if not system:
+        return jsonify({"error": "System not found"}), 404
+
+    system.access_key = access_key
+    system.secret_key = secret_key
+    system.assembly_url = assembly_url
+    system.partstudio_urls = partstudio_urls
+
     try:
         db.session.commit()
+        return jsonify({"msg": "✅ System settings updated!"})
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": f"Failed to update system settings: {str(e)}"}), 500
-    return jsonify({"message": "Settings saved"}), 200
+        return jsonify({"error": f"Failed to save system settings: {str(e)}"}), 500
 
 
 # Web endpoints for form actions (for completeness)

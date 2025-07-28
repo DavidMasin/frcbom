@@ -477,10 +477,10 @@ document.getElementById("saveSystemSettings")?.addEventListener("click", async (
     const robotName = parseURL().robotName;
     const systemName = parseURL().system;
 
-    const accessKey = document.getElementById("accessKey").value;
-    const secretKey = document.getElementById("secretKey").value;
-    const assemblyUrl = document.getElementById("assemblyUrl").value;
-    const partStudioUrls = document.getElementById("partStudioUrls").value.split(",").map(x => x.trim());
+    const accessKey = document.getElementById("accessKey")?.value;
+    const secretKey = document.getElementById("secretKey")?.value;
+    const assemblyUrl = document.getElementById("assemblyUrl")?.value;
+    const partStudioUrls = document.getElementById("partStudioUrls")?.value.split(",").map(x => x.trim());
 
     const res = await fetch(`${API_BASE_URL}api/system_settings`, {
         method: "POST",
@@ -500,37 +500,8 @@ document.getElementById("saveSystemSettings")?.addEventListener("click", async (
     });
 
     const data = await res.json();
-    document.getElementById("settingsMessage").textContent = data.msg || "Saved!";
+    document.getElementById("settingsMessage").textContent =
+        data.msg || data.error || "✅ Settings saved!";
 });
 
-document.getElementById("saveSystemSettings")?.addEventListener("click", async () => {
-    const teamNumber = parseURL().teamNumber;
-    const robotName = parseURL().robotName;
-    const systemName = parseURL().system;
-
-    const accessKey = document.getElementById("accessKey").value;
-    const secretKey = document.getElementById("secretKey").value;
-    const assemblyUrl = document.getElementById("assemblyUrl").value;
-    const partStudioUrls = document.getElementById("partStudioUrls").value.split(",").map(x => x.trim());
-
-    const res = await fetch(`${API_BASE_URL}api/system_settings`, {
-        method: "POST",
-        headers: {
-            "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            team_number: teamNumber,
-            robot_name: robotName,
-            system_name: systemName,
-            access_key: accessKey,
-            secret_key: secretKey,
-            assembly_url: assemblyUrl,
-            partstudio_urls: partStudioUrls
-        })
-    });
-
-    const data = await res.json();
-    document.getElementById("settingsMessage").textContent = data.msg || "Saved!";
-});
 

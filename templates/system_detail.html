@@ -1,18 +1,47 @@
 {% extends "team_base.html" %}
 {% block title %}System BOM - {{ current_robot }} {{ filter_system }}{% endblock %}
 {% block content %}
+
 <div class="mb-6">
-    <a href="{{ url_for('team_admin_robot', team_number=team_number, robot_name=current_robot) }}">
-    class="text-sm text-blue-300 hover:underline">&larr; Back to {{ current_robot }} Details</a>
+    <a href="{{ url_for('team_admin_robot', team_number=team_number, robot_name=current_robot) }}" class="text-sm text-blue-300 hover:underline">
+        &larr; Back to {{ current_robot }} Details
+    </a>
     <h1 class="text-3xl font-bold text-white mt-2">{{ filter_system }} BOM</h1>
 </div>
 
-<!-- BOM Parts Section -->
+<!-- 🔧 System Settings Form -->
+<div class="bg-gray-100 rounded-lg p-6 mb-10 shadow-md max-w-2xl">
+    <h2 class="text-xl font-bold text-gray-800 mb-4">System Settings</h2>
+    <form id="systemSettingsForm" class="space-y-4">
+        <div>
+            <label class="block text-gray-700 mb-1">Assembly URL</label>
+            <input type="text" id="assemblyUrl" class="w-full px-3 py-2 border rounded" />
+        </div>
+        <div>
+            <label class="block text-gray-700 mb-1">Part Studio URLs (comma-separated)</label>
+            <textarea id="partStudioUrls" class="w-full px-3 py-2 border rounded" rows="3"></textarea>
+        </div>
+        <div>
+            <label class="block text-gray-700 mb-1">Onshape Access Key</label>
+            <input type="text" id="accessKey" class="w-full px-3 py-2 border rounded" />
+        </div>
+        <div>
+            <label class="block text-gray-700 mb-1">Onshape Secret Key</label>
+            <input type="text" id="secretKey" class="w-full px-3 py-2 border rounded" />
+        </div>
+        <div class="flex gap-4 mt-4">
+            <button type="button" id="saveSystemSettings" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">💾 Save</button>
+            <button type="button" id="fetchBom" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">🔄 Fetch BOM</button>
+        </div>
+        <p id="settingsMessage" class="text-sm mt-2 text-red-500"></p>
+    </form>
+</div>
+
+<!-- 🧩 BOM Parts Section -->
 <div class="mb-8">
     <h2 class="text-2xl font-bold text-gray-100 mb-4">Parts in {{ filter_system }}</h2>
     <div id="bomPartsGrid" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
     <p id="noPartsMessage" class="text-center text-gray-500 mt-4">No parts to display.</p>
 </div>
 
-<!-- (Optional: could include controls to fetch/update BOM if needed) -->
 {% endblock %}

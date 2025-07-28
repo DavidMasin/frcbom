@@ -62,64 +62,36 @@ document.addEventListener('DOMContentLoaded', async () => {
  * It also handles routing based on the URL structure.
  */
 async function initializeDashboard() {
-    const teamNumber = localStorage.getItem('team_number');
-    const role = localStorage.getItem('role');
-    const path = window.location.pathname.split('/').filter(Boolean);
+    const { teamNumber, robotName, system, admin } = parseURL();
+    const currentPath = window.location.pathname;
 
-    // For simplicity, we assume the first part of the path is the team number or indicates a dashboard context
-    const isDashboardPage = path.length > 0;
+    // 🚫 Avoid running this logic on pages where robotName isn't valid
+    const excludedPaths = ["/new_robot", "/register", "/login"];
+    if (excludedPaths.some(path => currentPath.includes(path))) return;
 
-    if (!isDashboardPage) return; // Not a dashboard page, do nothing
+    if (!teamNumber || !robotName) return;
 
-    if (!teamNumber) {
-        alert('You are not logged in. Redirecting to login page.');
-        window.location.href = '/';
-        return;
-    }
+    // 🌟 Try to load robot data to see if it exists
+    const response = await fetch(`${API_BASE_URL}api/robot_exists`, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            team_number: teamNumber,
+            robot_name: robotName
+        })
+    });
 
-    const isAdminPage = path[1] === 'Admin';
-    if (isAdminPage && role !== 'Admin') {
-        alert('Admin access required for this page. Redirecting to your dashboard.');
-        window.location.href = `/${teamNumber}`;
-        return;
-    }
+    const data = await response.json();
 
-    const robotName = isAdminPage ? path[2] : path[1];
-    const systemName = (isAdminPage ? path[3] : path[2]) || 'Main';
-
-    const robots = await getTeamRobots(teamNumber);
-
-    if (!robotName) {
-        // If no robot is specified in the URL, show a selection screen
-        if (robots.length > 0) {
-            showRobotSelectionDashboard(robots, teamNumber, isAdminPage);
+    if (!data.exists) {
+        if (confirm(`Robot "${robotName}" doesn't exist for Team ${teamNumber}. Do you want to construct it now?`)) {
+            window.location.href = `/${teamNumber}/new_robot`;
         } else {
-            promptNewRobotCreation(teamNumber);
+            window.location.href = `/${teamNumber}`;
         }
-    } else {
-        // A robot is specified in the URL
-        if (!robots.includes(robotName)) {
-            const createRobot = confirm(`Robot "${robotName}" does not exist for your team. Would you like to create it now?`);
-            if (createRobot) {
-                await createNewRobot(teamNumber, robotName);
-                window.location.reload(); // Reload to reflect the new robot
-            } else {
-                window.location.href = isAdminPage ? `/${teamNumber}/Admin` : `/${teamNumber}`;
-            }
-            return;
-        }
-
-        // Setup the main dashboard view for the selected robot
-        localStorage.setItem('robot_name', robotName);
-        const teamNumEl = document.getElementById('teamNumber');
-        if (teamNumEl) teamNumEl.textContent = `Team ${teamNumber}`;
-        const robotNameEl = document.getElementById('robotNameDisplay');
-        if (robotNameEl) robotNameEl.textContent = `Robot: ${robotName}`;
-
-
-        setupSystemSelector(systemName, teamNumber, robotName, isAdminPage);
-        await setupBOMView(robotName, systemName);
-        setupEventListeners(teamNumber);
     }
 }
 

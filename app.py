@@ -782,10 +782,14 @@ def fetch_bom():
         return jsonify({"error": "Missing required Onshape credentials or assembly URL"}), 400
 
     try:
-        client = Client()
-        client.configuration.access_key = system.access_key
-        client.configuration.secret_key = system.secret_key
-        client.configuration.base_url = "https://cad.onshape.com"
+        from onshape_client.client import Client
+
+        client = Client(configuration={
+            "base_url": "https://cad.onshape.com",
+            "access_key": system.access_key,
+            "secret_key": system.secret_key
+        })
+
     except Exception as e:
         return jsonify({"error": f"Onshape client init failed: {str(e)}"}), 500
 
@@ -937,6 +941,7 @@ def download_settings_dict():
 @jwt_required()
 def update_system_settings():
     data = request.get_json()
+    print(data)
     team_number = data.get("team_number")
     robot_name = data.get("robot_name")
     system_name = data.get("system_name")
@@ -944,7 +949,7 @@ def update_system_settings():
     secret_key = data.get("secret_key")
     assembly_url = data.get("assembly_url")
     partstudio_urls = data.get("partstudio_urls")
-
+    print("GOT ALL!!!!!!!!!!!!!!!!!!!!!!")
     team = Team.query.filter_by(team_number=team_number).first()
     if not team:
         return jsonify({"error": "Team not found"}), 404

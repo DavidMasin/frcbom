@@ -86,7 +86,7 @@ def team_admin_bom(team_number, robot_name, system):
     if not robot:
         return "Robot not found", 404
     robots = Robot.query.filter_by(team_id=team.id).all()
-    return render_template("system_detail.html", team_number=team_number, team_id=team.id,
+    return render_template("system_detail.html",team=team, team_number=team_number, team_id=team.id,
                            robots=robots, current_robot=robot_name, filter_system=system)
 
 

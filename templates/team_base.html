@@ -40,7 +40,7 @@
                         </div>
                         <div class="hidden md:block">
                             <div class="ml-10 flex items-baseline space-x-4">
-                                <a href="{{ url_for('team_admin_dashboard') }}" class="nav-link {% if request.endpoint == 'teamAdmin_dashboard' %}active{% endif %}">Robots</a>
+                                <a href="{{ url_for('team_admin_dashboard', team_number=team.team_number) }}" class="nav-link {% if request.endpoint == 'team_admin_dashboard' %}active{% endif %}">Robots</a>
                                 <a href="{{ url_for('manage_machines') }}" class="nav-link {% if request.endpoint == 'manage_machines' %}active{% endif %}">Machines</a>
                             </div>
                         </div>

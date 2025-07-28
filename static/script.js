@@ -616,3 +616,26 @@ document.getElementById("saveSystemSettings")?.addEventListener("click", async (
     const data = await res.json();
     document.getElementById("settingsMessage").textContent = data.msg || "Saved!";
 });
+
+document.getElementById("fetchBom")?.addEventListener("click", async () => {
+    const teamNumber = parseURL().teamNumber;
+    const robotName = parseURL().robotName;
+    const systemName = parseURL().system;
+
+    const res = await fetch(`${API_BASE_URL}api/fetch_bom`, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            team_number: teamNumber,
+            robot_name: robotName,
+            system_name: systemName
+        })
+    });
+
+    const data = await res.json();
+    document.getElementById("settingsMessage").textContent =
+        data.msg || data.error || "✅ BOM fetched successfully!";
+});

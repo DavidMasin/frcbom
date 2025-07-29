@@ -823,9 +823,15 @@ def fetch_bom():
             headers=headers,
             body={}
         )
+        print(data)
         bom_json = response.data
+
+        # Handle all possible types from Onshape response
         if isinstance(bom_json, (bytes, bytearray)):
+            bom_json = jsonlib.loads(bom_json.decode("utf-8"))
+        elif isinstance(bom_json, str):
             bom_json = jsonlib.loads(bom_json)
+
     except Exception as e:
         app.logger.error("❌ BOM fetch failed: %s", str(e))
         return jsonify({"error": f"❌ Failed to fetch BOM: {str(e)}"}), 500

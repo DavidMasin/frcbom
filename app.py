@@ -830,7 +830,6 @@ def fetch_bom():
         app.logger.error("❌ BOM fetch failed: %s", str(e))
         return jsonify({"error": f"❌ Failed to fetch BOM: {str(e)}"}), 500
 
-    app.logger.info("📦 Parsing BOM for %d rows...", len(bom_json.get("rows", [])))
 
     def find_id_by_name(bom_dict, name):
         for header in bom_dict.get("headers", []):

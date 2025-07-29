@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const res = await fetch(`${API_BASE_URL}api/bom`, {
                 method: "POST",
                 headers: {
-                    "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+                    "Authorization": `Bearer ${localStorage.getItem("jwt_token")}`,
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
@@ -115,7 +115,7 @@ async function initializeDashboard() {
     const response = await fetch(`${API_BASE_URL}api/robot_exists`, {
         method: "POST",
         headers: {
-            "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+            "Authorization": `Bearer ${localStorage.getItem("jwt_token")}`,
             "Content-Type": "application/json"
         },
         body: JSON.stringify({
@@ -231,7 +231,7 @@ async function fetchBOMDataFromServer(robotName, system = 'Main') {
         const response = await fetch(`${API_BASE_URL}api/robot_exists?team_number=${teamNumber}`, {
             method: "GET",
             headers: {
-                "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+                "Authorization": `Bearer ${localStorage.getItem("jwt_token")}`,
                 "Content-Type": "application/json"
             }
         });
@@ -490,7 +490,7 @@ document.getElementById("saveSystemSettings")?.addEventListener("click", async (
     const res = await fetch(`${API_BASE_URL}api/system_settings`, {
         method: "POST",
         headers: {
-            "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+            "Authorization": `Bearer ${localStorage.getItem("jwt_token")}`,
             "Content-Type": "application/json"
         },
         body: JSON.stringify({

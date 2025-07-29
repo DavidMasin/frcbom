@@ -544,7 +544,7 @@ function renderParts(parts) {
 
 // Called after fetching the BOM
 function loadPartsFromBackend(teamNumber, robotName, systemName) {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("jwt_token");
 
     fetch(`${API_BASE_URL}api/robot_data?team_number=${teamNumber}&robot=${robotName}&system=${systemName}`, {
         headers: {

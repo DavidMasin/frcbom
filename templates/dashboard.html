@@ -4,62 +4,57 @@
     <meta charset="UTF-8">
     <title>FRC BOM Dashboard</title>
     <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
-<body>
-
-<header>
-    <h1>FRC BOM Dashboard</h1>
-    <h2>Welcome, Team <span id="teamNumber"></span></h2>
-    <button id="logoutButton" class="button-primary">Log Out</button>
+<body class="bg-gray-900 text-gray-100">
+<header class="dashboard-header bg-gray-800 border-b border-gray-700">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+        <div>
+            <h1 class="text-xl font-bold">FRC BOM Dashboard</h1>
+            <h2 class="text-sm text-gray-400">Welcome, Team <span id="teamNumber"></span></h2>
+        </div>
+        <button id="logoutButton" class="button-secondary">Log Out</button>
+    </div>
 </header>
 
-<section id="robotSelection" class="robot-selection" style="display: none;">
-    <h2>Select a Robot</h2>
-    <div id="robotList" class="robot-list"></div>
-</section>
+<main class="max-w-7xl mx-auto px-4 py-6">
+    <!-- Robot and System Selector -->
+    <section class="dashboard-controls bg-gray-800 p-4 rounded-lg shadow mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label for="robotSelect" class="block text-sm font-medium">Select Robot:</label>
+                <select id="robotSelect" class="system-dropdown w-full mt-1"></select>
+            </div>
+            <div>
+                <label for="systemSelect" class="block text-sm font-medium">Select System:</label>
+                <select id="systemSelect" class="system-dropdown w-full mt-1"></select>
+            </div>
+            <div>
+                <label for="machineFilter" class="block text-sm font-medium">Filter by Machine:</label>
+                <select id="machineFilter" class="system-dropdown w-full mt-1">
+                    <option value="All">All</option>
+                </select>
+            </div>
+        </div>
+    </section>
 
-<section class="dashboard-controls">
-    <div class="system-selector">
-        <label for="systemSelect" class="system-label">Select System:</label>
-        <select id="systemSelect" class="system-dropdown">
-            <option value="Main" selected>Main</option>
-            <option value="System1">System 1</option>
-            <option value="System2">System 2</option>
-            <option value="System3">System 3</option>
-            <option value="System4">System 4</option>
-            <option value="System5">System 5</option>
-        </select>
-    </div>
-    <button class="filter-button" data-filter="All"><img src="/pictures/all.png" alt="All"><span>Show All</span>
-    </button>
-    <button class="filter-button" data-filter="InHouse"><img
-            src="/pictures/wrench-tool-in-a-hand-inside-a-house-shape.png" alt="In-House"><span>In-House Parts</span>
-    </button>
-    <button class="filter-button" data-filter="COTS"><img src="/pictures/cots.svg" alt="COTS"><span>COTS Parts</span>
-    </button>
-    <button class="filter-button" data-filter="CNC"><img src="/pictures/milling-machine.png" alt="CNC"><span>CNC</span>
-    </button>
-    <button class="filter-button" data-filter="Lathe"><img src="/pictures/lathe.png" alt="Lathe"><span>Lathe</span>
-    </button>
-    <button class="filter-button" data-filter="3D Printer"><img src="/pictures/3d-printer.png" alt="3D Printer"><span>3D Printer</span>
-    </button>
-    <button class="filter-button" data-filter="Saw"><img src="/pictures/miter-saw.png" alt="Saw"><span>Saw</span>
-    </button>
-    <button class="filter-button" data-filter="Mill"><img src="/pictures/mill.png" alt="Mill"><span>Mill</span></button>
-</section>
+    <!-- Parts Display -->
+    <section id="bomTableContainer">
+        <h2 class="text-2xl font-bold mb-4">BOM Parts</h2>
+        <div id="bomPartsGrid" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
+        <p id="noPartsMessage" class="text-center text-gray-400 mt-4">No parts to display.</p>
+    </section>
+</main>
 
-<section id="bomTableContainer">
-    <h2>BOM Parts</h2>
-    <div id="bomPartsGrid" class="grid-layout"></div>
-</section>
-
+<!-- Edit Modal -->
 <div id="editModal" class="modal">
     <div class="modal-content">
         <span id="closeModal" class="close">&times;</span>
         <button id="downloadCADButton" class="button-primary">Download CAD</button>
-        <h2>Edit Quantities</h2>
+        <h2 class="text-xl font-bold text-gray-800">Edit Quantities</h2>
         <div id="modalBody" class="modal-body"></div>
-        <button id="saveButton" class="button-primary">Save Changes</button>
+        <button id="saveButton" class="button-primary mt-4">Save Changes</button>
     </div>
 </div>
 

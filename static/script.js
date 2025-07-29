@@ -104,7 +104,9 @@ function parseURL() {
 async function initializeDashboard() {
     const { teamNumber, robotName, system, admin } = parseURL();
     const currentPath = window.location.pathname;
-
+    if (teamNumber && robotName && system) {
+        loadPartsFromBackend(teamNumber, robotName, system);
+    }
     // 🚫 Avoid running this logic on pages where robotName isn't valid
     const excludedPaths = ["/new_robot", "/register", "/login"];
     if (excludedPaths.some(path => currentPath.includes(path))) return;
@@ -509,4 +511,86 @@ document.getElementById("saveSystemSettings")?.addEventListener("click", async (
         data.msg || data.error || "✅ Settings saved!";
 });
 
+let allParts = [];
+
+function renderParts(parts) {
+    const container = document.getElementById("bomPartsGrid");
+    const noParts = document.getElementById("noPartsMessage");
+
+    container.innerHTML = "";
+
+    if (!parts || parts.length === 0) {
+        noParts.style.display = "block";
+        return;
+    }
+
+    noParts.style.display = "none";
+
+    parts.forEach(part => {
+        const card = document.createElement("div");
+        card.className = "bg-gray-800 p-4 rounded-lg shadow";
+
+        card.innerHTML = `
+            <h3 class="text-lg font-bold">${part["Part Name"] || "Unnamed"}</h3>
+            <p class="text-sm text-gray-400">${part.Description || ""}</p>
+            <p class="text-sm">Qty: <strong>${part.Quantity}</strong></p>
+            <p class="text-sm">Process 1: ${part["Process 1"] || "-"}</p>
+            <p class="text-sm">Pre-Process: ${part["Pre Process"] || "-"}</p>
+        `;
+
+        container.appendChild(card);
+    });
+}
+
+// Called after fetching the BOM
+function loadPartsFromBackend(teamNumber, robotName, systemName) {
+    const token = localStorage.getItem("token");
+
+    fetch(`${API_BASE_URL}api/robot_data?team_number=${teamNumber}&robot=${robotName}&system=${systemName}`, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    })
+        .then(res => res.json())
+        .then(data => {
+            allParts = data.bom_data || [];
+            renderParts(allParts);
+            populateFilterDropdown();
+        })
+        .catch(err => {
+            console.error("Error loading BOM data:", err);
+        });
+}
+
+// Optional: dynamically populate the machine types dropdown
+function populateFilterDropdown() {
+    const filter = document.getElementById("machineFilter");
+    const machines = new Set(["All"]);
+
+    allParts.forEach(p => {
+        if (p["Process 1"]) machines.add(p["Process 1"]);
+        if (p["Process 2"]) machines.add(p["Process 2"]);
+    });
+
+    filter.innerHTML = "";
+    machines.forEach(m => {
+        const opt = document.createElement("option");
+        opt.value = m;
+        opt.textContent = m;
+        filter.appendChild(opt);
+    });
+}
+
+// Filtering logic
+document.getElementById("machineFilter").addEventListener("change", (e) => {
+    const selected = e.target.value;
+    if (selected === "All") {
+        renderParts(allParts);
+    } else {
+        const filtered = allParts.filter(p =>
+            p["Process 1"] === selected || p["Process 2"] === selected
+        );
+        renderParts(filtered);
+    }
+});
 

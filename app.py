@@ -758,6 +758,28 @@ def save_bom_for_robot_system():
         return jsonify({"error": f"Failed to save BOM data: {str(e)}"}), 500
     return jsonify({"message": "BOM data saved successfully"}), 200
 
+@app.route("/api/robot_data", methods=["GET"])
+@jwt_required()
+def get_robot_data():
+    team_number = request.args.get("team_number")
+    robot_name = request.args.get("robot")
+    system_name = request.args.get("system")
+
+    team = Team.query.filter_by(team_number=team_number).first()
+    if not team:
+        return jsonify({"error": "Team not found"}), 404
+
+    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
+    if not robot:
+        return jsonify({"error": "Robot not found"}), 404
+
+    system = System.query.filter_by(robot_id=robot.id, name=system_name).first()
+    if not system:
+        return jsonify({"error": "System not found"}), 404
+
+    return jsonify({
+        "bom_data": system.bom_data or []
+    })
 
 @app.route("/api/bom", methods=["POST"])
 @jwt_required()

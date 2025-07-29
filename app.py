@@ -8,6 +8,10 @@ from flask_migrate import Migrate
 from flask_socketio import SocketIO
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+import logging
+
+# Optional: Set level and format for clarity
+logging.basicConfig(level=logging.INFO)
 
 # Initialize Flask app and configuration
 app = Flask(__name__)
@@ -763,36 +767,36 @@ def fetch_bom():
     import json as jsonlib
 
     data = request.get_json()
-    print("📥 Incoming BOM fetch request:", data)
+    app.logger.info("📥 Incoming BOM fetch request: %s", data)
 
     team_number = data.get("team_number")
     robot_name = data.get("robot")
     system_name = data.get("system")
 
     if system_name == "Main":
-        print("❌ Attempted to fetch BOM to 'Main' — not allowed.")
+        app.logger.warning("❌ Attempted to fetch BOM to 'Main' — not allowed.")
         return jsonify({"error": "Cannot fetch BOM into 'Main'. Select a specific system."}), 400
 
     team = Team.query.filter_by(team_number=team_number).first()
     if not team:
-        print("❌ Team not found")
+        app.logger.warning("❌ Team not found: %s", team_number)
         return jsonify({"error": "Team not found"}), 404
 
     robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
     if not robot:
-        print("❌ Robot not found")
+        app.logger.warning("❌ Robot not found: %s", robot_name)
         return jsonify({"error": "Robot not found"}), 404
 
     system = System.query.filter_by(robot_id=robot.id, name=system_name).first()
     if not system:
-        print("❌ System not found")
+        app.logger.warning("❌ System not found: %s", system_name)
         return jsonify({"error": "System not found"}), 404
 
     if not system.assembly_url or not system.access_key or not system.secret_key:
-        print("❌ Missing assembly_url or API keys")
+        app.logger.warning("❌ Missing credentials or assembly_url for system %s", system_name)
         return jsonify({"error": "Missing required Onshape credentials or assembly URL"}), 400
 
-    print("🔐 Initializing Onshape client...")
+    app.logger.info("🔐 Initializing Onshape client...")
     try:
         client = Client(configuration={
             "base_url": "https://cad.onshape.com",
@@ -800,10 +804,10 @@ def fetch_bom():
             "secret_key": system.secret_key
         })
     except Exception as e:
-        print("❌ Onshape client init failed:", e)
+        app.logger.error("❌ Onshape client init failed: %s", str(e))
         return jsonify({"error": f"Onshape client init failed: {str(e)}"}), 500
 
-    print("📡 Fetching BOM from Onshape...")
+    app.logger.info("📡 Fetching BOM from Onshape for %s/%s", robot_name, system_name)
     try:
         element = OnshapeElement(system.assembly_url)
         did = element.did
@@ -823,10 +827,11 @@ def fetch_bom():
         if isinstance(bom_json, (bytes, bytearray)):
             bom_json = jsonlib.loads(bom_json)
     except Exception as e:
-        print("❌ BOM fetch failed:", e)
+        app.logger.error("❌ BOM fetch failed: %s", str(e))
         return jsonify({"error": f"❌ Failed to fetch BOM: {str(e)}"}), 500
 
-    print("📦 Parsing BOM rows...")
+    app.logger.info("📦 Parsing BOM for %d rows...", len(bom_json.get("rows", [])))
+
     def find_id_by_name(bom_dict, name):
         for header in bom_dict.get("headers", []):
             if header.get('name') == name:
@@ -862,17 +867,16 @@ def fetch_bom():
             part_entry["materialBOM"] = part_entry["materialBOM"].get("displayName", "Unknown")
         bom_data_list.append(part_entry)
 
-    print(f"✅ Parsed {len(bom_data_list)} BOM parts. Saving...")
+    app.logger.info("✅ Parsed %d BOM parts. Saving...", len(bom_data_list))
 
-    # Save parsed BOM to the system
     system.bom_data = bom_data_list
     try:
         db.session.commit()
-        print("✅ BOM saved to system!")
+        app.logger.info("✅ BOM saved to DB for %s/%s", robot_name, system_name)
         return jsonify({"msg": "✅ BOM successfully fetched and saved!", "bom_data": bom_data_list}), 200
     except Exception as e:
         db.session.rollback()
-        print("❌ Failed to save BOM:", e)
+        app.logger.error("❌ Failed to save BOM: %s", str(e))
         return jsonify({"error": f"Failed to save BOM data: {str(e)}"}), 500
 
 # Global admin endpoints
@@ -951,12 +955,11 @@ def download_settings_dict():
     return jsonify({"settings_data_dict": settings_data_dict}), 200
 
 
-# Update system Onshape settings (team admin/global admin)
 @app.route("/api/system_settings", methods=["POST"])
 @jwt_required()
 def update_system_settings():
     data = request.get_json()
-    print("📥 Incoming system settings data:", data)
+    app.logger.info("📥 Incoming system settings data: %s", data)
 
     team_number = data.get("team_number")
     robot_name = data.get("robot_name")
@@ -968,20 +971,18 @@ def update_system_settings():
 
     team = Team.query.filter_by(team_number=team_number).first()
     if not team:
-        print("❌ Team not found")
+        app.logger.warning("❌ Team not found: %s", team_number)
         return jsonify({"error": "Team not found"}), 404
 
     robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
     if not robot:
-        print("❌ Robot not found")
+        app.logger.warning("❌ Robot not found: %s", robot_name)
         return jsonify({"error": "Robot not found"}), 404
 
     system = System.query.filter_by(robot_id=robot.id, name=system_name).first()
     if not system:
-        print("❌ System not found")
+        app.logger.warning("❌ System not found: %s", system_name)
         return jsonify({"error": "System not found"}), 404
-
-    print(f"🔧 Updating system '{system_name}' for robot '{robot_name}'")
 
     system.access_key = access_key
     system.secret_key = secret_key
@@ -990,11 +991,11 @@ def update_system_settings():
 
     try:
         db.session.commit()
-        print("✅ System settings saved")
+        app.logger.info("✅ System settings saved for %s/%s", robot_name, system_name)
         return jsonify({"msg": "✅ System settings updated!"})
     except Exception as e:
         db.session.rollback()
-        print("❌ Commit failed:", e)
+        app.logger.error("❌ Failed to save system settings: %s", str(e))
         return jsonify({"error": f"Failed to save system settings: {str(e)}"}), 500
 
 

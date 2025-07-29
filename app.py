@@ -1082,6 +1082,26 @@ def handle_connect():
 def handle_disconnect():
     app.logger.info('Client disconnected')
 
+@app.route("/api/debug_system_url")
+@jwt_required()
+def debug_system_url():
+    team_number = request.args.get("team_number")
+    robot_name = request.args.get("robot")
+    system_name = request.args.get("system")
+    team = Team.query.filter_by(team_number=team_number).first()
+    if not team:
+        return jsonify({"error": "Team not found"}), 404
+    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
+    if not robot:
+        return jsonify({"error": "Robot not found"}), 404
+    system = System.query.filter_by(robot_id=robot.id, name=system_name).first()
+    if not system:
+        return jsonify({"error": "System not found"}), 404
+    return jsonify({
+        "assembly_url": system.assembly_url,
+        "access_key": system.access_key,
+        "secret_key": system.secret_key
+    })
 
 def run():
     port = int(os.environ.get("PORT", 5000))

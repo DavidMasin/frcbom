@@ -228,9 +228,14 @@ async function fetchBOMDataFromServer(robotName, system = 'Main') {
     const token = getAuthToken();
     if (!teamNum || !robotName) return null;
     try {
-        const response = await fetch(`${API_BASE_URL}api/get_bom?team_number=${teamNum}&robot=${robotName}&system=${system}`, {
-            headers: {'Authorization': `Bearer ${token}`}
+        const response = await fetch(`${API_BASE_URL}api/robot_exists?team_number=${teamNumber}`, {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+                "Content-Type": "application/json"
+            }
         });
+
         const data = await response.json();
         if (response.ok) {
             return data.bom_data;

@@ -823,7 +823,7 @@ def fetch_bom():
             headers=headers,
             body={}
         )
-        print(data)
+        print(response.data)
         bom_json = response.data
 
         # Handle all possible types from Onshape response

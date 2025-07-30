@@ -634,7 +634,7 @@ def add_machine():
     icon_file = request.files.get("icon")
     if not team_number or not robot_name or not machine_name or not cad_format:
         return jsonify({"error": "Team number, robot name, machine name, and cad_format are required"}), 400
-    team = Team.query.filter_by(team_number=team_number).first()
+    team = Team.query.filter_by(team_number=str(team_number)).first()
     robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first() if team else None
     if not team or not robot:
         return jsonify({"error": "Team or robot not found"}), 404

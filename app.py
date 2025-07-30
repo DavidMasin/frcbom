@@ -1,3 +1,4 @@
+import logging
 import os
 from datetime import datetime
 
@@ -8,7 +9,6 @@ from flask_migrate import Migrate
 from flask_socketio import SocketIO
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-import logging
 
 # Optional: Set level and format for clarity
 logging.basicConfig(level=logging.INFO)
@@ -62,8 +62,6 @@ def team_page(team_number):
     return render_template('dashboard.html', team=team, team_number=team_number, robots=robots)
 
 
-
-
 @app.route("/<team_number>/Admin")
 def team_admin_dashboard(team_number):
     team = Team.query.filter_by(team_number=team_number).first()
@@ -71,6 +69,7 @@ def team_admin_dashboard(team_number):
         return "Team not found", 404
     robots = Robot.query.filter_by(team_id=team.id).all()
     return render_template("teamAdmin_dashboard.html", team=team, robots=robots)
+
 
 @app.route("/<int:team_number>/Admin/machines", methods=["GET"])
 def manage_machines(team_number):
@@ -84,6 +83,7 @@ def manage_machines(team_number):
     machines = Machine.query.filter(Machine.robot_id.in_(robot_ids)).all()
 
     return render_template("manage_machines.html", team=team, machines=machines)
+
 
 @app.route("/<team_number>/new_robot")
 def new_robot_form(team_number):
@@ -107,7 +107,7 @@ def team_admin_bom(team_number, robot_name, system):
     if not robot:
         return "Robot not found", 404
     robots = Robot.query.filter_by(team_id=team.id).all()
-    return render_template("system_detail.html",team=team, team_number=team_number, team_id=team.id,
+    return render_template("system_detail.html", team=team, team_number=team_number, team_id=team.id,
                            robots=robots, current_robot=robot_name, filter_system=system)
 
 
@@ -551,6 +551,7 @@ def list_machines():
         machine_list.append(machine_data)
     return jsonify({"machines": machine_list}), 200
 
+
 @app.route("/<team_number>/<robot_name>")
 def team_robot_public(team_number, robot_name):
     team = Team.query.filter_by(team_number=str(team_number)).first()
@@ -562,6 +563,8 @@ def team_robot_public(team_number, robot_name):
         return "Robot not found", 404
 
     return render_template("dashboard.html", team=team, team_number=team_number, robot_name=robot_name)
+
+
 @app.route("/<team_number>/<robot_name>/<system>")
 def team_robot_system_public(team_number, robot_name, system):
     team = Team.query.filter_by(team_number=str(team_number)).first()
@@ -572,7 +575,47 @@ def team_robot_system_public(team_number, robot_name, system):
     if not robot:
         return "Robot not found", 404
 
-    return render_template("dashboard.html", team=team, team_number=team_number, robot_name=robot_name, filter_system=system)
+    return render_template("dashboard.html", team=team, team_number=team_number, robot_name=robot_name,
+                           filter_system=system)
+
+
+@app.route("/<team_number>/<robot_name>/<system>")
+def team_bom_filtered(team_number, robot_name, system):
+    team = Team.query.filter_by(team_number=str(team_number)).first()
+    if not team:
+        return "Team not found", 404
+
+    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
+    if not robot:
+        return "Robot not found", 404
+
+    return render_template(
+        'dashboard.html',
+        team=team,
+        team_number=team_number,
+        robot_name=robot_name,
+        filter_system=system
+    )
+
+
+@app.route("/<team_number>/<robot_name>")
+def team_robot_public(team_number, robot_name):
+    team = Team.query.filter_by(team_number=str(team_number)).first()
+    if not team:
+        return "Team not found", 404
+
+    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
+    if not robot:
+        return "Robot not found", 404
+
+    return render_template(
+        'dashboard.html',
+        team=team,
+        team_number=team_number,
+        robot_name=robot_name,
+        filter_system="Main"
+    )
+
 
 @app.route('/api/machines', methods=['POST'])
 def add_machine():
@@ -790,6 +833,7 @@ def save_bom_for_robot_system():
         return jsonify({"error": f"Failed to save BOM data: {str(e)}"}), 500
     return jsonify({"message": "BOM data saved successfully"}), 200
 
+
 @app.route("/api/robot_exists", methods=["POST"])
 @jwt_required()
 def robot_exists():
@@ -806,6 +850,7 @@ def robot_exists():
 
     robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
     return jsonify({"exists": robot is not None})
+
 
 @app.route("/api/bom", methods=["POST"])
 @jwt_required()
@@ -884,7 +929,6 @@ def fetch_bom():
         app.logger.error("❌ BOM fetch failed: %s", str(e))
         return jsonify({"error": f"❌ Failed to fetch BOM: {str(e)}"}), 500
 
-
     def find_id_by_name(bom_dict, name):
         for header in bom_dict.get("headers", []):
             if header.get('name') == name:
@@ -931,6 +975,7 @@ def fetch_bom():
         db.session.rollback()
         app.logger.error("❌ Failed to save BOM: %s", str(e))
         return jsonify({"error": f"Failed to save BOM data: {str(e)}"}), 500
+
 
 # Global admin endpoints
 @app.route('/api/admin/get_bom', methods=['GET'])
@@ -1052,7 +1097,6 @@ def update_system_settings():
         return jsonify({"error": f"Failed to save system settings: {str(e)}"}), 500
 
 
-
 # Web endpoints for form actions (for completeness)
 @app.route('/<team_number>/new_robot', methods=['POST'])
 def create_robot_web(team_number):
@@ -1135,6 +1179,7 @@ def handle_connect():
 def handle_disconnect():
     app.logger.info('Client disconnected')
 
+
 @app.route("/api/debug_system_url")
 @jwt_required()
 def debug_system_url():
@@ -1155,6 +1200,7 @@ def debug_system_url():
         "access_key": system.access_key,
         "secret_key": system.secret_key
     })
+
 
 def run():
     port = int(os.environ.get("PORT", 5000))

@@ -4,7 +4,6 @@ from sqlalchemy.dialects.postgresql import JSON
 
 db = SQLAlchemy()
 
-
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -39,7 +38,7 @@ class Robot(db.Model):
     team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)
     team = db.relationship('Team', back_populates='robots')
     systems = db.relationship('System', back_populates='robot', cascade="all, delete-orphan")
-    machines = db.relationship('Machine', primaryjoin="Machine.robot_id == Robot.id", back_populates='robot')
+    machines = db.relationship('Machine', back_populates='robot', cascade="all, delete-orphan")
     image_text = db.Column(db.String(100), nullable=True, default='uploads/robot_images/default_robot.png')
 
 
@@ -61,5 +60,6 @@ class Machine(db.Model):
     icon_file = db.Column(db.String(100), nullable=True, default='uploads/machine_icons/default_machine.png')
     cad_format = db.Column(db.String(20), nullable=False, default='STEP')
     robot_id = db.Column(db.Integer, db.ForeignKey('robot.id'), nullable=False)
+    robot = db.relationship('Robot', back_populates='machines')
     team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)
     team = db.relationship('Team', back_populates='machines')

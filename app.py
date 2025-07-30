@@ -568,15 +568,21 @@ def list_machines():
 
 @app.route("/<team_number>/<robot_name>")
 def team_robot_public(team_number, robot_name):
-    team = Team.query.filter_by(team_number=str(team_number)).first()
+    team = Team.query.filter_by(team_number=team_number).first()
     if not team:
         return "Team not found", 404
 
-    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
-    if not robot:
-        return "Robot not found", 404
+    robots = Robot.query.filter_by(team_id=team.id).all()
 
-    return render_template("dashboard.html", team=team, team_number=team_number, robot_name=robot_name)
+    return render_template(
+        "dashboard.html",
+        team=team,
+        robots=robots,
+        team_number=team_number,
+        robot_name=robot_name
+    )
+
+
 
 
 @app.route('/api/machines', methods=['POST'])

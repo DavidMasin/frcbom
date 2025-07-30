@@ -568,7 +568,7 @@ def list_machines():
 
 @app.route("/<team_number>/<robot_name>")
 def team_robot_public(team_number, robot_name):
-    team = Team.query.filter_by(team_number=team_number).first()
+    team = Team.query.filter_by(team_number=str(team_number)).first()
     if not team:
         return "Team not found", 404
 

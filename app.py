@@ -68,15 +68,7 @@ def team_admin_dashboard(team_number):
     return render_template("teamAdmin_dashboard.html", team=team, robots=robots)
 
 @app.route("/<int:team_number>/Admin/machines", methods=["GET"])
-# @jwt_required()
 def manage_machines(team_number):
-    # current_user = get_jwt_identity()
-    # claims = get_jwt()
-
-    # Authorization: allow only if user is global or owns the team
-    # if current_user != str(team_number) and not claims.get("is_global_admin"):
-    #     return jsonify({"error": "Unauthorized"}), 403
-
     team = Team.query.filter_by(team_number=team_number).first()
     if not team:
         return "Team not found", 404

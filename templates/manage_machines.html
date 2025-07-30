@@ -90,43 +90,43 @@
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         const form = document.getElementById("addMachineForm");
-        if (form) {
-            form.addEventListener("submit", async (event) => {
-                event.preventDefault();
+        if (!form) return;
 
-                const teamNumber = localStorage.getItem("team_number");
-                const robotName = localStorage.getItem("robot_name");
-                const formData = new FormData(form);
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
 
-                formData.append("team_number", teamNumber);
-                formData.append("robot_name", robotName);
+            const teamNumber = localStorage.getItem("team_number");
+            const robotName = localStorage.getItem("robot_name");
+            const token = localStorage.getItem("jwt_token");
 
-                const token = localStorage.getItem("jwt_token");
+            const formData = new FormData(form);
+            formData.append("team_number", teamNumber);
+            formData.append("robot_name", robotName);
 
-                try {
-                    const res = await fetch("/api/machines", {
-                        method: "POST",
-                        headers: {
-                            "Authorization": `Bearer ${token}`
-                        },
-                        body: formData
-                    });
+            try {
+                const res = await fetch("/api/machines", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: formData
+                });
 
-                    const data = await res.json();
+                const data = await res.json();
 
-                    if (res.ok) {
-                        alert("✅ Machine added successfully!");
-                        window.location.reload();
-                    } else {
-                        alert(`❌ Error: ${data.error || "Something went wrong."}`);
-                    }
-                } catch (err) {
-                    console.error("Error adding machine:", err);
-                    alert("❌ Failed to add machine.");
+                if (res.ok) {
+                    alert("✅ Machine added successfully!");
+                    window.location.reload();
+                } else {
+                    alert(`❌ ${data.error || "Something went wrong"}`);
                 }
-            });
-        }
+            } catch (err) {
+                console.error("❌ Error adding machine:", err);
+                alert("Server error");
+            }
+        });
     });
+
 </script>
 
 {% endblock %}

@@ -282,7 +282,7 @@ def create_robot():
         db.session.add(sys_record)
     if template_robot:
         for templ_machine in template_robot.machines:
-            machine_copy = Machine(robot=new_robot, name=templ_machine.name, cad_format=templ_machine.cad_format)
+            machine_copy = Machine(team_id=team.id, name=templ_machine.name, cad_format=templ_machine.cad_format)
             if templ_machine.icon_file:
                 machine_dir = os.path.join(app.config['UPLOAD_FOLDER'], f"team_{team_number}", "machines")
                 os.makedirs(machine_dir, exist_ok=True)
@@ -429,7 +429,7 @@ def new_robot_legacy():
         db.session.add(sys_record)
     if template_robot:
         for templ_machine in template_robot.machines:
-            machine_copy = Machine(robot=new_robot, name=templ_machine.name, cad_format=templ_machine.cad_format)
+            machine_copy = Machine(team_id=team.id, name=templ_machine.name, cad_format=templ_machine.cad_format)
             if templ_machine.icon_file and os.path.isfile(templ_machine.icon_file):
                 ext = templ_machine.icon_file.rsplit('.', 1)[-1] if '.' in templ_machine.icon_file else ''
                 machine_dir = os.path.join(app.config['UPLOAD_FOLDER'], f"team_{team_number}", "machines")

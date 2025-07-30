@@ -14,7 +14,7 @@
         <div class="group relative bg-gray-800/50 border border-gray-700 rounded-2xl shadow-lg overflow-hidden transform hover:-translate-y-2 transition-all duration-300">
             <div class="absolute -inset-0.5 bg-gradient-to-r from-pink-600 to-purple-600 rounded-2xl blur opacity-0 group-hover:opacity-75 transition duration-500"></div>
             <div class="relative">
-                <a href="{{ url_for('team_page', team_number=team.team_number, robot_name=robot.name) }}">
+                <a href="{{ url_for('team_dashboard', team_number=team.team_number, robot_name=robot.name) }}">
                     <img src="{{ url_for('static', filename=robot.image_text) }}"
                          alt="{{ robot.name }}"
                          class="w-full h-56 object-cover"
@@ -26,7 +26,7 @@
                     <p class="text-indigo-300 font-semibold">Competition Year: {{ robot.year }}</p>
                 </div>
                 <div class="absolute top-4 right-4 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <a href="{{ url_for('team_page', team_number=team.team_number, robot_name=robot.name) }}"
+                    <a href="{{ url_for('team_dashboard', team_number=team.team_number, robot_name=robot.name) }}">
                        class="bg-blue-600/80 hover:bg-blue-500 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg backdrop-blur-sm">
                         <i class="fas fa-arrow-right"></i>
                     </a>

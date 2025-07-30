@@ -551,6 +551,28 @@ def list_machines():
         machine_list.append(machine_data)
     return jsonify({"machines": machine_list}), 200
 
+@app.route("/<team_number>/<robot_name>")
+def team_robot_public(team_number, robot_name):
+    team = Team.query.filter_by(team_number=str(team_number)).first()
+    if not team:
+        return "Team not found", 404
+
+    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
+    if not robot:
+        return "Robot not found", 404
+
+    return render_template("dashboard.html", team=team, team_number=team_number, robot_name=robot_name)
+@app.route("/<team_number>/<robot_name>/<system>")
+def team_robot_system_public(team_number, robot_name, system):
+    team = Team.query.filter_by(team_number=str(team_number)).first()
+    if not team:
+        return "Team not found", 404
+
+    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
+    if not robot:
+        return "Robot not found", 404
+
+    return render_template("dashboard.html", team=team, team_number=team_number, robot_name=robot_name, filter_system=system)
 
 @app.route('/api/machines', methods=['POST'])
 def add_machine():

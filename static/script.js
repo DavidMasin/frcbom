@@ -127,6 +127,7 @@ async function initializeDashboard() {
     });
 
     const data = await response.json();
+    if (currentPath.includes('/Admin') || currentPath.includes('/machines')) return;
 
     if (!data.exists) {
         if (confirm(`Robot "${robotName}" doesn't exist for Team ${teamNumber}. Do you want to construct it now?`)) {

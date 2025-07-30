@@ -566,9 +566,12 @@ def list_machines():
     return jsonify({"machines": machine_list}), 200
 
 
-@app.route("/<team_number>/<robot_name>")
-def team_robot_public(team_number, robot_name):
-    team = Team.query.filter_by(team_number=str(team_number)).first()
+@app.route("/api/robot_data")
+def team_dashboard_api():
+    team_number = request.args.get("team_number")
+    robot_name = request.args.get("robot")
+
+    team = Team.query.filter_by(team_number=team_number).first()
     if not team:
         return "Team not found", 404
 

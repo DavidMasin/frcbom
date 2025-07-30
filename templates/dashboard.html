@@ -26,7 +26,7 @@
                     <p class="text-indigo-300 font-semibold">Competition Year: {{ robot.year }}</p>
                 </div>
                 <div class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <a href="{{ url_for('team_robot_public', team_number=team.team_number, robot_name=robot.name) }}">
+                    <a href="{{ url_for('team_bom_filtered', team_number=team.team_number, robot_name=robot.name) }}">
                     class="bg-blue-600/80 hover:bg-blue-500 text-white w-10 h-10 rounded-full flex items-center
                         justify-center shadow-lg backdrop-blur-sm">
                         <i class="fas fa-arrow-right"></i>

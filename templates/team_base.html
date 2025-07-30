@@ -47,7 +47,7 @@
                             <a href="{{ url_for('team_admin_dashboard', team_number=team.team_number) }}"
                                class="nav-link {% if request.endpoint == 'team_admin_dashboard' %}active{% endif %}">Robots</a>
 
-                            <a href="{{ url_for('manage_machines' }}"
+                            <a href="{{ url_for('manage_machines', team_number=team.team_number) }}"
                                class="nav-link">Machines</a>
 
 

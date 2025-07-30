@@ -15,7 +15,7 @@
             <div class="absolute -inset-0.5 bg-gradient-to-r from-pink-600 to-purple-600 rounded-2xl blur opacity-0 group-hover:opacity-75 transition duration-500"></div>
             <div class="relative">
                 <a href="{{ url_for('team_robot_public', team_number=team.team_number, robot_name=robot.name) }}">
-                <img src="{{ url_for('static', filename=robot.image_text) }}"
+                    <img src="{{ url_for('static', filename=robot.image_text) }}"
                          alt="{{ robot.name }}"
                          class="w-full h-56 object-cover"
                          onerror="this.onerror=null;this.src='https://placehold.co/600x400/1f2937/9ca3af?text=No+Image';">
@@ -25,12 +25,12 @@
                     <h2 class="text-3xl font-black text-white tracking-wider uppercase">{{ robot.name }}</h2>
                     <p class="text-indigo-300 font-semibold">Competition Year: {{ robot.year }}</p>
                 </div>
-                <div class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <a href="{{ url_for('team_bom_filtered', team_number=team.team_number, robot_name=robot.name) }}">
-                    class="bg-blue-600/80 hover:bg-blue-500 text-white w-10 h-10 rounded-full flex items-center
-                        justify-center shadow-lg backdrop-blur-sm">
+                <div class="absolute top-4 right-4 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <a href="{{ url_for('team_robot_public', team_number=team.team_number, robot_name=robot.name) }}"
+                       class="bg-blue-600/80 hover:bg-blue-500 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg backdrop-blur-sm">
                         <i class="fas fa-arrow-right"></i>
                     </a>
+
                 </div>
             </div>
         </div>
@@ -40,8 +40,9 @@
     <div class="text-center py-20 px-6 bg-gray-800/50 border-2 border-dashed border-gray-700 rounded-2xl">
         <i class="fas fa-space-shuttle text-6xl text-gray-500 mb-4 transform -rotate-45"></i>
         <h2 class="text-3xl font-bold text-white">The Hangar is Empty</h2>
-        <p class="text-gray-400 mt-2 max-w-md mx-auto">Your robot fleet awaits its first champion. Please ask your team
-            admin to add a robot.</p>
+        <p class="text-gray-400 mt-2 max-w-md mx-auto">Your robot fleet awaits its first champion. Build a new robot to
+            begin your journey to victory.
+            Contact your Team Admin!</p>
     </div>
     {% endif %}
 </div>

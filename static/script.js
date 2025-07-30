@@ -108,7 +108,7 @@ async function initializeDashboard() {
         loadPartsFromBackend(teamNumber, robotName, system);
     }
     // 🚫 Avoid running this logic on pages where robotName isn't valid
-    const excludedPaths = ["/new_robot", "/register", "/login"];
+    const excludedPaths = ["/new_robot", "/register", "/login", "/machines"];
     if (excludedPaths.some(path => currentPath.includes(path))) return;
 
     if (!teamNumber || !robotName) return;

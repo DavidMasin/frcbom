@@ -1,64 +1,46 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>FRC BOM Dashboard</title>
-    <link rel="stylesheet" href="/static/style.css">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-</head>
-<body class="bg-gray-900 text-gray-100">
-<header class="dashboard-header bg-gray-800 border-b border-gray-700">
-    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-        <div>
-            <h1 class="text-xl font-bold">FRC BOM Dashboard</h1>
-            <h2 class="text-sm text-gray-400">Welcome, Team <span id="teamNumber"></span></h2>
-        </div>
-        <button id="logoutButton" class="button-secondary">Log Out</button>
-    </div>
-</header>
+{% extends "team_base.html" %}
 
-<main class="max-w-7xl mx-auto px-4 py-6">
-    <!-- Robot and System Selector -->
-    <section class="dashboard-controls bg-gray-800 p-4 rounded-lg shadow mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-                <label for="robotSelect" class="block text-sm font-medium">Select Robot:</label>
-                <select id="robotSelect" class="system-dropdown w-full mt-1"></select>
-            </div>
-            <div>
-                <label for="systemSelect" class="block text-sm font-medium">Select System:</label>
-                <select id="systemSelect" class="system-dropdown w-full mt-1"></select>
-            </div>
-            <div>
-                <label for="machineFilter" class="block text-sm font-medium">Filter by Machine:</label>
-                <select id="machineFilter" class="system-dropdown w-full mt-1">
-                    <option value="All">All</option>
-                </select>
+{% block title %}Robot Dashboard - Team {{ team.team_number }}{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-0">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-4xl font-bold text-white tracking-tight">Robot Fleet</h1>
+    </div>
+
+    {% if robots %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for robot in robots %}
+        <div class="group relative bg-gray-800/50 border border-gray-700 rounded-2xl shadow-lg overflow-hidden transform hover:-translate-y-2 transition-all duration-300">
+            <div class="absolute -inset-0.5 bg-gradient-to-r from-pink-600 to-purple-600 rounded-2xl blur opacity-0 group-hover:opacity-75 transition duration-500"></div>
+            <div class="relative">
+                <a href="{{ url_for('team_robot_view', team_number=team.team_number, robot_name=robot.name) }}">
+                    <img src="{{ url_for('static', filename=robot.image_text) }}"
+                         alt="{{ robot.name }}"
+                         class="w-full h-56 object-cover"
+                         onerror="this.onerror=null;this.src='https://placehold.co/600x400/1f2937/9ca3af?text=No+Image';">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                </a>
+                <div class="absolute bottom-0 left-0 p-6 w-full">
+                    <h2 class="text-3xl font-black text-white tracking-wider uppercase">{{ robot.name }}</h2>
+                    <p class="text-indigo-300 font-semibold">Competition Year: {{ robot.year }}</p>
+                </div>
+                <div class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <a href="{{ url_for('team_robot_view', team_number=team.team_number, robot_name=robot.name) }}"
+                       class="bg-blue-600/80 hover:bg-blue-500 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg backdrop-blur-sm">
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
             </div>
         </div>
-    </section>
-
-    <!-- Parts Display -->
-    <section id="bomTableContainer">
-        <h2 class="text-2xl font-bold mb-4">BOM Parts</h2>
-        <div id="bomPartsGrid" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
-        <p id="noPartsMessage" class="text-center text-gray-400 mt-4">No parts to display.</p>
-    </section>
-</main>
-
-<!-- Edit Modal -->
-<div id="editModal" class="modal">
-    <div class="modal-content">
-        <span id="closeModal" class="close">&times;</span>
-        <button id="downloadCADButton" class="button-primary">Download CAD</button>
-        <h2 class="text-xl font-bold text-gray-800">Edit Quantities</h2>
-        <div id="modalBody" class="modal-body"></div>
-        <button id="saveButton" class="button-primary mt-4">Save Changes</button>
+        {% endfor %}
     </div>
+    {% else %}
+    <div class="text-center py-20 px-6 bg-gray-800/50 border-2 border-dashed border-gray-700 rounded-2xl">
+        <i class="fas fa-space-shuttle text-6xl text-gray-500 mb-4 transform -rotate-45"></i>
+        <h2 class="text-3xl font-bold text-white">The Hangar is Empty</h2>
+        <p class="text-gray-400 mt-2 max-w-md mx-auto">Your robot fleet awaits its first champion. Please ask your team admin to add a robot.</p>
+    </div>
+    {% endif %}
 </div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
-<script src="/static/script.js"></script>
-</body>
-</html>
+{% endblock %}

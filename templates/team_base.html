@@ -46,10 +46,10 @@
                         <div class="ml-10 flex items-baseline space-x-4">
                             <a href="{{ url_for('team_admin_dashboard', team_number=team.team_number) }}"
                                class="nav-link {% if request.endpoint == 'team_admin_dashboard' %}active{% endif %}">Robots</a>
-                            {% if robots %}
-                            <a href="{{ url_for('add_machine', team_number=team.team_number, robot_name=robots[0].name) }}"
+
+                            <a href="{{ url_for('manage_machines' }}"
                                class="nav-link">Machines</a>
-                            {% endif %}
+
 
                         </div>
                     </div>

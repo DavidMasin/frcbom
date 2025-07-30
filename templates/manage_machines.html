@@ -87,4 +87,46 @@
         {% endif %}
     </div>
 </div>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const form = document.getElementById("addMachineForm");
+        if (form) {
+            form.addEventListener("submit", async (event) => {
+                event.preventDefault();
+
+                const teamNumber = localStorage.getItem("team_number");
+                const robotName = localStorage.getItem("robot_name");
+                const formData = new FormData(form);
+
+                formData.append("team_number", teamNumber);
+                formData.append("robot_name", robotName);
+
+                const token = localStorage.getItem("jwt_token");
+
+                try {
+                    const res = await fetch("/api/machines", {
+                        method: "POST",
+                        headers: {
+                            "Authorization": `Bearer ${token}`
+                        },
+                        body: formData
+                    });
+
+                    const data = await res.json();
+
+                    if (res.ok) {
+                        alert("✅ Machine added successfully!");
+                        window.location.reload();
+                    } else {
+                        alert(`❌ Error: ${data.error || "Something went wrong."}`);
+                    }
+                } catch (err) {
+                    console.error("Error adding machine:", err);
+                    alert("❌ Failed to add machine.");
+                }
+            });
+        }
+    });
+</script>
+
 {% endblock %}

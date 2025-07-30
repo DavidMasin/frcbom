@@ -579,28 +579,6 @@ def team_robot_public(team_number, robot_name):
     return render_template("dashboard.html", team=team, team_number=team_number, robot_name=robot_name)
 
 
-
-
-
-@app.route("/<team_number>/<robot_name>")
-def team_robot_public(team_number, robot_name):
-    team = Team.query.filter_by(team_number=str(team_number)).first()
-    if not team:
-        return "Team not found", 404
-
-    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
-    if not robot:
-        return "Robot not found", 404
-
-    return render_template(
-        'dashboard.html',
-        team=team,
-        team_number=team_number,
-        robot_name=robot_name,
-        filter_system="Main"
-    )
-
-
 @app.route('/api/machines', methods=['POST'])
 def add_machine():
     """Add a new machine to a robot (team admin or global admin only)."""

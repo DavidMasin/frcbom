@@ -28,7 +28,7 @@ class Team(db.Model):
     adminPassword = db.Column(db.String(128))
     users = db.relationship('User', back_populates='team')
     robots = db.relationship('Robot', back_populates='team', cascade="all, delete-orphan")
-
+    machines = db.relationship('Machine', back_populates='team', cascade='all, delete-orphan')
 
 class Robot(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -59,5 +59,6 @@ class Machine(db.Model):
     name = db.Column(db.String(100), nullable=False)
     icon_file = db.Column(db.String(100), nullable=True, default='uploads/machine_icons/default_machine.png')
     cad_format = db.Column(db.String(20), nullable=False, default='STEP')
-    robot_id = db.Column(db.Integer, db.ForeignKey('robot.id'), nullable=False)
-    robot = db.relationship('Robot', back_populates='machines')
+    team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)
+    team = db.relationship('Team', back_populates='machines')
+

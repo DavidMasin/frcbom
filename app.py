@@ -580,32 +580,40 @@ def team_robot_public(team_number, robot_name):
 
 
 @app.route('/api/machines', methods=['POST'])
+@jwt_required()
 def add_machine():
-    """Add a new machine to a robot (team admin or global admin only)."""
+    """Add a new machine to the team (not tied to any robot)."""
+    current_user = get_jwt_identity()
+    claims = get_jwt()
 
     if request.is_json:
         team_number = request.json.get("team_number")
-        robot_name = request.json.get("robot_name")
         machine_name = request.json.get("name")
         cad_format = request.json.get("cad_format")
     else:
         team_number = request.form.get("team_number")
-        robot_name = request.form.get("robot_name")
         machine_name = request.form.get("name")
         cad_format = request.form.get("cad_format")
-    icon_file = request.files.get("icon")
-    if not team_number or not robot_name or not machine_name or not cad_format:
-        return jsonify({"error": "Team number, robot name, machine name, and cad_format are required"}), 400
-    team = Team.query.filter_by(team_number=str(team_number)).first()
-    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first() if team else None
-    if not team or not robot:
-        return jsonify({"error": "Team or robot not found"}), 404
-    if Machine.query.filter_by(robot_id=robot.id, name=machine_name).first():
-        return jsonify({"error": "Machine name already exists for this robot"}), 400
 
-    new_machine = Machine(robot=robot, name=machine_name, cad_format=cad_format)
+    icon_file = request.files.get("icon")
+
+    if not team_number or not machine_name or not cad_format:
+        return jsonify({"error": "Missing team_number, name, or cad_format"}), 400
+
+    # Auth check
+    if not (claims.get('is_team_admin') and current_user == team_number) and not claims.get('is_global_admin'):
+        return jsonify({"error": "Unauthorized"}), 403
+
+    team = Team.query.filter_by(team_number=str(team_number)).first()
+    if not team:
+        return jsonify({"error": "Team not found"}), 404
+
+    if Machine.query.filter_by(team_id=team.id, name=machine_name).first():
+        return jsonify({"error": "Machine already exists for this team"}), 400
+
+    new_machine = Machine(team=team, name=machine_name, cad_format=cad_format)
     db.session.add(new_machine)
-    db.session.flush()  # assign ID
+    db.session.flush()
 
     if icon_file:
         machine_dir = os.path.join(app.config['UPLOAD_FOLDER'], f"team_{team_number}", "machines")
@@ -614,7 +622,7 @@ def add_machine():
         icon_filename_secure = secure_filename(icon_file.filename)
         if '.' in icon_filename_secure:
             ext = icon_filename_secure.rsplit('.', 1)[1].lower()
-        icon_filename = f"machine_{robot.id}_{secure_filename(machine_name)}.{ext}" if ext else f"machine_{robot.id}_{secure_filename(machine_name)}"
+        icon_filename = f"machine_{new_machine.id}_{secure_filename(machine_name)}.{ext}" if ext else f"machine_{new_machine.id}_{secure_filename(machine_name)}"
         icon_path = os.path.join(machine_dir, icon_filename)
         icon_file.save(icon_path)
         new_machine.icon_file = os.path.join("uploads", f"team_{team_number}", "machines", icon_filename)
@@ -634,6 +642,7 @@ def add_machine():
             "icon": ("/static/" + new_machine.icon_file if new_machine.icon_file else None)
         }
     }), 200
+
 
 
 @app.route('/api/machines/<int:machine_id>', methods=['PUT'])

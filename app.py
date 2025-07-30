@@ -529,17 +529,14 @@ def delete_robot_legacy():
 
 # Machine endpoints
 @app.route('/api/machines', methods=['GET'])
-@jwt_required()
 def list_machines():
     """List all machines for a given team and robot."""
-    current_user = get_jwt_identity()
-    claims = get_jwt()
+
     team_number = request.args.get('team_number')
     robot_name = request.args.get('robot_name')
     if not team_number or not robot_name:
         return jsonify({"error": "Team number and robot name are required"}), 400
-    if current_user != team_number and not claims.get('is_global_admin'):
-        return jsonify({"error": "Unauthorized"}), 403
+
     team = Team.query.filter_by(team_number=team_number).first()
     robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first() if team else None
     if not team or not robot:
@@ -556,11 +553,9 @@ def list_machines():
 
 
 @app.route('/api/machines', methods=['POST'])
-@jwt_required()
 def add_machine():
     """Add a new machine to a robot (team admin or global admin only)."""
-    current_user = get_jwt_identity()
-    claims = get_jwt()
+
     if request.is_json:
         team_number = request.json.get("team_number")
         robot_name = request.json.get("robot_name")
@@ -574,8 +569,6 @@ def add_machine():
     icon_file = request.files.get("icon")
     if not team_number or not robot_name or not machine_name or not cad_format:
         return jsonify({"error": "Team number, robot name, machine name, and cad_format are required"}), 400
-    if not (claims.get('is_team_admin') and current_user == team_number) and not claims.get('is_global_admin'):
-        return jsonify({"error": "Unauthorized"}), 403
     team = Team.query.filter_by(team_number=team_number).first()
     robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first() if team else None
     if not team or not robot:

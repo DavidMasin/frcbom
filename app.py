@@ -75,7 +75,9 @@ def manage_machines(team_number):
     if not team:
         return "Team not found", 404
 
-    machines = Machine.query.filter_by(team_id=team.id).all()
+    # Get all robot IDs for this team
+    robot_ids = [robot.id for robot in team.robots]
+    machines = Machine.query.filter(Machine.robot_id.in_(robot_ids)).all()
 
     return render_template("manage_machines.html", team=team, machines=machines)
 

@@ -70,7 +70,8 @@ def team_admin_dashboard(team_number):
 
 @app.route("/<int:team_number>/Admin/machines", methods=["GET"])
 def manage_machines(team_number):
-    team = Team.query.filter_by(team_number=team_number).first()
+    print(team_number)
+    team = Team.query.filter_by(team_number=str(team_number)).first()
     if not team:
         return "Team not found", 404
 

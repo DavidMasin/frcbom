@@ -53,7 +53,7 @@ def team_dashboard(team_number, robot_name):
 
 @app.route('/<team_number>')
 def team_page(team_number):
-    team = Team.query.filter_by(team_number=int(team_number)).first()
+    team = Team.query.filter_by(team_number=str(team_number)).first()
     if not team:
         return "Team not found", 404
     return render_template('dashboard.html', team=team, team_number=team_number)

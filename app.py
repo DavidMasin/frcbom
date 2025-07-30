@@ -48,7 +48,10 @@ def home():
 
 @app.route('/<team_number>/<robot_name>')
 def team_dashboard(team_number, robot_name):
-    return render_template('dashboard.html', team_number=team_number, robot_name=robot_name)
+    team = Team.query.filter_by(team_number=team_number).first_or_404()
+    robots = Robot.query.filter_by(team_id=team.id).all()
+    return render_template('dashboard.html', team=team, team_number=team_number, robot_name=robot_name, robots=robots)
+
 
 
 @app.route('/<team_number>')
@@ -78,9 +81,7 @@ def manage_machines(team_number):
     if not team:
         return "Team not found", 404
 
-    # Get all robot IDs for this team
-    robot_ids = [robot.id for robot in team.robots]
-    machines = Machine.query.filter(Machine.robot_id.in_(robot_ids)).all()
+    machines = Machine.query.filter_by(team_id=team.id).all()
 
     return render_template("manage_machines.html", team=team, machines=machines)
 

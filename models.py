@@ -38,7 +38,6 @@ class Robot(db.Model):
     team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)
     team = db.relationship('Team', back_populates='robots')
     systems = db.relationship('System', back_populates='robot', cascade="all, delete-orphan")
-    machines = db.relationship('Machine', back_populates='robot', cascade="all, delete-orphan")
     image_text = db.Column(db.String(100), nullable=True, default='uploads/robot_images/default_robot.png')
 
 

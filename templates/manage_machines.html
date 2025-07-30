@@ -100,7 +100,7 @@
             formData.append("robot_name", localStorage.getItem("robot_name"));
 
             try {
-                const res = await fetch("/api/machines", {
+                const res = await fetch("https://frcbom.com/api/machines", {
                     method: "POST",
                     headers: {
                         "Authorization": `Bearer ${localStorage.getItem("jwt_token")}`

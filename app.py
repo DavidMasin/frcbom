@@ -56,7 +56,11 @@ def team_page(team_number):
     team = Team.query.filter_by(team_number=str(team_number)).first()
     if not team:
         return "Team not found", 404
-    return render_template('dashboard.html', team=team, team_number=team_number)
+
+    robots = Robot.query.filter_by(team_id=team.id).all()
+
+    return render_template('dashboard.html', team=team, team_number=team_number, robots=robots)
+
 
 
 

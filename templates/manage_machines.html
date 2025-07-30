@@ -95,37 +95,33 @@
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
 
-            const teamNumber = localStorage.getItem("team_number");
-            const robotName = localStorage.getItem("robot_name");
-            const token = localStorage.getItem("jwt_token");
-
             const formData = new FormData(form);
-            formData.append("team_number", teamNumber);
-            formData.append("robot_name", robotName);
+            formData.append("team_number", localStorage.getItem("team_number"));
+            formData.append("robot_name", localStorage.getItem("robot_name"));
 
             try {
                 const res = await fetch("/api/machines", {
                     method: "POST",
                     headers: {
-                        "Authorization": `Bearer ${token}`
+                        "Authorization": `Bearer ${localStorage.getItem("jwt_token")}`
                     },
                     body: formData
                 });
 
                 const data = await res.json();
-
                 if (res.ok) {
-                    alert("✅ Machine added successfully!");
+                    alert("✅ Machine added!");
                     window.location.reload();
                 } else {
                     alert(`❌ ${data.error || "Something went wrong"}`);
                 }
             } catch (err) {
-                console.error("❌ Error adding machine:", err);
+                console.error("❌ Failed to add machine:", err);
                 alert("Server error");
             }
         });
     });
+
 
 </script>
 

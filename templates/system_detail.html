@@ -137,21 +137,14 @@
                 })
             });
 
-            if (!res.ok) {
-                const err = await res.json();
-                alert("❌ Error: " + (err.error || "Download failed."));
+            const data = await res.json();
+            if (!res.ok || !data.redirect_url) {
+                alert("❌ Error: " + (data.error || "Download failed."));
                 return;
             }
 
-            const blob = await res.blob();
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            console.log(url);
-            link.href = url;
-            // link.download = `Part_${partId}.${fileType.toLowerCase()}`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            // ✅ Open the Onshape download link directly in a new tab
+            window.open(data.redirect_url, "_blank");
         } catch (err) {
             console.error("❌ Download failed", err);
             alert("❌ Download failed");

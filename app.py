@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify, render_template, redirect, session, f
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, get_jwt, jwt_required
 from flask_migrate import Migrate
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, emit
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 

@@ -50,7 +50,7 @@ def home():
 def team_dashboard(team_number, robot_name):
     team = Team.query.filter_by(team_number=team_number).first_or_404()
     robots = Robot.query.filter_by(team_id=team.id).all()
-    return render_template('dashboard.html', team=team, team_number=team_number, robot_name=robot_name, robots=robots)
+    return render_template('robot_detail.html', team=team, team_number=team_number, robot_name=robot_name, robots=robots)
 
 
 

@@ -10,8 +10,8 @@
      {% endif %}>
     <div class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
     <div class="relative z-10">
-        <a href="{{ url_for('team_dashboard', team_number=team.team_number) }}"
-           class="text-sm text-indigo-300 hover:underline mb-4 block">&larr; Back to Robot Fleet</a>
+        <a href="{{ url_for('team_dashboard', team_number=team.team_number, robot_name=robot.name) }}">
+        class="text-sm text-indigo-300 hover:underline mb-4 block">&larr; Back to Robot Fleet</a>
         <h1 class="text-5xl md:text-6xl font-black text-white tracking-wider uppercase">{{ robot.name }}</h1>
         <p class="text-xl text-gray-300 font-light">Competition Year: {{ robot.year }}</p>
     </div>

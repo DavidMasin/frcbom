@@ -1042,34 +1042,42 @@ def download_cad():
     if not system:
         return jsonify({"error": "System not found"}), 404
 
-    if not all([system.access_key, system.secret_key, system.assembly_url]):
-        return jsonify({"error": "Onshape credentials or document URL missing"}), 400
-
-    print("🔗 Parsing Onshape URL:", system.assembly_url)
-    element = OnshapeElement(system.assembly_url)
-    did = element.did
-    wid = element.wvmid
-    eid = element.eid
+    if not all([system.access_key, system.secret_key, system.partstudio_urls]):
+        return jsonify({"error": "Onshape credentials or part studio URLs missing"}), 400
 
     headers = {"Accept": "application/json"}
     auth = (system.access_key, system.secret_key)
 
-    # ✅ Get part list to verify partId
-    parts_res = requests.get(
-        f"https://cad.onshape.com/api/parts/d/{did}/w/{wid}/e/{eid}",
-        headers=headers,
-        auth=auth
-    )
-    if parts_res.status_code != 200:
-        return jsonify({"error": "Failed to retrieve parts"}), 500
+    # 🔁 Search through part studios to find matching partId
+    target = None
+    for ps_url in system.partstudio_urls:
+        try:
+            element = OnshapeElement(ps_url)
+            did, wid, eid = element.did, element.wvmid, element.eid
 
-    valid_part_ids = [p["partId"] for p in parts_res.json()]
-    if part_id not in valid_part_ids:
-        return jsonify({"error": f"Part ID '{part_id}' not found in Onshape element"}), 404
+            res = requests.get(
+                f"https://cad.onshape.com/api/parts/d/{did}/w/{wid}/e/{eid}",
+                headers=headers,
+                auth=auth
+            )
+            if res.status_code != 200:
+                continue
 
-    print("🚀 Starting translation to", format_name)
-    translate_res = requests.post(
-        f"https://cad.onshape.com/api/partstudios/d/{did}/w/{wid}/e/{eid}/translations",
+            part_ids = [p["partId"] for p in res.json()]
+            if part_id in part_ids:
+                target = {"did": did, "wid": wid, "eid": eid}
+                break
+        except Exception as e:
+            print(f"⚠️ Failed to process {ps_url}: {e}")
+
+    if not target:
+        print(f"❌ Part ID '{part_id}' not found in any partstudio")
+        return jsonify({"error": f"Part ID '{part_id}' not found in any part studio"}), 404
+
+    # 🚀 Start translation
+    print(f"🚀 Found in document {target['did']} — Translating to {format_name}")
+    r = requests.post(
+        f"https://cad.onshape.com/api/partstudios/d/{target['did']}/w/{target['wid']}/e/{target['eid']}/translations",
         headers={"Accept": "application/json", "Content-Type": "application/json"},
         auth=auth,
         json={
@@ -1079,37 +1087,38 @@ def download_cad():
         }
     )
 
-    if translate_res.status_code != 200:
-        print("❌ Translation initiation failed:", translate_res.text)
+    if r.status_code != 200:
+        print("❌ Translation initiation failed:", r.text)
         return jsonify({"error": "Failed to start translation"}), 500
 
-    translation_id = translate_res.json().get("id")
+    translation_id = r.json().get("id")
     print("🆔 Translation started:", translation_id)
 
+    # ⏳ Poll until translation completes
     for attempt in range(30):
         time.sleep(0.5)
-        poll_res = requests.get(
+        poll = requests.get(
             f"https://cad.onshape.com/api/translations/{translation_id}",
             headers=headers,
             auth=auth
         )
-        status = poll_res.json()
-        state = status.get("requestState")
+        result = poll.json()
+        state = result.get("requestState")
+        print(f"⏳ Attempt {attempt+1}: {state}")
 
-        print(f"🔄 Polling attempt {attempt + 1}/30 — State: {state}")
         if state == "DONE":
-            ids = status.get("resultExternalDataIds")
+            ids = result.get("resultExternalDataIds")
             if not ids:
                 return jsonify({"error": "Export completed but no download ID"}), 500
             external_id = ids[0]
-            download_url = f"https://cad.onshape.com/api/documents/d/{did}/externaldata/{external_id}"
-            print("✅ Download ready:", download_url)
+            download_url = f"https://cad.onshape.com/api/documents/d/{target['did']}/externaldata/{external_id}"
+            print("✅ Ready:", download_url)
             return jsonify({"redirect_url": download_url}), 200
-
         elif state == "FAILED":
             return jsonify({"error": "Translation failed"}), 500
 
     return jsonify({"error": "Export timed out"}), 504
+
 
 
 @app.route('/api/admin/download_settings_dict', methods=['GET'])

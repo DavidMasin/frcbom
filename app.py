@@ -548,16 +548,14 @@ def list_machines():
     """List all machines for a given team and robot."""
 
     team_number = request.args.get('team_number')
-    robot_name = request.args.get('robot_name')
-    if not team_number or not robot_name:
-        return jsonify({"error": "Team number and robot name are required"}), 400
+    if not team_number:
+        return jsonify({"error": "Team number is required"}), 400
 
     team = Team.query.filter_by(team_number=team_number).first()
-    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first() if team else None
-    if not team or not robot:
+    if not team:
         return jsonify({"error": "Team or robot not found"}), 404
 
-    machines = Machine.query.filter_by(robot_id=robot.id).all()
+    machines = Machine.query.filter_by(team_id=team.id).all()
     machine_list = []
     for m in machines:
         machine_data = {"id": m.id, "name": m.name, "cad_format": m.cad_format, "icon": None}

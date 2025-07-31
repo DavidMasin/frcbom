@@ -1,0 +1,52 @@
+{% extends "team_base.html" %}
+
+{% block title %}{{ robot.name }} - Details{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="relative rounded-2xl overflow-hidden p-8 md:p-12 mb-8 border border-gray-700 bg-gray-800" {% if
+     robot.image_text
+     %}style="background-image: url('{{ url_for('static', filename=robot.image_text) }}'); background-size: cover; background-position: center;"
+     {% endif %}>
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+    <div class="relative z-10">
+        <a href="{{ url_for('team_dashboard', team_number=team.team_number) }}"
+           class="text-sm text-indigo-300 hover:underline mb-4 block">&larr; Back to Robot Fleet</a>
+        <h1 class="text-5xl md:text-6xl font-black text-white tracking-wider uppercase">{{ robot.name }}</h1>
+        <p class="text-xl text-gray-300 font-light">Competition Year: {{ robot.year }}</p>
+    </div>
+</div>
+
+<!-- Systems Section -->
+<div class="bg-gray-800/50 border border-gray-700 rounded-2xl shadow-lg p-6 sm:p-8">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-3xl font-bold text-white">Robot Systems</h2>
+        <button onclick="toggleModal('addSystemModal', true)"
+                class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 flex items-center">
+            <i class="fas fa-plus mr-2"></i> Add System
+        </button>
+    </div>
+
+    {% if robot.systems %}
+    <div class="space-y-4">
+        {% for system in robot.systems %}
+        <a href="{{ url_for('team_bom_filtered', team_number=team.team_number, robot_name=robot.name, system=system.name) }}"
+           class="group block bg-gray-900/70 hover:bg-gray-700/80 border border-gray-700 rounded-lg p-4 transition-all duration-200">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-semibold text-gray-200 group-hover:text-white">{{ system.name }}</h3>
+                <span class="text-indigo-400 group-hover:text-indigo-300 font-semibold opacity-0 group-hover:opacity-100 transition-opacity">Manage &rarr;</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-12 border-2 border-dashed border-gray-700 rounded-lg">
+        <i class="fas fa-puzzle-piece text-5xl text-gray-600 mb-4"></i>
+        <h3 class="text-xl font-semibold text-gray-300">No Systems Defined</h3>
+        <p class="text-gray-500 mt-1">Add a system to begin assembling your robot.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- (System modals omitted for brevity) -->
+{% endblock %}

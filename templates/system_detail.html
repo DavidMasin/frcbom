@@ -45,3 +45,45 @@
 </div>
 
 {% endblock %}
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", async () => {
+        const teamNumber = "{{ team_number }}";
+        const robotName = "{{ current_robot }}";
+        const systemName = "{{ filter_system }}";
+        const token = localStorage.getItem("jwt_token");
+
+        const response = await fetch(`/api/get_bom?team_number=${teamNumber}&robot=${robotName}&system=${systemName}`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+
+        const data = await response.json();
+        const partsGrid = document.getElementById("bomPartsGrid");
+        const noPartsMessage = document.getElementById("noPartsMessage");
+
+        if (response.ok && data.bom_data && data.bom_data.length > 0) {
+            partsGrid.innerHTML = '';
+            data.bom_data.forEach(part => {
+                const div = document.createElement("div");
+                div.classList.add("part-button");
+                div.innerHTML = `
+                <h3>${part["Part Name"] || "Unnamed"}</h3>
+                <p><strong>Description:</strong> ${part.Description || "N/A"}</p>
+                <p><strong>Material:</strong> ${part.materialBOM || part.Material || "N/A"}</p>
+                <p><strong>Quantity:</strong> ${part.Quantity || "N/A"}</p>
+                <p><strong>Pre Process:</strong> ${part["Pre Process"] || "N/A"}</p>
+                <p><strong>Process 1:</strong> ${part["Process 1"] || "N/A"}</p>
+                <p><strong>Process 2:</strong> ${part["Process 2"] || "N/A"}</p>
+            `;
+                partsGrid.appendChild(div);
+            });
+            noPartsMessage.style.display = "none";
+        } else {
+            partsGrid.innerHTML = '';
+            noPartsMessage.style.display = "block";
+        }
+    });
+</script>
+{% endblock %}

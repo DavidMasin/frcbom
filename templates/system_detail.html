@@ -77,9 +77,24 @@
         renderBOM();
     }
 
-    async function updateQty(partId, newQty) {
+    function getStatusColor(part, qtyNeeded) {
+        const donePre = parseInt(part.done_preprocess || 0);
+        const doneP1 = parseInt(part.done_process1 || 0);
+        const doneP2 = parseInt(part.done_process2 || 0);
+        const available = parseInt(part.available_qty || 0);
+
+        if (!part["Pre Process"] && !part["Process 1"] && !part["Process 2"]) {
+            return available >= qtyNeeded ? "bg-green-200" : "bg-yellow-200";
+        }
+
+        if (doneP2 >= qtyNeeded) return "bg-green-200";
+        if (donePre > 0 || doneP1 > 0 || doneP2 > 0) return "bg-yellow-200";
+        return "";
+    }
+
+    async function updateProcessQty(partId, key, newQty) {
         const part = fullBOM.find(p => p.partId === partId);
-        if (part) part.Quantity = newQty;
+        if (part) part[key] = newQty;
         const res = await fetch("/api/save_bom_for_robot_system", {
             method: "POST",
             headers: {
@@ -106,7 +121,7 @@
 
         fullBOM.forEach(part => {
             const partId = part.partId || '';
-            const qty = part.Quantity || 0;
+            const qty = parseInt(part.Quantity || 0);
             const name = part["Part Name"] || "Unnamed";
             const preDone = part["Pre Process"] === "Done";
             const proc1Done = part["Process 1"] === "Done";
@@ -126,8 +141,10 @@
             }
             if (!matches) return;
 
+            const color = getStatusColor(part, qty);
+
             const div = document.createElement("div");
-            div.className = "part-button hover:scale-[1.03] transition duration-300 border rounded relative";
+            div.className = `part-button hover:scale-[1.03] transition duration-300 border rounded relative p-4 ${color}`;
             div.innerHTML = `
           <h3 class="font-bold text-lg text-blue-700">${name}</h3>
           <p><strong>Material:</strong> ${part.materialBOM || part.Material || "N/A"}</p>
@@ -135,10 +152,18 @@
           <p><strong>Pre Process:</strong> ${part["Pre Process"] || "N/A"}</p>
           <p><strong>Process 1:</strong> ${proc1 || "N/A"}</p>
           <p><strong>Process 2:</strong> ${proc2 || "N/A"}</p>
-          <label><strong>Qty:</strong>
-            <input type="number" value="${qty}" min="0" data-part-id="${partId}"
-              onchange="updateQty('${partId}', this.value)"
-              class="border px-2 py-1 mt-1 rounded w-20" />
+          <p><strong>Qty Needed:</strong> ${qty}</p>
+          <label>✅ Done Pre:
+            <input type="number" value="${part.done_preprocess || 0}" min="0" onchange="updateProcessQty('${partId}', 'done_preprocess', this.value)" class="border px-2 py-1 rounded w-20" />
+          </label><br/>
+          <label>✅ Done P1:
+            <input type="number" value="${part.done_process1 || 0}" min="0" onchange="updateProcessQty('${partId}', 'done_process1', this.value)" class="border px-2 py-1 rounded w-20" />
+          </label><br/>
+          <label>✅ Done P2:
+            <input type="number" value="${part.done_process2 || 0}" min="0" onchange="updateProcessQty('${partId}', 'done_process2', this.value)" class="border px-2 py-1 rounded w-20" />
+          </label><br/>
+          <label>📦 Qty In Stock:
+            <input type="number" value="${part.available_qty || 0}" min="0" onchange="updateProcessQty('${partId}', 'available_qty', this.value)" class="border px-2 py-1 rounded w-20" />
           </label>
           <button title="Download CAD"
             class="absolute top-2 right-2 text-blue-600 hover:text-blue-900 transition"
@@ -174,7 +199,6 @@
         else alert(data.error || "Download failed");
     }
 
-    // Init BOM and filter buttons
     (async () => {
         const machineRes = await fetch(`/api/machines?team_number=${teamNumber}`, {
             headers: { Authorization: `Bearer ${token}` }

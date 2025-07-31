@@ -1005,6 +1005,110 @@ def download_bom_dict():
             team_dict[robot.name] = robot_dict
         bom_data_dict[team.team_number] = team_dict
     return jsonify({"bom_data_dict": bom_data_dict}), 200
+@app.route("/api/download_cad", methods=["POST"])
+@jwt_required()
+def download_cad():
+    import requests, time
+    from onshape_client.onshape_url import OnshapeElement
+
+    current_user = get_jwt_identity()
+    claims = get_jwt()
+    data = request.get_json()
+
+    team_number = data.get("team_number")
+    robot_name = data.get("robot")
+    system_name = data.get("system")
+    part_id = data.get("id")
+    format_name = data.get("format", "STEP").upper()
+
+    print("🛠️ Received download request for part:", part_id)
+
+    if not all([team_number, robot_name, system_name, part_id]):
+        return jsonify({"error": "Missing required fields (team_number, robot, system, id)"}), 400
+
+    if current_user != team_number and not claims.get("is_global_admin"):
+        return jsonify({"error": "Unauthorized"}), 403
+
+    team = Team.query.filter_by(team_number=team_number).first()
+    if not team:
+        return jsonify({"error": "Team not found"}), 404
+
+    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
+    if not robot:
+        return jsonify({"error": "Robot not found"}), 404
+
+    system = System.query.filter_by(robot_id=robot.id, name=system_name).first()
+    if not system:
+        return jsonify({"error": "System not found"}), 404
+
+    if not all([system.access_key, system.secret_key, system.assembly_url]):
+        return jsonify({"error": "Onshape credentials or document URL missing"}), 400
+
+    print("🔗 Parsing Onshape URL:", system.assembly_url)
+    element = OnshapeElement(system.assembly_url)
+    did = element.did
+    wid = element.wvmid
+    eid = element.eid
+
+    headers = {"Accept": "application/json"}
+    auth = (system.access_key, system.secret_key)
+
+    # ✅ Get part list to verify partId
+    parts_res = requests.get(
+        f"https://cad.onshape.com/api/parts/d/{did}/w/{wid}/e/{eid}",
+        headers=headers,
+        auth=auth
+    )
+    if parts_res.status_code != 200:
+        return jsonify({"error": "Failed to retrieve parts"}), 500
+
+    valid_part_ids = [p["partId"] for p in parts_res.json()]
+    if part_id not in valid_part_ids:
+        return jsonify({"error": f"Part ID '{part_id}' not found in Onshape element"}), 404
+
+    print("🚀 Starting translation to", format_name)
+    translate_res = requests.post(
+        f"https://cad.onshape.com/api/partstudios/d/{did}/w/{wid}/e/{eid}/translations",
+        headers={"Accept": "application/json", "Content-Type": "application/json"},
+        auth=auth,
+        json={
+            "formatName": format_name,
+            "partIds": part_id,
+            "storeInDocument": False
+        }
+    )
+
+    if translate_res.status_code != 200:
+        print("❌ Translation initiation failed:", translate_res.text)
+        return jsonify({"error": "Failed to start translation"}), 500
+
+    translation_id = translate_res.json().get("id")
+    print("🆔 Translation started:", translation_id)
+
+    for attempt in range(30):
+        time.sleep(0.5)
+        poll_res = requests.get(
+            f"https://cad.onshape.com/api/translations/{translation_id}",
+            headers=headers,
+            auth=auth
+        )
+        status = poll_res.json()
+        state = status.get("requestState")
+
+        print(f"🔄 Polling attempt {attempt + 1}/30 — State: {state}")
+        if state == "DONE":
+            ids = status.get("resultExternalDataIds")
+            if not ids:
+                return jsonify({"error": "Export completed but no download ID"}), 500
+            external_id = ids[0]
+            download_url = f"https://cad.onshape.com/api/documents/d/{did}/externaldata/{external_id}"
+            print("✅ Download ready:", download_url)
+            return jsonify({"redirect_url": download_url}), 200
+
+        elif state == "FAILED":
+            return jsonify({"error": "Translation failed"}), 500
+
+    return jsonify({"error": "Export timed out"}), 504
 
 
 @app.route('/api/admin/download_settings_dict', methods=['GET'])

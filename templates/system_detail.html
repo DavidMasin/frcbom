@@ -146,8 +146,9 @@
             const blob = await res.blob();
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement("a");
+            console.log(url);
             link.href = url;
-            link.download = `Part_${partId}.${fileType.toLowerCase()}`;
+            // link.download = `Part_${partId}.${fileType.toLowerCase()}`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);

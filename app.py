@@ -1294,8 +1294,11 @@ def debug_system_url():
         "secret_key": system.secret_key
     })
 
+@socketio.on("qty_update")
+def handle_qty_update(data):
+    emit("qty_update", data, broadcast=True)
 
 def run():
-    port = int(os.environ.get("PORT", 5000))
     print("✅ Flask app is starting via socketio.run() (Gunicorn)")
-    socketio.run(app, host="0.0.0.0", port=port)
+    socketio.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+

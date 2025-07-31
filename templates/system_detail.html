@@ -121,34 +121,35 @@
             return;
         }
 
-        try {
-            const res = await fetch("/api/download_cad", {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    team_number: teamNumber,
-                    robot: robotName,
-                    system: systemName,
-                    id: partId,
-                    format: fileType
-                })
+        const payload = {
+            team_number: teamNumber,
+            robot: robotName,
+            system: systemName,
+            id: partId,
+            format: fileType
+        };
+
+        fetch(`/api/download_cad`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${jwt}`
+            },
+            body: JSON.stringify(payload)
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.redirect_url) {
+                    // ✅ Replaces the current tab with the download URL
+                    window.location.href = data.redirect_url;
+                } else if (data.error) {
+                    alert("❌ Export failed: " + data.error);
+                }
+            })
+            .catch(err => {
+                console.error("❌ Error during CAD download:", err);
+                alert("❌ An error occurred during CAD export.");
             });
-
-            const data = await res.json();
-            if (!res.ok || !data.redirect_url) {
-                alert("❌ Error: " + (data.error || "Download failed."));
-                return;
-            }
-
-            // ✅ Open the Onshape download link directly in a new tab
-            window.open(data.redirect_url, "_blank");
-        } catch (err) {
-            console.error("❌ Download failed", err);
-            alert("❌ Download failed");
-        }
     }
 </script>
 {% endblock %}

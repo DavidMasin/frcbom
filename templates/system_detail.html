@@ -40,7 +40,8 @@
 <!-- 👁️ Onshape Viewer Modal -->
 <div id="viewerModal" class="fixed inset-0 z-50 bg-black bg-opacity-70 hidden flex items-center justify-center">
     <div class="bg-white rounded shadow-lg w-4/5 h-4/5 relative">
-        <button onclick="closeViewer()" class="absolute top-2 right-3 text-gray-600 hover:text-black text-xl">&times;</button>
+        <button onclick="closeViewer()" class="absolute top-2 right-3 text-gray-600 hover:text-black text-xl">&times;
+        </button>
         <canvas id="gltfCanvas" class="w-full h-full rounded"></canvas>
     </div>
 </div>
@@ -290,6 +291,7 @@
         </div>
     `;
     }
+
     function renderBOM() {
         const grid = document.getElementById("bomPartsGrid");
         const noMsg = document.getElementById("noPartsMessage");
@@ -351,7 +353,7 @@
     })();
 
     async function loadPartViewer(partId) {
-        const res = await fetch("/api/download_cad", {
+        const res = await fetch("/api/viewer_gltf", {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${token}`,
@@ -361,19 +363,17 @@
                 team_number: teamNumber,
                 robot: robotName,
                 system: systemName,
-                id: partId,
-                format: "GLTF"
+                id: partId
             })
         });
 
-        if (!res.ok) return alert("Failed to load model");
+        if (!res.ok) return alert("❌ Failed to fetch GLTF");
 
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
-
-        // Call the imported function
         showGLTFViewer(url);
     }
+
     document.addEventListener("DOMContentLoaded", loadAndRenderBOM);
 </script>
 <script type="importmap">

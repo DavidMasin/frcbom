@@ -1133,46 +1133,24 @@ def download_cad():
 
     return jsonify({"error": "Export timed out"}), 504
 
-def find_partstudio_for_part(part_id, partstudio_urls, access_key, secret_key):
-    headers = {"Accept": "application/json"}
-    auth = (access_key, secret_key)
 
-    for ps_url in partstudio_urls:
-        try:
-            element = OnshapeElement(ps_url)
-            did, wid, eid = element.did, element.wvmid, element.eid
-
-            res = requests.get(
-                f"https://cad.onshape.com/api/parts/d/{did}/w/{wid}/e/{eid}",
-                headers=headers,
-                auth=auth
-            )
-
-            if res.status_code == 200:
-                part_ids = [p["partId"] for p in res.json()]
-                if part_id in part_ids:
-                    return did, wid, eid
-        except Exception as e:
-            print(f"⚠️ Error checking {ps_url}: {e}")
-
-    return None
-
-@app.route("/api/view_cad", methods=["GET"])
+@app.route("/api/viewer_gltf", methods=["POST"])
 @jwt_required()
-def view_cad():
+def viewer_gltf():
     import requests
     from onshape_client.onshape_url import OnshapeElement
 
-    team_number = request.args.get("team_number")
-    robot_name = request.args.get("robot")
-    system_name = request.args.get("system")
-    part_id = request.args.get("part_id")
-
-    if not all([team_number, robot_name, system_name, part_id]):
-        return jsonify({"error": "Missing required query parameters"}), 400
-
     current_user = get_jwt_identity()
     claims = get_jwt()
+    data = request.get_json()
+
+    team_number = data.get("team_number")
+    robot_name = data.get("robot")
+    system_name = data.get("system")
+    part_id = data.get("id")
+
+    if not all([team_number, robot_name, system_name, part_id]):
+        return jsonify({"error": "Missing required fields"}), 400
 
     if current_user != team_number and not claims.get("is_global_admin"):
         return jsonify({"error": "Unauthorized"}), 403
@@ -1190,38 +1168,41 @@ def view_cad():
         return jsonify({"error": "System not found"}), 404
 
     if not all([system.access_key, system.secret_key, system.partstudio_urls]):
-        return jsonify({"error": "Onshape credentials or part studio URLs missing"}), 400
+        return jsonify({"error": "Missing Onshape credentials or Part Studios"}), 400
 
-    headers = {"Accept": "application/json"}
+    headers = {"Accept": "application/vnd.onshape.v1+json"}
     auth = (system.access_key, system.secret_key)
 
-    for ps_url in system.partstudio_urls:
+    # 🔍 Find which Part Studio contains this partId
+    target = None
+    for url in system.partstudio_urls:
         try:
-            element = OnshapeElement(ps_url)
+            element = OnshapeElement(url)
             did, wid, eid = element.did, element.wvmid, element.eid
 
-            res = requests.get(
-                f"https://cad.onshape.com/api/parts/d/{did}/w/{wid}/e/{eid}",
-                headers=headers,
-                auth=auth
-            )
-
+            parts_url = f"https://cad.onshape.com/api/parts/d/{did}/w/{wid}/e/{eid}"
+            res = requests.get(parts_url, headers=headers, auth=auth)
             if res.status_code != 200:
                 continue
 
             part_ids = [p["partId"] for p in res.json()]
             if part_id in part_ids:
-                return jsonify({
-                    "documentId": did,
-                    "workspaceId": wid,
-                    "elementId": eid,
-                    "accessKey": system.access_key,
-                    "secretKey": system.secret_key
-                }), 200
+                target = {"did": did, "wid": wid, "eid": eid}
+                break
         except Exception as e:
-            print(f"⚠️ Failed to check PartStudio {ps_url}: {e}")
+            print(f"⚠️ Error checking Part Studio: {e}")
 
-    return jsonify({"error": f"Part ID '{part_id}' not found in any part studio"}), 404
+    if not target:
+        return jsonify({"error": f"Part ID '{part_id}' not found in any part studio"}), 404
+
+    gltf_url = f"https://cad.onshape.com/api/v12/parts/d/{target['did']}/w/{target['wid']}/e/{target['eid']}/partid/{part_id}/gltf"
+    gltf_res = requests.get(gltf_url, headers=headers, auth=auth)
+
+    if gltf_res.status_code != 200:
+        print(f"❌ Failed to fetch GLTF: {gltf_res.status_code} {gltf_res.text}")
+        return jsonify({"error": "Failed to retrieve GLTF model"}), 500
+
+    return Response(gltf_res.content, content_type="model/gltf+json")
 
 @app.route('/api/admin/download_settings_dict', methods=['GET'])
 @jwt_required()

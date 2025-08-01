@@ -1,15 +1,12 @@
 import logging
 import os
-import time
 from datetime import datetime
 
-import requests
-from flask import Flask, request, jsonify, render_template, redirect, session, flash, url_for, Response
+from flask import Flask, request, jsonify, render_template, redirect, session, flash, url_for
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, get_jwt, jwt_required
 from flask_migrate import Migrate
 from flask_socketio import SocketIO, emit
-from onshape_client import OnshapeElement
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
@@ -54,8 +51,6 @@ def team_dashboard(team_number, robot_name):
     team = Team.query.filter_by(team_number=team_number).first_or_404()
     robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first_or_404()
     return render_template('robot_detail_user.html', team=team, robot=robot)
-
-
 
 
 @app.route('/<team_number>')
@@ -589,8 +584,6 @@ def team_dashboard_api():
     )
 
 
-
-
 @app.route('/api/machines', methods=['POST'])
 @jwt_required()
 def add_machine():
@@ -654,7 +647,6 @@ def add_machine():
             "icon": ("/static/" + new_machine.icon_file if new_machine.icon_file else None)
         }
     }), 200
-
 
 
 @app.route('/api/machines/<int:machine_id>', methods=['PUT'])
@@ -1009,6 +1001,8 @@ def download_bom_dict():
             team_dict[robot.name] = robot_dict
         bom_data_dict[team.team_number] = team_dict
     return jsonify({"bom_data_dict": bom_data_dict}), 200
+
+
 @app.route("/api/download_cad", methods=["POST"])
 @jwt_required()
 def download_cad():
@@ -1106,7 +1100,7 @@ def download_cad():
         )
         result = poll.json()
         state = result.get("requestState")
-        print(f"⏳ Attempt {attempt+1}: {state}")
+        print(f"⏳ Attempt {attempt + 1}: {state}")
         if state == "DONE":
             ids = result.get("resultExternalDataIds")
             if not ids:
@@ -1135,7 +1129,7 @@ def download_cad():
     return jsonify({"error": "Export timed out"}), 504
 
 
-@app.route("/api/view_gltf", methods=["POST"])
+@app.route("/api/viewer_gltf", methods=["POST"])
 @jwt_required()
 def view_gltf():
     import requests
@@ -1164,35 +1158,35 @@ def view_gltf():
             element = OnshapeElement(ps_url)
             did, wid, eid = element.did, element.wvmid, element.eid
 
+            # 🔍 Find matching part
             parts_res = requests.get(
                 f"https://cad.onshape.com/api/parts/d/{did}/w/{wid}/e/{eid}",
-                headers={"Accept": "*/*"},
+                headers={"Accept": "application/json"},
                 auth=auth
             )
-            parts = parts_res.json()
-            for part in parts:
+
+            if parts_res.status_code != 200:
+                return jsonify({"error": "Failed to fetch part list", "status": parts_res.status_code, "details": parts_res.text}), parts_res.status_code
+
+            for part in parts_res.json():
                 if part["partId"] == part_id:
                     gltf_url = f"https://cad.onshape.com/api/v12/parts/d/{did}/w/{wid}/e/{eid}/partid/{part_id}/gltf?rollbackBarIndex=-1&outputSeparateFaceNodes=false&outputFaceAppearances=false"
-                    print("🔍 Trying GLTF:", gltf_url)
-                    print("🔑 Using access key:", system.access_key[:6], "...")  # don't print whole key
-                    print("📦 Part ID:", part_id)
-                    print("⚙️ PartStudio URLs:", system.partstudio_urls)
                     headers = {
-                        "Accept": "model/gltf+json;charset=UTF-8;qs=0.08"
+                        "Accept": "*/*"
                     }
-
                     gltf_res = requests.get(gltf_url, headers=headers, auth=auth, stream=True)
+
                     if gltf_res.status_code == 200:
                         return Response(gltf_res.content, content_type="model/gltf+json")
                     else:
                         return jsonify({
-                            "error": f"GLTF fetch failed",
+                            "error": "GLTF fetch failed",
                             "status": gltf_res.status_code,
-                            "body": gltf_res.text
+                            "url": gltf_url,
+                            "details": gltf_res.text
                         }), gltf_res.status_code
         except Exception as e:
-            print(f"❌ Error checking partstudio: {e}")
-            continue
+            return jsonify({"error": f"Exception: {str(e)}"}), 500
 
     return jsonify({"error": f"Part '{part_id}' not found in any partstudio"}), 404
 
@@ -1370,11 +1364,12 @@ def debug_system_url():
         "secret_key": system.secret_key
     })
 
+
 @socketio.on("qty_update")
 def handle_qty_update(data):
     emit("qty_update", data, broadcast=True)
 
+
 def run():
     print("✅ Flask app is starting via socketio.run() (Gunicorn)")
     socketio.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
-

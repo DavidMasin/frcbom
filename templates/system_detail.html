@@ -17,6 +17,13 @@
         <button class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600" onclick="applyFilter('InHouse')">In-House</button>
     </div>
 </div>
+<!-- 🧲 Material Download Dropdown -->
+<div class="mb-6">
+    <label for="materialDropdown" class="text-white font-semibold mr-2">Download All Material:</label>
+    <select id="materialDropdown" onchange="downloadAllOfMaterial(this.value)" class="system-dropdown">
+        <option value="">-- Select Material --</option>
+    </select>
+</div>
 
 <!-- 🤩 BOM Parts Section -->
 <div class="mb-8">
@@ -72,6 +79,47 @@
             }
         }
         return "bg-white";
+    }
+    function populateMaterialDropdown() {
+        const dropdown = document.getElementById("materialDropdown");
+        const materials = new Set();
+
+        fullBOM.forEach(part => {
+            const material = part.materialBOM || part.Material || null;
+            if (material) materials.add(material.trim());
+        });
+
+        // Sort and add options
+        [...materials].sort().forEach(mat => {
+            const option = document.createElement("option");
+            option.value = mat;
+            option.textContent = mat;
+            dropdown.appendChild(option);
+        });
+    }
+
+    async function downloadAllOfMaterial(materialName) {
+        if (!materialName) return;
+
+        const matchingParts = fullBOM.filter(p => {
+            const mat = p.materialBOM || p.Material || "";
+            return mat.trim() === materialName.trim();
+        });
+
+        if (matchingParts.length === 0) {
+            alert("No parts found with that material.");
+            return;
+        }
+
+        for (const part of matchingParts) {
+            const partId = part.partId;
+            const qty = parseInt(part.Quantity || 1);
+            const curProcess = getCurrentProcessStatus(part, qty);
+            const fileType = machineMap[curProcess] || "STEP";
+
+            // Delay between downloads to avoid API rate limits
+            setTimeout(() => downloadPartCad(partId, fileType), 300);
+        }
     }
 
     function updateProcessQty(partId, key, newQty) {
@@ -186,7 +234,9 @@
         if (!res.ok || !data.bom_data) return;
         fullBOM = data.bom_data;
         renderBOM();
+        populateMaterialDropdown();  // <--- add this
     }
+
 
     (async () => {
         const token = localStorage.getItem("jwt_token");

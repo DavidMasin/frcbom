@@ -8,22 +8,37 @@ window.showGLTFViewer = async function (blobUrl) {
     const canvas = document.getElementById("gltfCanvas");
     document.getElementById("viewerModal").classList.remove("hidden");
 
-    scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-    renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+    // Clear previous WebGL context (in case of refresh)
+    if (renderer) {
+        renderer.dispose();
+    }
 
-    const light = new THREE.AmbientLight(0xffffff);
+    scene = new THREE.Scene();
+
+    camera = new THREE.PerspectiveCamera(
+        75,
+        canvas.clientWidth / canvas.clientHeight,
+        0.01,
+        1000
+    );
+
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+
+    // Lights
+    const light = new THREE.AmbientLight(0xffffff, 1);
     scene.add(light);
 
+    // Controls
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.enablePan = true;
-    controls.enableZoom = true;
+    controls.dampingFactor = 0.1;
     controls.screenSpacePanning = true;
+    controls.enableZoom = true;
+    controls.enablePan = true;
 
-    // 🛑 REMOVE vertical lock
+    // 🚨 Full orbit freedom
     controls.minPolarAngle = 0;
     controls.maxPolarAngle = Math.PI;
 
@@ -32,23 +47,23 @@ window.showGLTFViewer = async function (blobUrl) {
         const model = gltf.scene;
         scene.add(model);
 
+        // Auto-center & scale
         const box = new THREE.Box3().setFromObject(model);
         const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
-
-        model.position.sub(center); // center the model
+        model.position.sub(center);
 
         const maxDim = Math.max(size.x, size.y, size.z);
         const fov = camera.fov * (Math.PI / 180);
-        const cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2)) * 1.5;
+        const distance = Math.abs(maxDim / Math.sin(fov / 2)) * 0.6;
 
-        camera.position.set(0, 0, cameraZ);
+        camera.position.set(distance, distance, distance);
         camera.lookAt(0, 0, 0);
 
         controls.target.set(0, 0, 0);
         controls.update();
 
-        // 🧱 Edges
+        // Add outlines
         model.traverse((child) => {
             if (child.isMesh) {
                 const edges = new THREE.EdgesGeometry(child.geometry);
@@ -63,15 +78,17 @@ window.showGLTFViewer = async function (blobUrl) {
 
     function animate() {
         requestAnimationFrame(animate);
-        controls.update(); // 💡 needed for damping
+        controls.update();
         renderer.render(scene, camera);
     }
 
     animate();
 };
 
-
+// 🧹 Cleanup + reload
 window.closeViewer = function () {
     document.getElementById("viewerModal").classList.add("hidden");
-    document.getElementById("gltfCanvas").replaceWith(document.getElementById("gltfCanvas").cloneNode(true));
+    const canvas = document.getElementById("gltfCanvas");
+    const clone = canvas.cloneNode(true);
+    canvas.parentNode.replaceChild(clone, canvas);
 };

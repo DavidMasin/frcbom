@@ -1170,7 +1170,16 @@ def view_gltf():
 
             for part in parts_res.json():
                 if part["partId"] == part_id:
-                    gltf_url = f"https://cad.onshape.com/api/v12/parts/d/{did}/w/{wid}/e/{eid}/partid/{part_id}/gltf?rollbackBarIndex=-1&outputSeparateFaceNodes=false&outputFaceAppearances=false"
+                    gltf_url = (
+                        f"https://cad.onshape.com/api/v12/parts/d/{did}/w/{wid}/e/{eid}/partid/{part_id}/gltf"
+                        f"?rollbackBarIndex=-1"
+                        f"&outputSeparateFaceNodes=false"
+                        f"&outputFaceAppearances=false"
+                        f"&angleTolerance=0.5"  # Smaller = smoother curves
+                        f"&chordTolerance=0.05"  # Smaller = higher precision
+                        f"&maxFacetWidth=0.1"  # Smaller = more detail
+                    )
+
                     headers = {
                         "Accept": "*/*"
                     }

@@ -152,6 +152,32 @@
     `;
     }
 
+    function renderBOM() {
+        const grid = document.getElementById("bomPartsGrid");
+        const noMsg = document.getElementById("noPartsMessage");
+        grid.innerHTML = '';
+
+        const shownParts = fullBOM
+            .filter(part => {
+                const p1 = part["Process 1"]?.trim();
+                const p2 = part["Process 2"]?.trim();
+                const isCOTS = !part["Pre Process"] && !p1 && !p2;
+                const isInHouse = !isCOTS;
+
+                if (!currentFilter) return true;
+                if (currentFilter === "COTS") return isCOTS;
+                if (currentFilter === "InHouse") return isInHouse;
+                return [part["Pre Process"], p1, p2].includes(currentFilter);
+            })
+            .sort((a, b) => (a["Part Name"] || "").localeCompare(b["Part Name"] || ""));
+
+        shownParts.forEach(part => {
+            grid.innerHTML += renderCard(part);
+        });
+
+        noMsg.style.display = shownParts.length === 0 ? "block" : "none";
+    }
+
     async function loadAndRenderBOM() {
         const res = await fetch(`/api/get_bom?team_number=${teamNumber}&robot=${robotName}&system=${systemName}`, {
             headers: { Authorization: `Bearer ${token}` }
@@ -159,17 +185,10 @@
         const data = await res.json();
         if (!res.ok || !data.bom_data) return;
         fullBOM = data.bom_data;
-        fullBOM.sort((a, b) => (a["Part Name"] || "").localeCompare(b["Part Name"] || ""));
-        const grid = document.getElementById("bomPartsGrid");
-        const none = document.getElementById("noPartsMessage");
-        grid.innerHTML = '';
-        fullBOM.forEach(part => grid.innerHTML += renderCard(part));
-        none.style.display = fullBOM.length === 0 ? "block" : "none";
+        renderBOM();
     }
-    // Fetch machine filters dynamically
+
     (async () => {
-        const token = localStorage.getItem("jwt_token");
-        const teamNumber = "{{ team_number }}";
         const response = await fetch(`/api/machines?team_number=${teamNumber}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
@@ -184,6 +203,7 @@
             filterDiv.appendChild(btn);
         });
     })();
+
     document.addEventListener("DOMContentLoaded", loadAndRenderBOM);
 </script>
 {% endblock %}

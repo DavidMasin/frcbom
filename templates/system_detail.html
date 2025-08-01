@@ -133,6 +133,7 @@
     }
 
     function renderBOM() {
+        fullBOM.sort((a, b) => (a["Part Name"] || "").localeCompare(b["Part Name"] || ""));
         const grid = document.getElementById("bomPartsGrid");
         const noMsg = document.getElementById("noPartsMessage");
         grid.innerHTML = '';

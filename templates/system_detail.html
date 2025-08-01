@@ -214,8 +214,9 @@
         });
     }
 
-    function downloadPartCad(partId, fileType) {
+    function downloadPartCad(partId, fileType, partName = "Part") {
         if (!partId) return alert("Part ID missing");
+
         fetch(`/api/download_cad`, {
             method: "POST",
             headers: {
@@ -230,12 +231,20 @@
                 format: fileType || "STEP"
             })
         })
-            .then(res => res.json())
-            .then(data => {
-                if (data.redirect_url) window.open(data.redirect_url, "_blank");
-                else alert(data.error || "Download failed");
-            });
+            .then(res => res.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `${partName}.${fileType.toLowerCase()}`;  // ✅ filename based on part
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(() => alert("Download failed"));
     }
+
 
     function renderCard(part) {
         const partId = part.partId;

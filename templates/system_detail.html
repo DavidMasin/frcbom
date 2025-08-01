@@ -214,14 +214,14 @@
         });
     }
 
-    function downloadPartCad(partId, fileType, partName = "Part") {
+    async function downloadPartCad(partId, fileType, partName = "Part") {
         if (!partId) return alert("Part ID missing");
 
-        fetch(`/api/download_cad`, {
+        const res = await fetch(`/api/download_cad`, {
             method: "POST",
             headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
             },
             body: JSON.stringify({
                 team_number: teamNumber,
@@ -230,19 +230,26 @@
                 id: partId,
                 format: fileType || "STEP"
             })
-        })
-            .then(res => res.blob())
-            .then(blob => {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `${partName}.${fileType.toLowerCase()}`;  // ✅ filename based on part
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
-            })
-            .catch(() => alert("Download failed"));
+        });
+
+        const data = await res.json();
+        if (!data.redirect_url) {
+            alert(data.error || "Download failed");
+            return;
+        }
+
+        // 🔁 Fetch the actual CAD file from redirect_url
+        const fileRes = await fetch(data.redirect_url);
+        const blob = await fileRes.blob();
+
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${partName}.${fileType.toLowerCase()}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
     }
 
 
@@ -277,7 +284,7 @@
             ${p1 ? `<label>✅ Done ${p1}: <input type="number" value="${doneP1}" onchange="updateProcessQty('${partId}', 'done_process1', this.value)" class="border px-2 py-1 rounded w-20" /></label><br/>` : ""}
             ${p2 ? `<label>✅ Done ${p2}: <input type="number" value="${doneP2}" onchange="updateProcessQty('${partId}', 'done_process2', this.value)" class="border px-2 py-1 rounded w-20" /></label><br/>` : ""}
             ${isCOTS ? `<label>📦 Qty In Stock: <input type="number" value="${avail}" onchange="updateProcessQty('${partId}', 'available_qty', this.value)" class="border px-2 py-1 rounded w-20" /></label>` : ""}
-            <button title="Download CAD" class="absolute top-2 right-2 text-blue-600 hover:text-blue-900" onclick="downloadPartCad('${partId}', '${fileType}')">
+            <button title="Download CAD" class="absolute top-2 right-2 text-blue-600 hover:text-blue-900" onclick="downloadPartCad('${partId}', '${fileType}', '${name.replace(/[^a-zA-Z0-9_-]/g, "_")}')">
                 <i class="fas fa-download fa-lg"></i>
             </button>
         </div>

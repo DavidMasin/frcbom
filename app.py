@@ -2,11 +2,13 @@ import logging
 import os
 from datetime import datetime
 
+import requests
 from flask import Flask, request, jsonify, render_template, redirect, session, flash, url_for
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, get_jwt, jwt_required
 from flask_migrate import Migrate
 from flask_socketio import SocketIO, emit
+from onshape_client import OnshapeElement
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
@@ -1131,7 +1133,95 @@ def download_cad():
 
     return jsonify({"error": "Export timed out"}), 504
 
+def find_partstudio_for_part(part_id, partstudio_urls, access_key, secret_key):
+    headers = {"Accept": "application/json"}
+    auth = (access_key, secret_key)
 
+    for ps_url in partstudio_urls:
+        try:
+            element = OnshapeElement(ps_url)
+            did, wid, eid = element.did, element.wvmid, element.eid
+
+            res = requests.get(
+                f"https://cad.onshape.com/api/parts/d/{did}/w/{wid}/e/{eid}",
+                headers=headers,
+                auth=auth
+            )
+
+            if res.status_code == 200:
+                part_ids = [p["partId"] for p in res.json()]
+                if part_id in part_ids:
+                    return did, wid, eid
+        except Exception as e:
+            print(f"⚠️ Error checking {ps_url}: {e}")
+
+    return None
+
+@app.route("/api/view_cad", methods=["GET"])
+@jwt_required()
+def view_cad():
+    import requests
+    from onshape_client.onshape_url import OnshapeElement
+
+    team_number = request.args.get("team_number")
+    robot_name = request.args.get("robot")
+    system_name = request.args.get("system")
+    part_id = request.args.get("part_id")
+
+    if not all([team_number, robot_name, system_name, part_id]):
+        return jsonify({"error": "Missing required query parameters"}), 400
+
+    current_user = get_jwt_identity()
+    claims = get_jwt()
+
+    if current_user != team_number and not claims.get("is_global_admin"):
+        return jsonify({"error": "Unauthorized"}), 403
+
+    team = Team.query.filter_by(team_number=team_number).first()
+    if not team:
+        return jsonify({"error": "Team not found"}), 404
+
+    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
+    if not robot:
+        return jsonify({"error": "Robot not found"}), 404
+
+    system = System.query.filter_by(robot_id=robot.id, name=system_name).first()
+    if not system:
+        return jsonify({"error": "System not found"}), 404
+
+    if not all([system.access_key, system.secret_key, system.partstudio_urls]):
+        return jsonify({"error": "Onshape credentials or part studio URLs missing"}), 400
+
+    headers = {"Accept": "application/json"}
+    auth = (system.access_key, system.secret_key)
+
+    for ps_url in system.partstudio_urls:
+        try:
+            element = OnshapeElement(ps_url)
+            did, wid, eid = element.did, element.wvmid, element.eid
+
+            res = requests.get(
+                f"https://cad.onshape.com/api/parts/d/{did}/w/{wid}/e/{eid}",
+                headers=headers,
+                auth=auth
+            )
+
+            if res.status_code != 200:
+                continue
+
+            part_ids = [p["partId"] for p in res.json()]
+            if part_id in part_ids:
+                return jsonify({
+                    "documentId": did,
+                    "workspaceId": wid,
+                    "elementId": eid,
+                    "accessKey": system.access_key,
+                    "secretKey": system.secret_key
+                }), 200
+        except Exception as e:
+            print(f"⚠️ Failed to check PartStudio {ps_url}: {e}")
+
+    return jsonify({"error": f"Part ID '{part_id}' not found in any part studio"}), 404
 
 @app.route('/api/admin/download_settings_dict', methods=['GET'])
 @jwt_required()

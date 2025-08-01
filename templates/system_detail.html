@@ -37,6 +37,7 @@
     <div id="bomPartsGrid" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"></div>
     <p id="noPartsMessage" class="text-center text-gray-500 mt-4">No parts to display.</p>
 </div>
+<!-- 👁️ Onshape Viewer Modal -->
 <div id="cadModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden">
     <div class="bg-white rounded-lg shadow-lg w-full max-w-5xl h-[80vh] relative p-4 flex flex-col">
         <button onclick="closeViewer()" class="absolute top-2 right-3 text-gray-600 hover:text-black text-xl">&times;</button>
@@ -44,6 +45,7 @@
         <div id="viewerContainer" class="flex-1 border rounded bg-gray-100"></div>
     </div>
 </div>
+
 {% endblock %}
 {% block scripts %}
 <script>
@@ -284,32 +286,11 @@
             </button>
             <button title="View CAD"
                 class="absolute top-12 right-2 text-green-600 hover:text-green-900 transition"
-                onclick="showCadViewer('${part._documentId}', '${part._workspaceId}', '${part._elementId}', '${part._accessKey}', '${part._secretKey}')">
+                onclick="requestAndOpenViewer('${partId}')">
                 <i class="fas fa-eye fa-lg"></i>
             </button>
         </div>
     `;
-    }
-    function showCadViewer(documentId, workspaceId, elementId, accessKey, secretKey) {
-        const modal = document.getElementById("cadModal");
-        const container = document.getElementById("viewerContainer");
-
-        modal.classList.remove("hidden");
-        container.innerHTML = ""; // Clear previous viewer
-
-        loadViewer(container, {
-            documentId,
-            workspaceId,
-            elementId,
-            accessKey,
-            secretKey
-        });
-    }
-
-    function closeViewer() {
-        const modal = document.getElementById("cadModal");
-        modal.classList.add("hidden");
-        document.getElementById("viewerContainer").innerHTML = "";
     }
     function renderBOM() {
         const grid = document.getElementById("bomPartsGrid");
@@ -375,5 +356,40 @@
     document.addEventListener("DOMContentLoaded", loadAndRenderBOM);
 </script>
 <script src="https://cad.onshape.com/viewer/loader.js"></script>
+<script>
+    function showCadViewer(documentId, workspaceId, elementId, accessKey, secretKey) {
+        const modal = document.getElementById("cadModal");
+        const container = document.getElementById("viewerContainer");
+        modal.classList.remove("hidden");
+        container.innerHTML = "";
+        loadViewer(container, { documentId, workspaceId, elementId, accessKey, secretKey });
+    }
+
+    function closeViewer() {
+        const modal = document.getElementById("cadModal");
+        modal.classList.add("hidden");
+        document.getElementById("viewerContainer").innerHTML = "";
+    }
+
+    async function requestAndOpenViewer(partId) {
+        try {
+            const res = await fetch(`/api/view_cad?team_number=${teamNumber}&robot=${robotName}&system=${systemName}&part_id=${partId}`, {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+            const data = await res.json();
+            if (res.ok && data.documentId && data.workspaceId && data.elementId) {
+                showCadViewer(data.documentId, data.workspaceId, data.elementId, data.accessKey, data.secretKey);
+            } else {
+                alert(data.error || "Failed to load viewer.");
+            }
+        } catch (err) {
+            console.error("Viewer fetch failed:", err);
+            alert("Error loading viewer");
+        }
+    }
+</script>
+
 
 {% endblock %}

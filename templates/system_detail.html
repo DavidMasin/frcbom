@@ -164,8 +164,16 @@
                 .then(res => res.json())
                 .then(data => {
                     if (data.redirect_url) {
+                        const link = document.createElement("a");
+                        link.href = data.redirect_url;
+                        link.target = "_blank";
+
+                        // Try download with desired name using blob fallback
                         fetch(data.redirect_url)
-                            .then(resp => resp.blob())
+                            .then(resp => {
+                                if (!resp.ok) throw new Error("Unauthorized or failed");
+                                return resp.blob();
+                            })
                             .then(blob => {
                                 const url = window.URL.createObjectURL(blob);
                                 const a = document.createElement("a");
@@ -177,8 +185,9 @@
                                 window.URL.revokeObjectURL(url);
                             })
                             .catch(err => {
-                                console.error("❌ Error downloading file:", err);
-                                alert("Failed to download file.");
+                                // Fallback: open in new tab if blob download fails
+                                console.warn("🟡 Falling back to open in tab", err);
+                                link.click();
                             });
                     } else {
                         alert(data.error || "Download failed");

@@ -17,6 +17,15 @@ window.showGLTFViewer = async function (blobUrl) {
     scene.add(light);
 
     controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;           // Smooth motion
+    controls.dampingFactor = 0.05;
+    controls.enablePan = true;              // Allow panning
+    controls.enableZoom = true;             // Allow zoom with scroll/pinch
+    controls.screenSpacePanning = false;    // Optional: keeps orbiting intuitive
+
+    controls.minPolarAngle = 0;             // Top-down rotation allowed
+    controls.maxPolarAngle = Math.PI;       // Full orbit around vertical
+
 
     const loader = new GLTFLoader();
     loader.load(blobUrl, function (gltf) {

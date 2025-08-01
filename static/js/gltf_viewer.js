@@ -9,21 +9,40 @@ window.showGLTFViewer = async function (blobUrl) {
     document.getElementById("viewerModal").classList.remove("hidden");
 
     scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
-    renderer = new THREE.WebGLRenderer({ canvas });
+    camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.01, 1000);
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     renderer.setSize(canvas.clientWidth, canvas.clientHeight);
 
-    const light = new THREE.AmbientLight(0xffffff);
+    const light = new THREE.AmbientLight(0xffffff, 1);
     scene.add(light);
 
     controls = new OrbitControls(camera, renderer.domElement);
 
     const loader = new GLTFLoader();
     loader.load(blobUrl, function (gltf) {
-        scene.add(gltf.scene);
-    });
+        const model = gltf.scene;
+        scene.add(model);
 
-    camera.position.z = 5;
+        // 🧠 Compute bounding box
+        const box = new THREE.Box3().setFromObject(model);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+
+        // 🧭 Recenter model
+        model.position.sub(center);
+
+        // 🔍 Position camera to fit the model
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const fov = camera.fov * (Math.PI / 180);
+        const cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2)) * 1.5;
+
+        camera.position.set(0, 0, cameraZ);
+        camera.lookAt(0, 0, 0);
+
+        // 🛠 Update controls
+        controls.target.set(0, 0, 0);
+        controls.update();
+    });
 
     function animate() {
         requestAnimationFrame(animate);
@@ -32,6 +51,7 @@ window.showGLTFViewer = async function (blobUrl) {
 
     animate();
 };
+
 
 window.closeViewer = function () {
     document.getElementById("viewerModal").classList.add("hidden");

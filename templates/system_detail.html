@@ -43,6 +43,7 @@
         <button class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600" onclick="applyFilter(null)">All Parts</button>
         <button class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600" onclick="applyFilter('COTS')">COTS</button>
         <button class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600" onclick="applyFilter('InHouse')">In-House</button>
+        <!-- Dynamic machine buttons will be added here -->
     </div>
 </div>
 
@@ -63,12 +64,32 @@
     const robotName = "{{ current_robot }}";
     const systemName = "{{ filter_system }}";
     let fullBOM = [];
+    let currentFilter = null;
+    let machineMap = {}; // name => cad_format
 
     socket.on("connect", () => console.log("✅ Connected via Socket.IO"));
     socket.on("qty_update", ({ partId, key, newQty }) => {
         const input = document.querySelector(`input[data-part-id="${partId}"][data-key="${key}"]`);
         if (input) input.value = newQty;
     });
+
+    function applyFilter(name) {
+        currentFilter = name;
+        renderBOM();
+    }
+
+    function isReadyForMachine(part, machineName) {
+        const qty = parseInt(part.Quantity || 0);
+        const donePre = parseInt(part.done_preprocess || 0);
+        const doneP1 = parseInt(part.done_process1 || 0);
+        const process1 = (part["Process 1"] || "").trim();
+        const process2 = (part["Process 2"] || "").trim();
+
+        if (part["Pre Process"] && donePre < qty && machineName === part["Pre Process"].trim()) return true;
+        if (process1 === machineName && (!part["Pre Process"] || donePre >= qty) && doneP1 < qty) return true;
+        if (process2 === machineName && doneP1 >= qty) return true;
+        return false;
+    }
 
     async function downloadPartCad(partId, fileType) {
         if (!partId) return alert("Part ID missing");
@@ -87,7 +108,7 @@
             })
         });
         const data = await res.json();
-        if (data.redirect_url) window.location.href = data.redirect_url;
+        if (data.redirect_url) window.open(data.redirect_url, "_blank");
         else alert(data.error || "Download failed");
     }
 
@@ -125,6 +146,10 @@
             const isCots = !part["Pre Process"] && !part["Process 1"] && !part["Process 2"];
             const isInHouse = part["Pre Process"] || part["Process 1"] || part["Process 2"];
 
+            if (currentFilter === "COTS" && !isCots) return;
+            if (currentFilter === "InHouse" && !isInHouse) return;
+            if (machineMap[currentFilter] && !isReadyForMachine(part, currentFilter)) return;
+
             const card = document.createElement("div");
             card.className = "bg-white rounded shadow-md p-4 relative border hover:shadow-lg transition";
 
@@ -148,6 +173,23 @@
     }
 
     (async () => {
+        const mRes = await fetch(`/api/machines?team_number=${teamNumber}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        const mData = await mRes.json();
+        if (mRes.ok && Array.isArray(mData.machines)) {
+            const filterDiv = document.getElementById("filterButtons");
+            mData.machines.forEach(m => {
+                const name = m.name.trim();
+                machineMap[name] = m.cad_format;
+                const btn = document.createElement("button");
+                btn.className = "bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600";
+                btn.innerText = name;
+                btn.onclick = () => applyFilter(name);
+                filterDiv.appendChild(btn);
+            });
+        }
+
         const res = await fetch(`/api/get_bom?team_number=${teamNumber}&robot=${robotName}&system=${systemName}`, {
             headers: { Authorization: `Bearer ${token}` }
         });

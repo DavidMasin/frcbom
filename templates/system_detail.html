@@ -166,7 +166,24 @@
         fullBOM.forEach(part => grid.innerHTML += renderCard(part));
         none.style.display = fullBOM.length === 0 ? "block" : "none";
     }
-
+    // Fetch machine filters dynamically
+    (async () => {
+        const token = localStorage.getItem("jwt_token");
+        const teamNumber = "{{ team_number }}";
+        const response = await fetch(`/api/machines?team_number=${teamNumber}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        const filterDiv = document.getElementById("filterButtons");
+        (data.machines || []).forEach(m => {
+            const btn = document.createElement("button");
+            btn.className = "bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600";
+            btn.innerText = m.name;
+            btn.onclick = () => applyFilter(m.name);
+            filterDiv.appendChild(btn);
+        });
+    })();
     document.addEventListener("DOMContentLoaded", loadAndRenderBOM);
 </script>
 {% endblock %}

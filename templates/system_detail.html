@@ -132,45 +132,67 @@
         else alert("Update failed");
     }
 
-    function renderBOM() {
-        fullBOM.sort((a, b) => (a["Part Name"] || "").localeCompare(b["Part Name"] || ""));
-        const grid = document.getElementById("bomPartsGrid");
-        const noMsg = document.getElementById("noPartsMessage");
-        grid.innerHTML = '';
-        let shown = 0;
+    function getCurrentProcessStatus(part, qty) {
+        const donePre = parseInt(part.done_preprocess || 0);
+        const doneP1 = parseInt(part.done_process1 || 0);
+        const doneP2 = parseInt(part.done_process2 || 0);
+        const pp = part["Pre Process"]?.trim();
+        const p1 = part["Process 1"]?.trim();
+        const p2 = part["Process 2"]?.trim();
 
-        fullBOM.forEach(part => {
-            const partId = part.partId || '';
-            const qty = parseInt(part.Quantity || 0);
-            const name = part["Part Name"] || "Unnamed";
-            const fileType = part._fileType || "STEP";
-            const isCots = !part["Pre Process"] && !part["Process 1"] && !part["Process 2"];
-            const isInHouse = part["Pre Process"] || part["Process 1"] || part["Process 2"];
+        if (p2 && doneP2 < qty) return p2;
+        if (p1 && doneP1 < qty) return p1;
+        if (pp && donePre < qty) return pp;
+        return null;
+    }
 
-            if (currentFilter === "COTS" && !isCots) return;
-            if (currentFilter === "InHouse" && !isInHouse) return;
-            if (machineMap[currentFilter] && !isReadyForMachine(part, currentFilter)) return;
+    function getStatusColor(part, qty) {
+        const donePre = parseInt(part.done_preprocess || 0);
+        const doneP1 = parseInt(part.done_process1 || 0);
+        const doneP2 = parseInt(part.done_process2 || 0);
+        const p2 = part["Process 2"]?.trim();
 
-            const card = document.createElement("div");
-            card.className = "bg-white rounded shadow-md p-4 relative border hover:shadow-lg transition";
+        if (p2 && doneP2 >= qty) return "bg-green-100";
+        if (donePre > 0 || doneP1 > 0 || doneP2 > 0) return "bg-yellow-100";
+        return "bg-white";
+    }
 
-            card.innerHTML = `
-            <h3 class="text-lg font-bold text-blue-700">${name}</h3>
-            <p><strong>Material:</strong> ${part.materialBOM || part.Material || "N/A"}</p>
-            <p><strong>Description:</strong> ${part.Description || "N/A"}</p>
-            <p><strong>Quantity Needed:</strong> ${qty}</p>
-            ${part["Pre Process"] ? `<label>✅ Done Pre: <input type="number" data-part-id="${partId}" data-key="done_preprocess" value="${part.done_preprocess || 0}" min="0" onchange="updateProcessQty('${partId}', 'done_preprocess', this.value)" class="border px-2 py-1 rounded w-20" /></label><br/>` : ""}
-            ${part["Process 1"] ? `<label>✅ Done P1: <input type="number" data-part-id="${partId}" data-key="done_process1" value="${part.done_process1 || 0}" min="0" onchange="updateProcessQty('${partId}', 'done_process1', this.value)" class="border px-2 py-1 rounded w-20" /></label><br/>` : ""}
-            ${part["Process 2"] ? `<label>✅ Done P2: <input type="number" data-part-id="${partId}" data-key="done_process2" value="${part.done_process2 || 0}" min="0" onchange="updateProcessQty('${partId}', 'done_process2', this.value)" class="border px-2 py-1 rounded w-20" /></label><br/>` : ""}
-            ${isCots ? `<label>📦 Qty In Stock: <input type="number" data-part-id="${partId}" data-key="available_qty" value="${part.available_qty || 0}" min="0" onchange="updateProcessQty('${partId}', 'available_qty', this.value)" class="border px-2 py-1 rounded w-20" /></label>` : ""}
-            <button title="Download CAD" class="absolute top-2 right-2 text-blue-600 hover:text-blue-900" onclick="downloadPartCad('${partId}', '${fileType}')">
-                <i class="fas fa-download fa-lg"></i>
-            </button>
-        `;
-            grid.appendChild(card);
-            shown++;
-        });
-        noMsg.style.display = shown === 0 ? "block" : "none";
+    function renderCard(part) {
+        const partId = part.partId;
+        const qty = parseInt(part.Quantity || 0);
+        const curProcess = getCurrentProcessStatus(part, qty);
+        const bg = getStatusColor(part, qty);
+        const p1 = part["Process 1"]?.trim();
+        const p2 = part["Process 2"]?.trim();
+
+        const fileType = part._fileType || "STEP";
+        const name = part["Part Name"] || "Unnamed";
+        const mat = part.materialBOM || part.Material || "N/A";
+        const desc = part.Description || "N/A";
+        const donePre = part.done_preprocess || 0;
+        const doneP1 = part.done_process1 || 0;
+        const doneP2 = part.done_process2 || 0;
+        const avail = part.available_qty || 0;
+
+        const isCOTS = !part["Pre Process"] && !p1 && !p2;
+        const isInHouse = !isCOTS;
+
+        return `
+    <div class="rounded border shadow-md p-4 relative hover:shadow-lg transition ${bg}">
+        <h3 class="text-lg font-bold text-blue-700">${name}</h3>
+        <p><strong>Material:</strong> ${mat}</p>
+        <p><strong>Description:</strong> ${desc}</p>
+        <p><strong>Quantity Needed:</strong> ${qty}</p>
+        ${isInHouse && curProcess ? `<p class="text-sm text-gray-600 italic">🔧 Current Process: ${curProcess}</p>` : ""}
+        ${part["Pre Process"] ? `<label>✅ Done ${part["Pre Process"]}: <input type="number" value="${donePre}" onchange="updateProcessQty('${partId}', 'done_preprocess', this.value)" class="border px-2 py-1 rounded w-20" /></label><br/>` : ""}
+        ${p1 ? `<label>✅ Done ${p1}: <input type="number" value="${doneP1}" onchange="updateProcessQty('${partId}', 'done_process1', this.value)" class="border px-2 py-1 rounded w-20" /></label><br/>` : ""}
+        ${p2 ? `<label>✅ Done ${p2}: <input type="number" value="${doneP2}" onchange="updateProcessQty('${partId}', 'done_process2', this.value)" class="border px-2 py-1 rounded w-20" /></label><br/>` : ""}
+        ${isCOTS ? `<label>📦 Qty In Stock: <input type="number" value="${avail}" onchange="updateProcessQty('${partId}', 'available_qty', this.value)" class="border px-2 py-1 rounded w-20" /></label>` : ""}
+        <button title="Download CAD" class="absolute top-2 right-2 text-blue-600 hover:text-blue-900" onclick="downloadPartCad('${partId}', '${fileType}')">
+            <i class="fas fa-download fa-lg"></i>
+        </button>
+    </div>
+    `;
     }
 
     (async () => {

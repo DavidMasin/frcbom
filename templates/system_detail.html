@@ -9,41 +9,12 @@
     <h1 class="text-3xl font-bold text-white mt-2">{{ filter_system }} BOM</h1>
 </div>
 
-<!-- 🔧 System Settings Form -->
-<div class="bg-gray-100 rounded-lg p-6 mb-10 shadow-md max-w-2xl">
-    <h2 class="text-xl font-bold text-gray-800 mb-4">System Settings</h2>
-    <form id="systemSettingsForm" class="space-y-4">
-        <div>
-            <label class="block text-gray-700 mb-1">Assembly URL</label>
-            <input type="text" id="assemblyUrl" class="w-full px-3 py-2 border rounded" />
-        </div>
-        <div>
-            <label class="block text-gray-700 mb-1">Part Studio URLs (comma-separated)</label>
-            <textarea id="partStudioUrls" class="w-full px-3 py-2 border rounded" rows="3"></textarea>
-        </div>
-        <div>
-            <label class="block text-gray-700 mb-1">Onshape Access Key</label>
-            <input type="text" id="accessKey" class="w-full px-3 py-2 border rounded" />
-        </div>
-        <div>
-            <label class="block text-gray-700 mb-1">Onshape Secret Key</label>
-            <input type="text" id="secretKey" class="w-full px-3 py-2 border rounded" />
-        </div>
-        <div class="flex gap-4 mt-4">
-            <button type="button" id="saveSystemSettings" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">📏 Save</button>
-            <button type="button" id="fetchBom" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">🔄 Fetch BOM</button>
-        </div>
-        <p id="settingsMessage" class="text-sm mt-2 text-red-500"></p>
-    </form>
-</div>
-
 <!-- 🧹 BOM Filter Buttons -->
 <div class="mb-6">
     <div class="flex flex-wrap gap-2" id="filterButtons">
         <button class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600" onclick="applyFilter(null)">All Parts</button>
         <button class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600" onclick="applyFilter('COTS')">COTS</button>
         <button class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600" onclick="applyFilter('InHouse')">In-House</button>
-        <!-- Dynamic machine buttons will be added here -->
     </div>
 </div>
 
@@ -56,80 +27,18 @@
 
 {% endblock %}
 {% block scripts %}
-<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 <script>
-    const socket = io();
     const token = localStorage.getItem("jwt_token");
     const teamNumber = "{{ team_number }}";
     const robotName = "{{ current_robot }}";
     const systemName = "{{ filter_system }}";
     let fullBOM = [];
     let currentFilter = null;
-    let machineMap = {}; // name => cad_format
-
-    socket.on("connect", () => console.log("✅ Connected via Socket.IO"));
-    socket.on("qty_update", ({ partId, key, newQty }) => {
-        const input = document.querySelector(`input[data-part-id="${partId}"][data-key="${key}"]`);
-        if (input) input.value = newQty;
-    });
+    let machineMap = {};
 
     function applyFilter(name) {
         currentFilter = name;
         renderBOM();
-    }
-
-    function isReadyForMachine(part, machineName) {
-        const qty = parseInt(part.Quantity || 0);
-        const donePre = parseInt(part.done_preprocess || 0);
-        const doneP1 = parseInt(part.done_process1 || 0);
-        const process1 = (part["Process 1"] || "").trim();
-        const process2 = (part["Process 2"] || "").trim();
-
-        if (part["Pre Process"] && donePre < qty && machineName === part["Pre Process"].trim()) return true;
-        if (process1 === machineName && (!part["Pre Process"] || donePre >= qty) && doneP1 < qty) return true;
-        if (process2 === machineName && doneP1 >= qty) return true;
-        return false;
-    }
-
-    async function downloadPartCad(partId, fileType) {
-        if (!partId) return alert("Part ID missing");
-        const res = await fetch(`/api/download_cad`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                team_number: teamNumber,
-                robot: robotName,
-                system: systemName,
-                id: partId,
-                format: fileType || "STEP"
-            })
-        });
-        const data = await res.json();
-        if (data.redirect_url) window.open(data.redirect_url, "_blank");
-        else alert(data.error || "Download failed");
-    }
-
-    async function updateProcessQty(partId, key, newQty) {
-        const part = fullBOM.find(p => p.partId === partId);
-        if (part) part[key] = newQty;
-        const res = await fetch("/api/save_bom_for_robot_system", {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${token}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                team_number: teamNumber,
-                robot_name: robotName,
-                system_name: systemName,
-                bom_data: fullBOM
-            })
-        });
-        if (res.ok) socket.emit("qty_update", { partId, key, newQty });
-        else alert("Update failed");
     }
 
     function getCurrentProcessStatus(part, qty) {
@@ -150,11 +59,59 @@
         const donePre = parseInt(part.done_preprocess || 0);
         const doneP1 = parseInt(part.done_process1 || 0);
         const doneP2 = parseInt(part.done_process2 || 0);
+        const pp = part["Pre Process"]?.trim();
+        const p1 = part["Process 1"]?.trim();
         const p2 = part["Process 2"]?.trim();
 
-        if (p2 && doneP2 >= qty) return "bg-green-100";
-        if (donePre > 0 || doneP1 > 0 || doneP2 > 0) return "bg-yellow-100";
+        if (pp || p1 || p2) {
+            if ((p2 && doneP2 >= qty) || (!p2 && p1 && doneP1 >= qty) || (!p2 && !p1 && donePre >= qty)) {
+                return "bg-green-100";
+            } else if (donePre > 0 || doneP1 > 0 || doneP2 > 0) {
+                return "bg-yellow-100";
+            }
+        }
         return "bg-white";
+    }
+
+    function updateProcessQty(partId, key, newQty) {
+        const part = fullBOM.find(p => p.partId === partId);
+        if (part) part[key] = newQty;
+        fetch("/api/save_bom_for_robot_system", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                team_number: teamNumber,
+                robot_name: robotName,
+                system_name: systemName,
+                bom_data: fullBOM
+            })
+        });
+    }
+
+    function downloadPartCad(partId, fileType) {
+        if (!partId) return alert("Part ID missing");
+        fetch(`/api/download_cad`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                team_number: teamNumber,
+                robot: robotName,
+                system: systemName,
+                id: partId,
+                format: fileType || "STEP"
+            })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.redirect_url) window.open(data.redirect_url, "_blank");
+                else alert(data.error || "Download failed");
+            });
     }
 
     function renderCard(part) {
@@ -178,49 +135,38 @@
         const isInHouse = !isCOTS;
 
         return `
-    <div class="rounded border shadow-md p-4 relative hover:shadow-lg transition ${bg}">
-        <h3 class="text-lg font-bold text-blue-700">${name}</h3>
-        <p><strong>Material:</strong> ${mat}</p>
-        <p><strong>Description:</strong> ${desc}</p>
-        <p><strong>Quantity Needed:</strong> ${qty}</p>
-        ${isInHouse && curProcess ? `<p class="text-sm text-gray-600 italic">🔧 Current Process: ${curProcess}</p>` : ""}
-        ${part["Pre Process"] ? `<label>✅ Done ${part["Pre Process"]}: <input type="number" value="${donePre}" onchange="updateProcessQty('${partId}', 'done_preprocess', this.value)" class="border px-2 py-1 rounded w-20" /></label><br/>` : ""}
-        ${p1 ? `<label>✅ Done ${p1}: <input type="number" value="${doneP1}" onchange="updateProcessQty('${partId}', 'done_process1', this.value)" class="border px-2 py-1 rounded w-20" /></label><br/>` : ""}
-        ${p2 ? `<label>✅ Done ${p2}: <input type="number" value="${doneP2}" onchange="updateProcessQty('${partId}', 'done_process2', this.value)" class="border px-2 py-1 rounded w-20" /></label><br/>` : ""}
-        ${isCOTS ? `<label>📦 Qty In Stock: <input type="number" value="${avail}" onchange="updateProcessQty('${partId}', 'available_qty', this.value)" class="border px-2 py-1 rounded w-20" /></label>` : ""}
-        <button title="Download CAD" class="absolute top-2 right-2 text-blue-600 hover:text-blue-900" onclick="downloadPartCad('${partId}', '${fileType}')">
-            <i class="fas fa-download fa-lg"></i>
-        </button>
-    </div>
+        <div class="rounded border shadow-md p-4 relative hover:shadow-lg transition ${bg}">
+            <h3 class="text-lg font-bold text-blue-700">${name}</h3>
+            <p><strong>Material:</strong> ${mat}</p>
+            <p><strong>Description:</strong> ${desc}</p>
+            <p><strong>Quantity Needed:</strong> ${qty}</p>
+            ${isInHouse && curProcess ? `<p class="text-sm text-gray-600 italic">🔧 Current Process: ${curProcess}</p>` : ""}
+            ${part["Pre Process"] ? `<label>✅ Done ${part["Pre Process"]}: <input type="number" value="${donePre}" onchange="updateProcessQty('${partId}', 'done_preprocess', this.value)" class="border px-2 py-1 rounded w-20" /></label><br/>` : ""}
+            ${p1 ? `<label>✅ Done ${p1}: <input type="number" value="${doneP1}" onchange="updateProcessQty('${partId}', 'done_process1', this.value)" class="border px-2 py-1 rounded w-20" /></label><br/>` : ""}
+            ${p2 ? `<label>✅ Done ${p2}: <input type="number" value="${doneP2}" onchange="updateProcessQty('${partId}', 'done_process2', this.value)" class="border px-2 py-1 rounded w-20" /></label><br/>` : ""}
+            ${isCOTS ? `<label>📦 Qty In Stock: <input type="number" value="${avail}" onchange="updateProcessQty('${partId}', 'available_qty', this.value)" class="border px-2 py-1 rounded w-20" /></label>` : ""}
+            <button title="Download CAD" class="absolute top-2 right-2 text-blue-600 hover:text-blue-900" onclick="downloadPartCad('${partId}', '${fileType}')">
+                <i class="fas fa-download fa-lg"></i>
+            </button>
+        </div>
     `;
     }
 
-    (async () => {
-        const mRes = await fetch(`/api/machines?team_number=${teamNumber}`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        const mData = await mRes.json();
-        if (mRes.ok && Array.isArray(mData.machines)) {
-            const filterDiv = document.getElementById("filterButtons");
-            mData.machines.forEach(m => {
-                const name = m.name.trim();
-                machineMap[name] = m.cad_format;
-                const btn = document.createElement("button");
-                btn.className = "bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600";
-                btn.innerText = name;
-                btn.onclick = () => applyFilter(name);
-                filterDiv.appendChild(btn);
-            });
-        }
-
+    async function loadAndRenderBOM() {
         const res = await fetch(`/api/get_bom?team_number=${teamNumber}&robot=${robotName}&system=${systemName}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         const data = await res.json();
-        if (res.ok && data.bom_data) {
-            fullBOM = data.bom_data;
-            renderBOM();
-        }
-    })();
+        if (!res.ok || !data.bom_data) return;
+        fullBOM = data.bom_data;
+        fullBOM.sort((a, b) => (a["Part Name"] || "").localeCompare(b["Part Name"] || ""));
+        const grid = document.getElementById("bomPartsGrid");
+        const none = document.getElementById("noPartsMessage");
+        grid.innerHTML = '';
+        fullBOM.forEach(part => grid.innerHTML += renderCard(part));
+        none.style.display = fullBOM.length === 0 ? "block" : "none";
+    }
+
+    document.addEventListener("DOMContentLoaded", loadAndRenderBOM);
 </script>
 {% endblock %}

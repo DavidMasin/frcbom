@@ -123,8 +123,7 @@
         const p1 = part["Process 1"]?.trim();
         const p2 = part["Process 2"]?.trim();
 
-        const fileType = part._fileType || "STEP";
-        const name = part["Part Name"] || "Unnamed";
+        const fileType = machineMap[curProcess] || "STEP";        const name = part["Part Name"] || "Unnamed";
         const mat = part.materialBOM || part.Material || "N/A";
         const desc = part.Description || "N/A";
         const donePre = part.done_preprocess || 0;
@@ -190,6 +189,8 @@
     }
 
     (async () => {
+        const token = localStorage.getItem("jwt_token");
+        const teamNumber = "{{ team_number }}";
         const response = await fetch(`/api/machines?team_number=${teamNumber}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
@@ -197,13 +198,17 @@
         const data = await response.json();
         const filterDiv = document.getElementById("filterButtons");
         (data.machines || []).forEach(m => {
+            const name = m.name.trim();
+            const cadFormat = m.cad_format?.trim() || "STEP";  // ✅ Get CAD format
+            machineMap[name] = cadFormat;                       // ✅ Set mapping
             const btn = document.createElement("button");
             btn.className = "bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600";
-            btn.innerText = m.name;
-            btn.onclick = () => applyFilter(m.name);
+            btn.innerText = name;
+            btn.onclick = () => applyFilter(name);
             filterDiv.appendChild(btn);
         });
     })();
+
 
     document.addEventListener("DOMContentLoaded", loadAndRenderBOM);
 </script>

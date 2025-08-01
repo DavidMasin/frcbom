@@ -1166,14 +1166,17 @@ def view_gltf():
 
             parts_res = requests.get(
                 f"https://cad.onshape.com/api/parts/d/{did}/w/{wid}/e/{eid}",
-                headers={"Accept": "application/json"},
+                headers={"Accept": "*/*"},
                 auth=auth
             )
             parts = parts_res.json()
             for part in parts:
                 if part["partId"] == part_id:
                     gltf_url = f"https://cad.onshape.com/api/v12/parts/d/{did}/w/{wid}/e/{eid}/partid/{part_id}/gltf?rollbackBarIndex=-1&outputSeparateFaceNodes=false&outputFaceAppearances=false"
-
+                    print("🔍 Trying GLTF:", gltf_url)
+                    print("🔑 Using access key:", system.access_key[:6], "...")  # don't print whole key
+                    print("📦 Part ID:", part_id)
+                    print("⚙️ PartStudio URLs:", system.partstudio_urls)
                     headers = {
                         "Accept": "model/gltf+json;charset=UTF-8;qs=0.08"
                     }

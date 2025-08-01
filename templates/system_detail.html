@@ -3,7 +3,8 @@
 {% block content %}
 
 <div class="mb-6">
-    <a href="{{ url_for('team_admin_robot', team_number=team_number, robot_name=current_robot) }}" class="text-sm text-blue-300 hover:underline">
+    <a href="{{ url_for('team_admin_robot', team_number=team_number, robot_name=current_robot) }}"
+       class="text-sm text-blue-300 hover:underline">
         &larr; Back to {{ current_robot }} Details
     </a>
     <h1 class="text-3xl font-bold text-white mt-2">{{ filter_system }} BOM</h1>
@@ -12,9 +13,14 @@
 <!-- 🧹 BOM Filter Buttons -->
 <div class="mb-6">
     <div class="flex flex-wrap gap-2" id="filterButtons">
-        <button class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600" onclick="applyFilter(null)">All Parts</button>
-        <button class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600" onclick="applyFilter('COTS')">COTS</button>
-        <button class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600" onclick="applyFilter('InHouse')">In-House</button>
+        <button class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600" onclick="applyFilter(null)">All
+            Parts
+        </button>
+        <button class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600" onclick="applyFilter('COTS')">COTS
+        </button>
+        <button class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600" onclick="applyFilter('InHouse')">
+            In-House
+        </button>
     </div>
 </div>
 <!-- 🧲 Material Download Dropdown -->
@@ -80,6 +86,7 @@
         }
         return "bg-white";
     }
+
     function populateMaterialDropdown() {
         const dropdown = document.getElementById("materialDropdown");
         dropdown.innerHTML = `<option value="">-- Select Material --</option>`;
@@ -157,12 +164,22 @@
                 .then(res => res.json())
                 .then(data => {
                     if (data.redirect_url) {
-                        const link = document.createElement("a");
-                        link.href = data.redirect_url;
-                        link.download = filename;
-                        document.body.appendChild(link);
-                        link.click();
-                        link.remove();
+                        fetch(data.redirect_url)
+                            .then(resp => resp.blob())
+                            .then(blob => {
+                                const url = window.URL.createObjectURL(blob);
+                                const a = document.createElement("a");
+                                a.href = url;
+                                a.download = filename;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                window.URL.revokeObjectURL(url);
+                            })
+                            .catch(err => {
+                                console.error("❌ Error downloading file:", err);
+                                alert("Failed to download file.");
+                            });
                     } else {
                         alert(data.error || "Download failed");
                     }
@@ -219,7 +236,8 @@
         const p1 = part["Process 1"]?.trim();
         const p2 = part["Process 2"]?.trim();
 
-        const fileType = machineMap[curProcess] || "STEP";        const name = part["Part Name"] || "Unnamed";
+        const fileType = machineMap[curProcess] || "STEP";
+        const name = part["Part Name"] || "Unnamed";
         const mat = part.materialBOM || part.Material || "N/A";
         const desc = part.Description || "N/A";
         const donePre = part.done_preprocess || 0;
@@ -277,7 +295,7 @@
 
     async function loadAndRenderBOM() {
         const res = await fetch(`/api/get_bom?team_number=${teamNumber}&robot=${robotName}&system=${systemName}`, {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: {Authorization: `Bearer ${token}`}
         });
         const data = await res.json();
         if (!res.ok || !data.bom_data) return;
@@ -291,7 +309,7 @@
         const token = localStorage.getItem("jwt_token");
         const teamNumber = "{{ team_number }}";
         const response = await fetch(`/api/machines?team_number=${teamNumber}`, {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: {Authorization: `Bearer ${token}`}
         });
         if (!response.ok) return;
         const data = await response.json();

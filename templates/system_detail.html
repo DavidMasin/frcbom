@@ -37,7 +37,13 @@
     <div id="bomPartsGrid" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"></div>
     <p id="noPartsMessage" class="text-center text-gray-500 mt-4">No parts to display.</p>
 </div>
-
+<div id="cadModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden">
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-5xl h-[80vh] relative p-4 flex flex-col">
+        <button onclick="closeViewer()" class="absolute top-2 right-3 text-gray-600 hover:text-black text-xl">&times;</button>
+        <h2 class="text-lg font-semibold mb-3 text-center">🧿 3D Viewer</h2>
+        <div id="viewerContainer" class="flex-1 border rounded bg-gray-100"></div>
+    </div>
+</div>
 {% endblock %}
 {% block scripts %}
 <script>
@@ -147,7 +153,7 @@
 
             const filename = `${name}x${qty}-${mat}.${fileType.toLowerCase()}`;
 
-            fetch(`/api/download_cad`, {
+            const res = await fetch("/api/download_cad", {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${token}`,
@@ -160,39 +166,27 @@
                     id: partId,
                     format: fileType
                 })
-            })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.redirect_url) {
-                        const link = document.createElement("a");
-                        link.href = data.redirect_url;
-                        link.target = "_blank";
+            });
 
-                        // Try download with desired name using blob fallback
-                        fetch(data.redirect_url)
-                            .then(resp => {
-                                if (!resp.ok) throw new Error("Unauthorized or failed");
-                                return resp.blob();
-                            })
-                            .then(blob => {
-                                const url = window.URL.createObjectURL(blob);
-                                const a = document.createElement("a");
-                                a.href = url;
-                                a.download = filename;
-                                document.body.appendChild(a);
-                                a.click();
-                                document.body.removeChild(a);
-                                window.URL.revokeObjectURL(url);
-                            })
-                            .catch(err => {
-                                // Fallback: open in new tab if blob download fails
-                                console.warn("🟡 Falling back to open in tab", err);
-                                link.click();
-                            });
-                    } else {
-                        alert(data.error || "Download failed");
-                    }
-                });
+            if (!res.ok) {
+                const err = await res.json();
+                alert(err.error || "Download failed");
+                return;
+            }
+
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+
+            const sanitizedName = name.replace(/[<>:"/\\|?*\n\r]+/g, "_"); // Avoid illegal characters
+            const fileName = `${sanitizedName} x${qty} - ${mat}.${fileType.toLowerCase()}`;
+
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
         }
     }
 
@@ -288,10 +282,35 @@
             <button title="Download CAD" class="absolute top-2 right-2 text-blue-600 hover:text-blue-900" <button onclick="downloadPartCad('${partId}', '${fileType}', '${name}', '${part.materialBOM}')">
                 <i class="fas fa-download fa-lg"></i>
             </button>
+            <button title="View CAD"
+                class="absolute top-12 right-2 text-green-600 hover:text-green-900 transition"
+                onclick="showCadViewer('${part._documentId}', '${part._workspaceId}', '${part._elementId}', '${part._accessKey}', '${part._secretKey}')">
+                <i class="fas fa-eye fa-lg"></i>
+            </button>
         </div>
     `;
     }
+    function showCadViewer(documentId, workspaceId, elementId, accessKey, secretKey) {
+        const modal = document.getElementById("cadModal");
+        const container = document.getElementById("viewerContainer");
 
+        modal.classList.remove("hidden");
+        container.innerHTML = ""; // Clear previous viewer
+
+        loadViewer(container, {
+            documentId,
+            workspaceId,
+            elementId,
+            accessKey,
+            secretKey
+        });
+    }
+
+    function closeViewer() {
+        const modal = document.getElementById("cadModal");
+        modal.classList.add("hidden");
+        document.getElementById("viewerContainer").innerHTML = "";
+    }
     function renderBOM() {
         const grid = document.getElementById("bomPartsGrid");
         const noMsg = document.getElementById("noPartsMessage");
@@ -355,4 +374,6 @@
 
     document.addEventListener("DOMContentLoaded", loadAndRenderBOM);
 </script>
+<script src="https://cad.onshape.com/viewer/loader.js"></script>
+
 {% endblock %}

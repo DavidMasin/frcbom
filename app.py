@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 from datetime import datetime
 
 import requests
@@ -1170,7 +1171,7 @@ def viewer_gltf():
     if not all([system.access_key, system.secret_key, system.partstudio_urls]):
         return jsonify({"error": "Missing Onshape credentials or Part Studios"}), 400
 
-    headers = {"Accept": "application/vnd.onshape.v1+json"}
+    headers = { "Accept": "model/gltf+json;charset=UTF-8;qs=0.08"}
     auth = (system.access_key, system.secret_key)
 
     # 🔍 Find which Part Studio contains this partId
@@ -1197,7 +1198,8 @@ def viewer_gltf():
 
     gltf_url = f"https://cad.onshape.com/api/v12/parts/d/{target['did']}/w/{target['wid']}/e/{target['eid']}/partid/{part_id}/gltf"
     gltf_res = requests.get(gltf_url, headers=headers, auth=auth)
-
+    for _ in range(15):
+        time.sleep(0.5)
     if gltf_res.status_code != 200:
         print(f"❌ Failed to fetch GLTF: {gltf_res.status_code} {gltf_res.text}")
         return jsonify({"error": "Failed to retrieve GLTF model"}), 500

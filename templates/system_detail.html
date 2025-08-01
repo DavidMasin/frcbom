@@ -49,11 +49,12 @@
         const p1 = part["Process 1"]?.trim();
         const p2 = part["Process 2"]?.trim();
 
-        if (p2 && doneP2 < qty) return p2;
-        if (p1 && doneP1 < qty) return p1;
         if (pp && donePre < qty) return pp;
+        if (p1 && (!pp || donePre >= qty) && doneP1 < qty) return p1;
+        if (p2 && (!p1 || doneP1 >= qty) && doneP2 < qty) return p2;
         return null;
     }
+
 
     function getStatusColor(part, qty) {
         const donePre = parseInt(part.done_preprocess || 0);

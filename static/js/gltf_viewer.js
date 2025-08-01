@@ -9,45 +9,46 @@ window.showGLTFViewer = async function (blobUrl) {
     document.getElementById("viewerModal").classList.remove("hidden");
 
     scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.01, 1000);
+    camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     renderer.setSize(canvas.clientWidth, canvas.clientHeight);
 
-    const light = new THREE.AmbientLight(0xffffff, 1);
+    const light = new THREE.AmbientLight(0xffffff);
     scene.add(light);
 
     controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;           // Smooth motion
+    controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.enablePan = true;              // Allow panning
-    controls.enableZoom = true;             // Allow zoom with scroll/pinch
-    controls.screenSpacePanning = false;    // Optional: keeps orbiting intuitive
+    controls.enablePan = true;
+    controls.enableZoom = true;
+    controls.screenSpacePanning = true;
 
-    controls.minPolarAngle = 0;             // Top-down rotation allowed
-    controls.maxPolarAngle = Math.PI;       // Full orbit around vertical
-
+    // 🛑 REMOVE vertical lock
+    controls.minPolarAngle = 0;
+    controls.maxPolarAngle = Math.PI;
 
     const loader = new GLTFLoader();
     loader.load(blobUrl, function (gltf) {
         const model = gltf.scene;
         scene.add(model);
 
-        // 📦 Compute bounding box
         const box = new THREE.Box3().setFromObject(model);
         const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
-        model.position.sub(center);
 
-        // 🔍 Camera position
+        model.position.sub(center); // center the model
+
         const maxDim = Math.max(size.x, size.y, size.z);
         const fov = camera.fov * (Math.PI / 180);
         const cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2)) * 1.5;
+
         camera.position.set(0, 0, cameraZ);
         camera.lookAt(0, 0, 0);
+
         controls.target.set(0, 0, 0);
         controls.update();
 
-        // ✨ Edges helper: loop through meshes and add outlines
+        // 🧱 Edges
         model.traverse((child) => {
             if (child.isMesh) {
                 const edges = new THREE.EdgesGeometry(child.geometry);
@@ -55,17 +56,14 @@ window.showGLTFViewer = async function (blobUrl) {
                     edges,
                     new THREE.LineBasicMaterial({ color: 0x000000 })
                 );
-                line.position.copy(child.position);
-                line.rotation.copy(child.rotation);
-                line.scale.copy(child.scale);
                 child.add(line);
             }
         });
     });
 
-
     function animate() {
         requestAnimationFrame(animate);
+        controls.update(); // 💡 needed for damping
         renderer.render(scene, camera);
     }
 

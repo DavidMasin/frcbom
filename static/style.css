@@ -733,3 +733,6 @@ form h3 {
         flex-direction: column;
     }
 }
+#gltfCanvas {
+    touch-action: none; /* 👈 ensure touch gestures are allowed */
+}

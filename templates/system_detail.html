@@ -285,7 +285,7 @@
             ${p1 ? `<label>✅ Done ${p1}: <input type="number" value="${doneP1}" onchange="updateProcessQty('${partId}', 'done_process1', this.value)" class="border px-2 py-1 rounded w-20" /></label><br/>` : ""}
             ${p2 ? `<label>✅ Done ${p2}: <input type="number" value="${doneP2}" onchange="updateProcessQty('${partId}', 'done_process2', this.value)" class="border px-2 py-1 rounded w-20" /></label><br/>` : ""}
             ${isCOTS ? `<label>📦 Qty In Stock: <input type="number" value="${avail}" onchange="updateProcessQty('${partId}', 'available_qty', this.value)" class="border px-2 py-1 rounded w-20" /></label>` : ""}
-            <button title="Download CAD" class="absolute top-2 right-2 text-blue-600 hover:text-blue-900" <button onclick="downloadPartCad('${partId}', '${fileType}', '${name}', ${part.materialBOM})">
+            <button title="Download CAD" class="absolute top-2 right-2 text-blue-600 hover:text-blue-900" <button onclick="downloadPartCad('${partId}', '${fileType}', '${name}', '${part.materialBOM}')">
                 <i class="fas fa-download fa-lg"></i>
             </button>
         </div>

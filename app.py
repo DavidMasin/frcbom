@@ -1009,7 +1009,8 @@ def download_bom_dict():
 @app.route("/api/download_cad", methods=["POST"])
 @jwt_required()
 def download_cad():
-    import requests, time
+    import requests, time, io
+    from flask import send_file
     from onshape_client.onshape_url import OnshapeElement
 
     current_user = get_jwt_identity()
@@ -1020,7 +1021,7 @@ def download_cad():
     robot_name = data.get("robot")
     system_name = data.get("system")
     part_id = data.get("id")
-    format_name = data.get("format", "STEP").upper()
+    file_format = data.get("format", "STEP").upper()
 
     print("🛠️ Received download request for part:", part_id)
 
@@ -1048,7 +1049,7 @@ def download_cad():
     headers = {"Accept": "application/json"}
     auth = (system.access_key, system.secret_key)
 
-    # 🔁 Search through part studios to find matching partId
+    # 🔁 Find matching partId
     target = None
     for ps_url in system.partstudio_urls:
         try:
@@ -1071,30 +1072,28 @@ def download_cad():
             print(f"⚠️ Failed to process {ps_url}: {e}")
 
     if not target:
-        print(f"❌ Part ID '{part_id}' not found in any partstudio")
         return jsonify({"error": f"Part ID '{part_id}' not found in any part studio"}), 404
 
-    # 🚀 Start translation
-    print(f"🚀 Found in document {target['did']} — Translating to {format_name}")
+    print(f"🚀 Found part, requesting export to {file_format}")
     r = requests.post(
         f"https://cad.onshape.com/api/partstudios/d/{target['did']}/w/{target['wid']}/e/{target['eid']}/translations",
         headers={"Accept": "application/json", "Content-Type": "application/json"},
         auth=auth,
         json={
-            "formatName": format_name,
+            "formatName": file_format,
             "partIds": part_id,
             "storeInDocument": False
         }
     )
 
     if r.status_code != 200:
-        print("❌ Translation initiation failed:", r.text)
+        print("❌ Failed to start translation:", r.text)
         return jsonify({"error": "Failed to start translation"}), 500
 
     translation_id = r.json().get("id")
-    print("🆔 Translation started:", translation_id)
+    print("🆔 Translation ID:", translation_id)
 
-    # ⏳ Poll until translation completes
+    # ⏳ Poll until ready
     for attempt in range(30):
         time.sleep(0.5)
         poll = requests.get(
@@ -1105,15 +1104,28 @@ def download_cad():
         result = poll.json()
         state = result.get("requestState")
         print(f"⏳ Attempt {attempt+1}: {state}")
-
         if state == "DONE":
             ids = result.get("resultExternalDataIds")
             if not ids:
-                return jsonify({"error": "Export completed but no download ID"}), 500
+                return jsonify({"error": "Export completed but no file found"}), 500
             external_id = ids[0]
             download_url = f"https://cad.onshape.com/api/documents/d/{target['did']}/externaldata/{external_id}"
-            print("✅ Ready:", download_url)
-            return jsonify({"redirect_url": download_url}), 200
+            print("✅ Downloading from:", download_url)
+
+            # 🎯 Fetch the actual file
+            file_response = requests.get(download_url, headers=headers, auth=auth, stream=True)
+            if file_response.status_code != 200:
+                return jsonify({"error": "Failed to retrieve translated file"}), 500
+
+            # 🧾 Stream the file back
+            filename = f"{part_id}.{file_format.lower()}"
+            return send_file(
+                io.BytesIO(file_response.content),
+                mimetype="application/octet-stream",
+                as_attachment=True,
+                download_name=filename
+            )
+
         elif state == "FAILED":
             return jsonify({"error": "Translation failed"}), 500
 

@@ -217,7 +217,7 @@
     async function downloadPartCad(partId, fileType, partName = "Part") {
         if (!partId) return alert("Part ID missing");
 
-        const res = await fetch(`/api/download_cad`, {
+        const res = await fetch("/api/download_cad", {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${token}`,
@@ -228,20 +228,17 @@
                 robot: robotName,
                 system: systemName,
                 id: partId,
-                format: fileType || "STEP"
+                format: fileType
             })
         });
 
-        const data = await res.json();
-        if (!data.redirect_url) {
-            alert(data.error || "Download failed");
+        if (!res.ok) {
+            const err = await res.json();
+            alert(err.error || "Download failed");
             return;
         }
 
-        // 🔁 Fetch the actual CAD file from redirect_url
-        const fileRes = await fetch(data.redirect_url);
-        const blob = await fileRes.blob();
-
+        const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -284,7 +281,7 @@
             ${p1 ? `<label>✅ Done ${p1}: <input type="number" value="${doneP1}" onchange="updateProcessQty('${partId}', 'done_process1', this.value)" class="border px-2 py-1 rounded w-20" /></label><br/>` : ""}
             ${p2 ? `<label>✅ Done ${p2}: <input type="number" value="${doneP2}" onchange="updateProcessQty('${partId}', 'done_process2', this.value)" class="border px-2 py-1 rounded w-20" /></label><br/>` : ""}
             ${isCOTS ? `<label>📦 Qty In Stock: <input type="number" value="${avail}" onchange="updateProcessQty('${partId}', 'available_qty', this.value)" class="border px-2 py-1 rounded w-20" /></label>` : ""}
-            <button title="Download CAD" class="absolute top-2 right-2 text-blue-600 hover:text-blue-900" onclick="downloadPartCad('${partId}', '${fileType}', '${name.replace(/[^a-zA-Z0-9_-]/g, "_")}')">
+            <button title="Download CAD" class="absolute top-2 right-2 text-blue-600 hover:text-blue-900" <button onclick="downloadPartCad('${partId}', '${fileType}', '${name}')">
                 <i class="fas fa-download fa-lg"></i>
             </button>
         </div>

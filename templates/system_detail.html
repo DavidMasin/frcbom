@@ -82,14 +82,26 @@
     }
     function populateMaterialDropdown() {
         const dropdown = document.getElementById("materialDropdown");
-        const materials = new Set();
+        dropdown.innerHTML = `<option value="">-- Select Material --</option>`;
 
-        fullBOM.forEach(part => {
-            const material = part.materialBOM || part.Material || null;
-            if (material) materials.add(material.trim());
+        const shownParts = fullBOM.filter(part => {
+            const p1 = part["Process 1"]?.trim();
+            const p2 = part["Process 2"]?.trim();
+            const isCOTS = !part["Pre Process"] && !p1 && !p2;
+            const isInHouse = !isCOTS;
+
+            if (!currentFilter) return true;
+            if (currentFilter === "COTS") return isCOTS;
+            if (currentFilter === "InHouse") return isInHouse;
+            return [part["Pre Process"], p1, p2].includes(currentFilter);
         });
 
-        // Sort and add options
+        const materials = new Set();
+        shownParts.forEach(part => {
+            const mat = part.materialBOM || part.Material || null;
+            if (mat) materials.add(mat.trim());
+        });
+
         [...materials].sort().forEach(mat => {
             const option = document.createElement("option");
             option.value = mat;
@@ -101,24 +113,60 @@
     async function downloadAllOfMaterial(materialName) {
         if (!materialName) return;
 
-        const matchingParts = fullBOM.filter(p => {
+        const shownParts = fullBOM.filter(part => {
+            const p1 = part["Process 1"]?.trim();
+            const p2 = part["Process 2"]?.trim();
+            const isCOTS = !part["Pre Process"] && !p1 && !p2;
+            const isInHouse = !isCOTS;
+
+            if (!currentFilter) return true;
+            if (currentFilter === "COTS") return isCOTS;
+            if (currentFilter === "InHouse") return isInHouse;
+            return [part["Pre Process"], p1, p2].includes(currentFilter);
+        });
+
+        const filtered = shownParts.filter(p => {
             const mat = p.materialBOM || p.Material || "";
             return mat.trim() === materialName.trim();
         });
 
-        if (matchingParts.length === 0) {
-            alert("No parts found with that material.");
-            return;
-        }
-
-        for (const part of matchingParts) {
+        for (const part of filtered) {
             const partId = part.partId;
             const qty = parseInt(part.Quantity || 1);
+            const name = part["Part Name"]?.trim().replace(/[^a-zA-Z0-9-_]/g, "_") || "Unnamed";
+            const mat = materialName.replace(/[^a-zA-Z0-9-_]/g, "_");
             const curProcess = getCurrentProcessStatus(part, qty);
-            const fileType = machineMap[curProcess] || "STEP";
+            const fileType = (machineMap[curProcess] || "STEP").toUpperCase();
 
-            // Delay between downloads to avoid API rate limits
-            setTimeout(() => downloadPartCad(partId, fileType), 300);
+            const filename = `${name}x${qty}-${mat}.${fileType.toLowerCase()}`;
+
+            fetch(`/api/download_cad`, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    team_number: teamNumber,
+                    robot: robotName,
+                    system: systemName,
+                    id: partId,
+                    format: fileType
+                })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.redirect_url) {
+                        const link = document.createElement("a");
+                        link.href = data.redirect_url;
+                        link.download = filename;
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+                    } else {
+                        alert(data.error || "Download failed");
+                    }
+                });
         }
     }
 
@@ -224,6 +272,7 @@
         });
 
         noMsg.style.display = shownParts.length === 0 ? "block" : "none";
+        populateMaterialDropdown();
     }
 
     async function loadAndRenderBOM() {
@@ -234,7 +283,7 @@
         if (!res.ok || !data.bom_data) return;
         fullBOM = data.bom_data;
         renderBOM();
-        populateMaterialDropdown();  // <--- add this
+        populateMaterialDropdown();
     }
 
 

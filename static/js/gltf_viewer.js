@@ -23,26 +23,37 @@ window.showGLTFViewer = async function (blobUrl) {
         const model = gltf.scene;
         scene.add(model);
 
-        // 🧠 Compute bounding box
+        // 📦 Compute bounding box
         const box = new THREE.Box3().setFromObject(model);
         const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
-
-        // 🧭 Recenter model
         model.position.sub(center);
 
-        // 🔍 Position camera to fit the model
+        // 🔍 Camera position
         const maxDim = Math.max(size.x, size.y, size.z);
         const fov = camera.fov * (Math.PI / 180);
         const cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2)) * 1.5;
-
         camera.position.set(0, 0, cameraZ);
         camera.lookAt(0, 0, 0);
-
-        // 🛠 Update controls
         controls.target.set(0, 0, 0);
         controls.update();
+
+        // ✨ Edges helper: loop through meshes and add outlines
+        model.traverse((child) => {
+            if (child.isMesh) {
+                const edges = new THREE.EdgesGeometry(child.geometry);
+                const line = new THREE.LineSegments(
+                    edges,
+                    new THREE.LineBasicMaterial({ color: 0x000000 })
+                );
+                line.position.copy(child.position);
+                line.rotation.copy(child.rotation);
+                line.scale.copy(child.scale);
+                child.add(line);
+            }
+        });
     });
+
 
     function animate() {
         requestAnimationFrame(animate);

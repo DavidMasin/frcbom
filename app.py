@@ -1449,14 +1449,7 @@ def delete_robot(robot_id):
                 os.remove(file_path)
             except Exception:
                 pass
-    for mach in robot.machines:
-        if mach.icon_file:
-            icon_path = os.path.join(app.root_path, 'static', mach.icon_file)
-            if os.path.isfile(icon_path):
-                try:
-                    os.remove(icon_path)
-                except Exception:
-                    pass
+
     db.session.delete(robot)
     db.session.commit()
     return redirect(f"/{team_number}/Admin")

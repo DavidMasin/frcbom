@@ -957,9 +957,12 @@ def fetch_bom():
 
 
     def fetch_subassembly_names(document_id, workspace_id):
+        print("Im HERE")
         url = f"https://cad.onshape.com/api/v12/documents/d/{document_id}/w/{workspace_id}/contents"
         r = client.api_client.request('GET', url=url)
+        print("HERE @")
         content = safe_json(r.data)
+        print("Hola")
         return {el["id"]: el["name"] for el in content.get("elements", []) if el.get("elementType") == "ASSEMBLY"}
 
     def fetch_thumbnail_url(document_id):
@@ -1010,13 +1013,13 @@ def fetch_bom():
 
         final_parts = []
         sub_part_names = set()
-
+        print("HOLA2")
         for row in main_json.get("rows", []):
             values = row.get("headerIdToValue", {})
             sub_name = values.get("Name")
             qty = values.get("Quantity", 1)
             qty = int(qty) if isinstance(qty, (int, str)) and str(qty).isdigit() else 1
-
+            print("WOW")
             for sub_url in (system.subassembly_urls or []):
                 sub_elem = OnshapeElement(sub_url)
                 if sub_elem.eid in subassembly_names:

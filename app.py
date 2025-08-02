@@ -966,10 +966,10 @@ def fetch_bom():
             sub_json = fetch_bom_from_url(sub_url)
             sub_parts = extract_part_data(sub_json, old_bom_by_id)
             if sub_parts:
-                # Remove top-level part name if it exists in the main BOM
-                top_name = sub_parts[0].get("Assem") or sub_parts[0].get("Part Name")
-                if top_name:
-                    sub_names_to_remove.append(top_name)
+                # Try to detect a "placeholder card" by scanning for common names in subassembly
+                likely_names = set(p.get("Part Name") for p in sub_parts if p.get("Part Name"))
+                # Add all subassembly names to be removed from main BOM
+                sub_names_to_remove.extend(likely_names)
                 sub_boms.extend(sub_parts)
 
         # Filter out any placeholders from main BOM

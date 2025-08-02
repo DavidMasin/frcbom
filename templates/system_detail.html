@@ -159,6 +159,13 @@
         }
         return "bg-white";
     }
+    document.getElementById("materialDropdown")?.addEventListener("change", function () {
+        const selectedMaterial = this.value;
+        if (selectedMaterial) {
+            downloadAllOfMaterial(selectedMaterial);
+            this.value = ""; // Reset dropdown after download starts
+        }
+    });
 
     function populateMaterialDropdown() {
         const dropdown = document.getElementById("materialDropdown");

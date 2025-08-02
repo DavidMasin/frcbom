@@ -523,17 +523,18 @@
         const newName = el.textContent.trim().replace(/\s+BOM$/, '');
         const oldName = "{{ filter_system }}";
         if (newName === oldName || !newName) return;
+        const partstudioUrls = JSON.parse('{{ system.partstudio_urls | default("[]") | tojson | safe }}');
 
         const payload = {
             team_number: "{{ team_number }}",
             robot_name: "{{ current_robot }}",
             old_system_name: oldName,
             new_system_name: newName,
-            assembly_url: "{{ system.assembly_url }}",
-            access_key: "{{ system.access_key }}",
-            secret_key: "{{ system.secret_key }}",
-            partstudio_urls: {{ system.partstudio_urls | tojson }}
-    };
+            assembly_url: "{{ system.assembly_url | default('') }}",
+            access_key: "{{ system.access_key | default('') }}",
+            secret_key: "{{ system.secret_key | default('') }}",
+            partstudio_urls: partstudioUrls
+        };
 
         const res = await fetch("/api/update_system_settings", {
             method: "POST",

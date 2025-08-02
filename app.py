@@ -1278,7 +1278,7 @@ def update_system_settings():
     old_system_name = data.get("old_system_name")
     new_system_name = data.get("new_system_name")
     print(old_system_name)
-    if old_system_name == None:
+    if old_system_name is None:
         system_name = data.get("system_name")
     else:
         system_name = old_system_name
@@ -1294,7 +1294,7 @@ def update_system_settings():
     if not system:
         return jsonify({"error": "System not found"}), 404
 
-    if old_system_name != None:
+    if old_system_name is not None:
         system.name = new_system_name
     system.assembly_url = data.get("assembly_url")
     system.access_key = data.get("access_key")

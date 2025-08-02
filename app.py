@@ -1,6 +1,6 @@
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import Flask, request, jsonify, render_template, redirect, session, flash, url_for
 from flask_cors import CORS
@@ -23,6 +23,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = db_uri or 'sqlite:///teams.db'
 app.secret_key = os.getenv('SECRET_KEY', 'super-secret-session-key')
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'super-secure-jwt-key')
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'statiDec', 'uploads')
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=30)  # ⏳ Set token to last 30 days
 
 # Initialize extensions
 from models import db, Team, Robot, System, Machine

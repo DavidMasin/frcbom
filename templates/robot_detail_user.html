@@ -32,10 +32,13 @@
         {% for system in robot.systems %}
         <a href="{{ url_for('team_bom_filtered', team_number=team.team_number, robot_name=robot.name, system=system.name) }}"
            class="group block bg-gray-900/70 hover:bg-gray-700/80 border border-gray-700 rounded-lg p-4 transition-all duration-200">
-            <div class="flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                {% if system.thumbnail_url %}
+                <img src="{{ system.thumbnail_url }}" alt="Thumbnail" class="w-24 h-16 rounded object-cover">
+                {% endif %}
                 <h3 class="text-lg font-semibold text-gray-200 group-hover:text-white">{{ system.name }}</h3>
-                <span class="text-indigo-400 group-hover:text-indigo-300 font-semibold opacity-0 group-hover:opacity-100 transition-opacity">Manage &rarr;</span>
             </div>
+
         </a>
         {% endfor %}
     </div>

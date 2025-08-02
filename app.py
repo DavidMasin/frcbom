@@ -850,6 +850,7 @@ def fetch_bom():
     from onshape_client.client import Client
     from onshape_client.onshape_url import OnshapeElement
     import json as jsonlib
+    import re
 
     data = request.get_json()
     team_number = data.get("team_number")
@@ -874,35 +875,28 @@ def fetch_bom():
     if not system.assembly_url or not system.access_key or not system.secret_key:
         return jsonify({"error": "Missing required Onshape credentials or assembly URL"}), 400
 
+    client = Client(configuration={
+        "base_url": "https://cad.onshape.com",
+        "access_key": system.access_key,
+        "secret_key": system.secret_key
+    })
+
     def fetch_bom_from_url(url):
-        try:
-            client = Client(configuration={
-                "base_url": "https://cad.onshape.com",
-                "access_key": system.access_key,
-                "secret_key": system.secret_key
-            })
-            element = OnshapeElement(url)
-            did, wid, eid = element.did, element.wvmid, element.eid
+        element = OnshapeElement(url)
+        did, wid, eid = element.did, element.wvmid, element.eid
+        bom_url = f"/api/v10/assemblies/d/{did}/w/{wid}/e/{eid}/bom"
+        headers = {'Accept': 'application/vnd.onshape.v1+json', 'Content-Type': 'application/json'}
+        response = client.api_client.request(
+            'GET',
+            url="https://cad.onshape.com" + bom_url,
+            query_params={"indented": True},
+            headers=headers,
+            body={}
+        )
+        raw = response.data
+        return jsonlib.loads(raw.decode("utf-8")) if isinstance(raw, (bytes, bytearray)) else jsonlib.loads(raw)
 
-            bom_url = f"/api/v10/assemblies/d/{did}/w/{wid}/e/{eid}/bom"
-            headers = {'Accept': 'application/vnd.onshape.v1+json', 'Content-Type': 'application/json'}
-            response = client.api_client.request(
-                'GET',
-                url="https://cad.onshape.com" + bom_url,
-                query_params={"indented": True},
-                headers=headers,
-                body={}
-            )
-            raw = response.data
-            if isinstance(raw, (bytes, bytearray)):
-                return jsonlib.loads(raw.decode("utf-8"))
-            elif isinstance(raw, str):
-                return jsonlib.loads(raw)
-            return raw
-        except Exception as e:
-            raise RuntimeError(f"❌ Failed to fetch BOM from URL: {str(e)}")
-
-    def extract_part_data(bom_json, old_bom_by_id):
+    def extract_part_data(bom_json, old_bom_by_id, multiplier=1):
         def get_id(name):
             for header in bom_json.get("headers", []):
                 if header.get("name") == name:
@@ -922,10 +916,12 @@ def fetch_bom():
         for row in bom_json.get("rows", []):
             values = row.get("headerIdToValue", {})
             part_id = row.get("itemSource", {}).get("partId", "")
+            qty = values.get(qty_id, 1)
+            qty = int(qty) if isinstance(qty, (int, str)) and str(qty).isdigit() else 1
             entry = {
                 "Part Name": values.get(part_name_id, "Unknown"),
                 "Description": values.get(desc_id, "Unknown"),
-                "Quantity": values.get(qty_id, "N/A"),
+                "Quantity": qty * multiplier,
                 "Material": values.get(material_id, "Unknown"),
                 "materialBOM": values.get(material_bom_id, "Unknown"),
                 "Pre Process": values.get(preproc_id, "Unknown"),
@@ -934,7 +930,7 @@ def fetch_bom():
                 "partId": part_id
             }
 
-            # Normalize dict values
+            # Normalize
             for key in ["Material", "materialBOM"]:
                 if isinstance(entry[key], dict):
                     entry[key] = entry[key].get("displayName", "Unknown")
@@ -951,41 +947,68 @@ def fetch_bom():
 
         return part_list
 
-    # Load old BOM for carry-over of progress
-    old_bom = system.bom_data or []
-    old_bom_by_id = {p.get("partId"): p for p in old_bom}
+    def fetch_subassembly_names(document_id, workspace_id):
+        url = f"https://cad.onshape.com/api/v12/documents/d/{document_id}/w/{workspace_id}/contents"
+        r = client.api_client.request('GET', url=url)
+        content = jsonlib.loads(r.data.decode("utf-8")) if isinstance(r.data, (bytes, bytearray)) else r.data
+        return {el["id"]: el["name"] for el in content.get("elements", []) if el.get("elementType") == "ASSEMBLY"}
+
+    def fetch_thumbnail_url(document_id):
+        url = f"https://cad.onshape.com/api/v12/documents/{document_id}"
+        r = client.api_client.request('GET', url=url)
+        doc_data = jsonlib.loads(r.data.decode("utf-8")) if isinstance(r.data, (bytes, bytearray)) else r.data
+        sizes = doc_data.get("thumbnail", {}).get("sizes", [])
+        large = max(sizes, key=lambda x: int(x["size"].split("x")[0]), default=None)
+        return large.get("href") if large else None
+
+    # Load old BOM
+    old_bom_by_id = {p.get("partId"): p for p in (system.bom_data or [])}
 
     try:
         # Main BOM
         main_json = fetch_bom_from_url(system.assembly_url)
-        main_bom = extract_part_data(main_json, old_bom_by_id)
+        main_parts = extract_part_data(main_json, old_bom_by_id)
 
-        # Subassemblies
-        sub_boms = []
-        sub_names_to_remove = []
-        print("🔗 Subassemblies saved:", system.subassembly_urls)
-        for sub_url in (system.subassembly_urls or []):
-            sub_json = fetch_bom_from_url(sub_url)
-            print(sub_json)
-            sub_parts = extract_part_data(sub_json, old_bom_by_id)
-            print(sub_parts)
+        # Parse main assembly info
+        main_element = OnshapeElement(system.assembly_url)
+        did, wid, _ = main_element.did, main_element.wvmid, main_element.eid
 
-            if sub_parts:
-                # Try to detect a "placeholder card" by scanning for common names in subassembly
-                likely_names = set(p.get("Part Name") for p in sub_parts if p.get("Part Name"))
-                # Add all subassembly names to be removed from main BOM
-                sub_names_to_remove.extend(likely_names)
-                sub_boms.extend(sub_parts)
+        # Save thumbnail
+        thumbnail_url = fetch_thumbnail_url(did)
+        if thumbnail_url:
+            system.thumbnail_url = thumbnail_url
 
-        # Filter out any placeholders from main BOM
-        cleaned_main = [p for p in main_bom if p.get("Part Name") not in sub_names_to_remove]
+        # Map subassembly ID -> name
+        subassembly_names = fetch_subassembly_names(did, wid)
 
-        # Merge BOMs
-        final_bom = cleaned_main + sub_boms
+        final_parts = []
+        sub_part_names = set()
+
+        for row in main_json.get("rows", []):
+            values = row.get("headerIdToValue", {})
+            sub_name = values.get("Name")
+            qty = values.get("Quantity", 1)
+            qty = int(qty) if isinstance(qty, (int, str)) and str(qty).isdigit() else 1
+
+            for sub_url in (system.subassembly_urls or []):
+                sub_elem = OnshapeElement(sub_url)
+                if sub_elem.eid in subassembly_names:
+                    expected_name = subassembly_names[sub_elem.eid]
+                    if sub_name == expected_name:
+                        sub_json = fetch_bom_from_url(sub_url)
+                        sub_parts = extract_part_data(sub_json, old_bom_by_id, multiplier=qty)
+                        final_parts.extend(sub_parts)
+                        sub_part_names.add(sub_name)
+
+        # Remove subassembly placeholders
+        main_cleaned = [p for p in main_parts if p["Part Name"] not in sub_part_names]
+        final_bom = main_cleaned + final_parts
+
         system.bom_data = final_bom
         db.session.commit()
 
         return jsonify({"msg": "✅ BOM successfully fetched and saved!", "bom_data": final_bom}), 200
+
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"Failed to process BOM: {str(e)}"}), 500

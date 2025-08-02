@@ -177,7 +177,7 @@ async function handleLogin(event) {
             localStorage.setItem('team_number', teamNum);
             localStorage.setItem('role', data.isAdmin ? 'Admin' : 'User');
             // Redirect based on role
-            window.location.href = `${API_BASE_URL.replace('/api/', '')}${data.isAdmin ? `/${teamNum}/Admin` : `/${teamNum}`}`;
+            window.location.href = data.isAdmin ? `/${teamNum}/Admin` : `/${teamNum}`;
         } else {
             loginMessage.textContent = data.error || 'Login failed.';
         }

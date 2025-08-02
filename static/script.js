@@ -865,9 +865,7 @@ function populateFilterDropdown() {
     }
 
     const machines = new Set(["All"]);
-    document.getElementById("machineFilter").addEventListener("change", (e) => {
-        applyFilter(e.target.value);
-    });
+
     allParts.forEach(p => {
         if (p["Process 1"]) machines.add(p["Process 1"]);
         if (p["Process 2"]) machines.add(p["Process 2"]);

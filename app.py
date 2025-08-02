@@ -20,9 +20,9 @@ db_uri = os.getenv("DATABASE_URL")
 if db_uri and db_uri.startswith("postgres://"):
     db_uri = db_uri.replace("postgres://", "postgresql://", 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = db_uri or 'sqlite:///teams.db'
-
+app.secret_key = os.getenv('SECRET_KEY', 'super-secret-session-key')
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'super-secure-jwt-key')
-app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
+app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'statiDec', 'uploads')
 
 # Initialize extensions
 from models import db, Team, Robot, System, Machine
@@ -103,12 +103,27 @@ def team_admin_bom(team_number, robot_name, system):
     team = Team.query.filter_by(team_number=team_number).first()
     if not team:
         return "Team not found", 404
+
     robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
     if not robot:
         return "Robot not found", 404
+
+    system_obj = System.query.filter_by(robot_id=robot.id, name=system).first()
+    if not system_obj:
+        return "System not found", 404
+
     robots = Robot.query.filter_by(team_id=team.id).all()
-    return render_template("system_detail.html", team=team, team_number=team_number, team_id=team.id,
-                           robots=robots, current_robot=robot_name, filter_system=system,is_admin=True)
+
+    return render_template("system_detail.html",
+                           team=team,
+                           team_number=team_number,
+                           team_id=team.id,
+                           robots=robots,
+                           current_robot=robot_name,
+                           filter_system=system,
+                           is_admin=True,
+                           system=system_obj)  # ✅ Pass this in
+
 
 
 @app.route("/<team_number>/<robot_name>/<system>")
@@ -127,7 +142,8 @@ def team_bom_filtered(team_number, robot_name, system):
         team_number=team_number,
         robot_name=robot_name,
         filter_system=system,
-        is_admin=False
+        is_admin=False,
+        system=system
     )
 
 

@@ -947,16 +947,25 @@ def fetch_bom():
 
         return part_list
 
+    def safe_json(data):
+        if isinstance(data, (bytes, bytearray)):
+            return jsonlib.loads(data.decode("utf-8"))
+        if isinstance(data, str):
+            return jsonlib.loads(data)
+        if isinstance(data, dict):
+            return data
+        raise ValueError("❌ Invalid JSON payload type")
+
     def fetch_subassembly_names(document_id, workspace_id):
         url = f"https://cad.onshape.com/api/v12/documents/d/{document_id}/w/{workspace_id}/contents"
         r = client.api_client.request('GET', url=url)
-        content = jsonlib.loads(r.data.decode("utf-8")) if isinstance(r.data, (bytes, bytearray)) else r.data
+        content = safe_json(r.data)
         return {el["id"]: el["name"] for el in content.get("elements", []) if el.get("elementType") == "ASSEMBLY"}
 
     def fetch_thumbnail_url(document_id):
         url = f"https://cad.onshape.com/api/v12/documents/{document_id}"
         r = client.api_client.request('GET', url=url)
-        doc_data = jsonlib.loads(r.data.decode("utf-8")) if isinstance(r.data, (bytes, bytearray)) else r.data
+        doc_data = safe_json(r.data)
         sizes = doc_data.get("thumbnail", {}).get("sizes", [])
         large = max(sizes, key=lambda x: int(x["size"].split("x")[0]), default=None)
         return large.get("href") if large else None

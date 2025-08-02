@@ -7,13 +7,19 @@
        class="text-sm text-blue-300 hover:underline">
         &larr; Back to {{ current_robot }} Details
     </a>
-    <h1 id="systemNameHeader"
-        class="text-3xl font-bold text-white mt-2"
-        contenteditable="true"
-        spellcheck="false"
-        onblur="submitSystemNameEdit(this)">
-        {{ filter_system }} BOM 🖉
-    </h1>
+    {% if filter_system != "Main" %}
+    <span id="systemNameHeader"
+          contenteditable="true"
+          spellcheck="false"
+          onblur="submitSystemNameEdit(this)">
+    {{ filter_system }}
+    </span>
+    {% else %}
+    <span>{{ filter_system }}</span>
+    {% endif %}
+    BOM 🖉
+
+
 </div>
 {% if is_admin %}
 <div class="mb-6">
@@ -520,9 +526,10 @@
 </script>
 <script>
     async function submitSystemNameEdit(el) {
-        const newName = el.textContent.trim().replace(/\s+BOM$/, '');
+        const newName = el.textContent.trim();
         const oldName = "{{ filter_system }}";
         if (newName === oldName || !newName) return;
+
         const partstudioUrls = JSON.parse('{{ system.partstudio_urls | default("[]") | tojson | safe }}');
 
         const payload = {
@@ -550,9 +557,10 @@
             window.location.href = `/${payload.team_number}/Admin/${payload.robot_name}/${newName}`;
         } else {
             alert("❌ Failed to rename system: " + (data.error || "Unknown error"));
-            el.textContent = oldName + " BOM"; // rollback
+            el.textContent = oldName; // rollback
         }
     }
+
 </script>
 
 

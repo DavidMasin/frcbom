@@ -582,29 +582,23 @@ def list_machines():
 
 
 @app.route("/api/robot_data")
-@jwt_required()
-def api_robot_data():
+def team_dashboard_api():
     team_number = request.args.get("team_number")
     robot_name = request.args.get("robot")
-    system_name = request.args.get("system")
 
     team = Team.query.filter_by(team_number=team_number).first()
     if not team:
-        return jsonify({"error": "Team not found"}), 404
+        return "Team not found", 404
 
-    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
-    if not robot:
-        return jsonify({"error": "Robot not found"}), 404
+    robots = Robot.query.filter_by(team_id=team.id).all()
 
-    system = System.query.filter_by(robot_id=robot.id, name=system_name).first()
-    if not system:
-        return jsonify({"error": "System not found"}), 404
-
-    return jsonify({
-        "bom_data": system.bom_data or [],
-        "thumbnail_url": system.thumbnail_url
-    })
-
+    return render_template(
+        "dashboard.html",
+        team=team,
+        robots=robots,
+        team_number=team_number,
+        robot_name=robot_name
+    )
 
 
 @app.route('/api/machines', methods=['POST'])

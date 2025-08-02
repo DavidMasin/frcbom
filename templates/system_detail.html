@@ -113,6 +113,8 @@
 
 {% endblock %}
 {% block scripts %}
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="/static/script.js"></script>
 <script>
     const token = localStorage.getItem("jwt_token");
     const teamNumber = "{{ team_number }}";
@@ -304,8 +306,7 @@
             });
     }
 </script>
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<script src="/static/script.js"></script>
+
 <script>
     async function submitSystemNameEdit(el) {
         const newName = el.textContent.trim();

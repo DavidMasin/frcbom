@@ -911,7 +911,7 @@ def fetch_bom():
     def fetch_subassembly_names(document_id, workspace_id):
         print(f"📂 Fetching subassembly names from contents: {document_id}/{workspace_id}", flush=True)
         url = f"https://cad.onshape.com/api/v12/documents/d/{document_id}/w/{workspace_id}/contents"
-        r = client.api_client.request('GET', url=url)
+        r = client.api_client.request('GET', url=url, query_params={})
         content = safe_json(r.data)
         assembly_map = {el["id"]: el["name"] for el in content.get("elements", []) if el.get("elementType") == "ASSEMBLY"}
         print(f"🔧 Found subassemblies: {assembly_map}", flush=True)
@@ -920,7 +920,7 @@ def fetch_bom():
     def fetch_thumbnail_url(document_id):
         print(f"🖼️ Fetching thumbnail for document {document_id}", flush=True)
         url = f"https://cad.onshape.com/api/v12/documents/{document_id}"
-        r = client.api_client.request('GET', url=url)
+        r = client.api_client.request('GET', url=url, query_params={})
         doc_data = safe_json(r.data)
         thumbnail = doc_data.get("thumbnail")
         print("📦 Thumbnail field:", thumbnail, flush=True)

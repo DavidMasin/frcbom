@@ -851,7 +851,14 @@ def fetch_bom():
     from onshape_client.onshape_url import OnshapeElement
     import json as jsonlib
     import re
-
+    def safe_json(data):
+        if isinstance(data, (bytes, bytearray)):
+            return jsonlib.loads(data.decode("utf-8"))
+        if isinstance(data, str):
+            return jsonlib.loads(data)
+        if isinstance(data, dict):
+            return data
+        raise ValueError("❌ Invalid JSON payload type")
     data = request.get_json()
     team_number = data.get("team_number")
     robot_name = data.get("robot_name")
@@ -893,8 +900,8 @@ def fetch_bom():
             headers=headers,
             body={}
         )
-        raw = response.data
-        return jsonlib.loads(raw.decode("utf-8")) if isinstance(raw, (bytes, bytearray)) else jsonlib.loads(raw)
+        return safe_json(response.data)
+
 
     def extract_part_data(bom_json, old_bom_by_id, multiplier=1):
         def get_id(name):
@@ -947,14 +954,7 @@ def fetch_bom():
 
         return part_list
 
-    def safe_json(data):
-        if isinstance(data, (bytes, bytearray)):
-            return jsonlib.loads(data.decode("utf-8"))
-        if isinstance(data, str):
-            return jsonlib.loads(data)
-        if isinstance(data, dict):
-            return data
-        raise ValueError("❌ Invalid JSON payload type")
+
 
     def fetch_subassembly_names(document_id, workspace_id):
         url = f"https://cad.onshape.com/api/v12/documents/d/{document_id}/w/{workspace_id}/contents"

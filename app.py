@@ -1277,7 +1277,7 @@ def update_system_settings():
     robot_name = data.get("robot_name")
     old_system_name = data.get("old_system_name")
     new_system_name = data.get("new_system_name")
-
+    print(old_system_name)
     if old_system_name == "":
         system_name = data.get("system_name")
     else:

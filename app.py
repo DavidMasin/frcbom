@@ -1512,6 +1512,7 @@ def handle_qty_update(data):
     # Just echo it back to all for now
     emit("qty_update", data, broadcast=True)
 
+
 @socketio.on('join_room')
 def on_join(data):
     team_number = data.get("team_number")
@@ -1519,9 +1520,12 @@ def on_join(data):
     system_name = data.get("system_name")
     room = f"{team_number}/{robot_name}/{system_name}"
     join_room(room)
+
+
 @socketio.on('connect')
 def on_connect():
     print("✅ Client connected")
+
 
 def run():
     print("✅ Flask app is starting via socketio.run() (Gunicorn)")

@@ -341,7 +341,8 @@
         const doneP2 = part.done_process2 || 0;
         const avail = part.available_qty || 0;
 
-        const isCOTS = !part["Pre Process"] && !p1 && !p2;
+        const clean = str => !str || str.trim().toUpperCase() === "N/A";
+        const isCOTS = clean(part["Pre Process"]) && clean(p1) && clean(p2);
         const isInHouse = !isCOTS;
 
         return `

@@ -10,18 +10,8 @@ socket.on("connect", () => {
     console.log("✅ Socket connected");
 });
 
-socket.on('qty_update', ({ partId, updates }) => {
-    if (!window.bomData?.length) {
-        console.warn("⚠️ window.bomData not loaded yet — update skipped.");
-        return;
-    }
-
-    const part = window.bomData.find(p => p.partId === partId);
-    if (part) {
-        Object.assign(part, updates);
-        highlightPartRow(partId, 'green');
-        renderBOM(window.bomData); // or update just the part visually
-    }
+socket.on("qty_update", (data) => {
+    console.log("📡 Received qty_update via socket:", data);
 });
 
 
@@ -300,6 +290,15 @@ async function savePartQuantities(part) {
     }
 }
 
+// Live update receiver
+socket.on('qty_update', ({ partId, updates }) => {
+    const part = window.bomData.find(p => p.partId === partId);
+    if (part) {
+        Object.assign(part, updates);
+        highlightPartRow(partId, 'green');
+        renderBOM(window.bomData);
+    }
+});
 
 // Color highlight
 function highlightPartRow(partId, color) {

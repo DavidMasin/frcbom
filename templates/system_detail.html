@@ -56,6 +56,7 @@
         </div>
         <button onclick="addStudioField()" class="text-blue-600 text-sm hover:underline mb-4">+ Add Part Studio</button>
 
+
         <label class="block mb-2 font-semibold">Access Key:</label>
         <input id="accessKeyInput" type="text" class="w-full border px-3 py-2 rounded mb-4"/>
 
@@ -491,13 +492,7 @@
 
                 const wrapper = document.getElementById("studioUrlsWrapper");
                 wrapper.innerHTML = "";
-                (data.partstudio_urls || [""]).forEach(url => {
-                    const input = document.createElement("input");
-                    input.type = "text";
-                    input.className = "studio-input w-full border px-3 py-2 rounded";
-                    input.value = url;
-                    wrapper.appendChild(input);
-                });
+                (data.partstudio_urls || [""]).forEach(url => addStudioField(url));
                 (data.subassembly_urls || []).forEach(url => addSubassemblyUrl(url));
 
             });
@@ -507,12 +502,28 @@
         document.getElementById("settingsModal").classList.add("hidden");
     }
 
-    function addStudioField() {
+    function addStudioField(value = "") {
+        const wrapper = document.getElementById("studioUrlsWrapper");
+
+        const row = document.createElement("div");
+        row.className = "flex gap-2";
+
         const input = document.createElement("input");
         input.type = "text";
         input.className = "studio-input w-full border px-3 py-2 rounded";
-        document.getElementById("studioUrlsWrapper").appendChild(input);
+        input.value = value;
+
+        const removeBtn = document.createElement("button");
+        removeBtn.innerHTML = "✕";
+        removeBtn.type = "button";
+        removeBtn.className = "text-red-500 font-bold";
+        removeBtn.onclick = () => row.remove();
+
+        row.appendChild(input);
+        row.appendChild(removeBtn);
+        wrapper.appendChild(row);
     }
+
 
     function saveAndFetchBOM() {
         const payload = {

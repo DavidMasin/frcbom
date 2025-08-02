@@ -838,12 +838,13 @@ function renderParts(parts) {
 function loadPartsFromBackend(teamNumber, robotName, systemName) {
     const token = localStorage.getItem("jwt_token");
 
-    fetch(`${API_BASE_URL}api/robot_data?team_number=${teamNumber}&robot=${robotName}&system=${systemName}`, {
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
+    fetch(`/api/robot_data?team_number=${teamNumber}&robot=${robotName}&system=${systemName}`, {
+        headers: { Authorization: `Bearer ${token}` }
     })
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error("API failed: " + res.status);
+            return res.json();
+        })
         .then(data => {
             allParts = data.bom_data || [];
             renderParts(allParts);
@@ -852,6 +853,7 @@ function loadPartsFromBackend(teamNumber, robotName, systemName) {
         .catch(err => {
             console.error("Error loading BOM data:", err);
         });
+
 }
 
 // Optional: dynamically populate the machine types dropdown

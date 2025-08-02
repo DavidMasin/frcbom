@@ -9,6 +9,45 @@
     </a>
     <h1 class="text-3xl font-bold text-white mt-2">{{ filter_system }} BOM</h1>
 </div>
+{% if is_admin %}
+<div class="mb-6">
+    <button onclick="openSettingsModal()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">⚙️ Edit
+        System Settings
+    </button>
+</div>
+
+<!-- ⚙️ Settings Modal -->
+<div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg p-6 w-full max-w-2xl relative">
+        <button onclick="closeSettingsModal()" class="absolute top-2 right-3 text-gray-600 hover:text-black text-xl">
+            &times;
+        </button>
+        <h2 class="text-xl font-bold mb-4">🛠 Edit System Details</h2>
+
+        <label class="block mb-2 font-semibold">Rename System:</label>
+        <input id="renameInput" type="text" class="w-full border px-3 py-2 rounded mb-4" value="{{ system.name }}"/>
+
+        <label class="block mb-2 font-semibold">Assembly URL:</label>
+        <input id="assemblyUrlInput" type="text" class="w-full border px-3 py-2 rounded mb-4"/>
+
+        <label class="block mb-2 font-semibold">Part Studio URLs:</label>
+        <div id="studioUrlsWrapper" class="space-y-2 mb-4">
+            <input type="text" class="studio-input w-full border px-3 py-2 rounded"/>
+        </div>
+        <button onclick="addStudioField()" class="text-blue-600 text-sm hover:underline mb-4">+ Add Part Studio</button>
+
+        <label class="block mb-2 font-semibold">Access Key:</label>
+        <input id="accessKeyInput" type="text" class="w-full border px-3 py-2 rounded mb-4"/>
+
+        <label class="block mb-2 font-semibold">Secret Key:</label>
+        <input id="secretKeyInput" type="text" class="w-full border px-3 py-2 rounded mb-4"/>
+
+        <button onclick="saveAndFetchBOM()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">🔄 Fetch
+            BOM
+        </button>
+    </div>
+</div>
+{% endif %}
 
 <!-- 🧹 BOM Filter Buttons -->
 <div class="mb-6">
@@ -385,6 +424,94 @@
     }
 </script>
 <script type="module" src="{{ url_for('static', filename='js/gltf_viewer.js') }}"></script>
+<script>
+    function openSettingsModal() {
+        document.getElementById("settingsModal").classList.remove("hidden");
+
+        // Pre-fill current values
+        fetch(`/api/system_settings?team_number={{ team_number }}&robot_name={{ robot_name }}&system_name={{ system_name }}`, {
+            headers: {Authorization: `Bearer ${localStorage.getItem("jwt_token")}`}
+        })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("assemblyUrlInput").value = data.assembly_url || "";
+                document.getElementById("accessKeyInput").value = data.access_key || "";
+                document.getElementById("secretKeyInput").value = data.secret_key || "";
+
+                const wrapper = document.getElementById("studioUrlsWrapper");
+                wrapper.innerHTML = "";
+                (data.partstudio_urls || [""]).forEach(url => {
+                    const input = document.createElement("input");
+                    input.type = "text";
+                    input.className = "studio-input w-full border px-3 py-2 rounded";
+                    input.value = url;
+                    wrapper.appendChild(input);
+                });
+            });
+    }
+
+    function closeSettingsModal() {
+        document.getElementById("settingsModal").classList.add("hidden");
+    }
+
+    function addStudioField() {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "studio-input w-full border px-3 py-2 rounded";
+        document.getElementById("studioUrlsWrapper").appendChild(input);
+    }
+
+    function saveAndFetchBOM() {
+        const payload = {
+            team_number: "{{ team_number }}",
+            robot_name: "{{ robot_name }}",
+            old_system_name: "{{ system_name }}",
+            new_system_name: document.getElementById("renameInput").value,
+            assembly_url: document.getElementById("assemblyUrlInput").value,
+            access_key: document.getElementById("accessKeyInput").value,
+            secret_key: document.getElementById("secretKeyInput").value,
+            partstudio_urls: Array.from(document.getElementsByClassName("studio-input")).map(input => input.value)
+        };
+
+        fetch("/api/update_system_settings", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${localStorage.getItem("jwt_token")}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    alert("❌ Failed to save system: " + (data.error || "Unknown error"));
+                    return;
+                }
+
+                // ✅ Now fetch BOM
+                fetch("/api/fetch_bom", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${localStorage.getItem("jwt_token")}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        team_number: payload.team_number,
+                        robot_name: payload.robot_name,
+                        system_name: payload.new_system_name
+                    })
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            window.location.href = `/${payload.team_number}/Admin/${payload.robot_name}/${payload.new_system_name}`;
+                        } else {
+                            alert("❌ Failed to fetch BOM: " + (data.error || "Unknown error"));
+                        }
+                    });
+            });
+    }
+</script>
 
 
 {% endblock %}

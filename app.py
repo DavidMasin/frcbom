@@ -108,7 +108,7 @@ def team_admin_bom(team_number, robot_name, system):
         return "Robot not found", 404
     robots = Robot.query.filter_by(team_id=team.id).all()
     return render_template("system_detail.html", team=team, team_number=team_number, team_id=team.id,
-                           robots=robots, current_robot=robot_name, filter_system=system)
+                           robots=robots, current_robot=robot_name, filter_system=system,is_admin=True)
 
 
 @app.route("/<team_number>/<robot_name>/<system>")
@@ -122,11 +122,12 @@ def team_bom_filtered(team_number, robot_name, system):
         return "Robot not found", 404
 
     return render_template(
-        'dashboard.html',
+        'system_detail.html',
         team=team,
         team_number=team_number,
         robot_name=robot_name,
-        filter_system=system
+        filter_system=system,
+        is_admin=False
     )
 
 
@@ -1225,48 +1226,36 @@ def download_settings_dict():
     return jsonify({"settings_data_dict": settings_data_dict}), 200
 
 
-@app.route("/api/system_settings", methods=["POST"])
+@app.route("/api/update_system_settings", methods=["POST"])
 @jwt_required()
 def update_system_settings():
     data = request.get_json()
-    app.logger.info("📥 Incoming system settings data: %s", data)
-
     team_number = data.get("team_number")
     robot_name = data.get("robot_name")
-    system_name = data.get("system_name")
-    access_key = data.get("access_key")
-    secret_key = data.get("secret_key")
-    assembly_url = data.get("assembly_url")
-    partstudio_urls = data.get("partstudio_urls")
+    old_system_name = data.get("old_system_name")
+    new_system_name = data.get("new_system_name")
+
+    current_user = get_jwt_identity()
+    claims = get_jwt()
+    if current_user != team_number and not claims.get("is_global_admin"):
+        return jsonify({"error": "Unauthorized"}), 403
 
     team = Team.query.filter_by(team_number=team_number).first()
-    if not team:
-        app.logger.warning("❌ Team not found: %s", team_number)
-        return jsonify({"error": "Team not found"}), 404
-
     robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
-    if not robot:
-        app.logger.warning("❌ Robot not found: %s", robot_name)
-        return jsonify({"error": "Robot not found"}), 404
+    system = System.query.filter_by(robot_id=robot.id, name=old_system_name).first()
 
-    system = System.query.filter_by(robot_id=robot.id, name=system_name).first()
     if not system:
-        app.logger.warning("❌ System not found: %s", system_name)
         return jsonify({"error": "System not found"}), 404
 
-    system.access_key = access_key
-    system.secret_key = secret_key
-    system.assembly_url = assembly_url
-    system.partstudio_urls = partstudio_urls
+    system.name = new_system_name
+    system.assembly_url = data.get("assembly_url")
+    system.access_key = data.get("access_key")
+    system.secret_key = data.get("secret_key")
+    system.partstudio_urls = data.get("partstudio_urls")
 
-    try:
-        db.session.commit()
-        app.logger.info("✅ System settings saved for %s/%s", robot_name, system_name)
-        return jsonify({"msg": "✅ System settings updated!"})
-    except Exception as e:
-        db.session.rollback()
-        app.logger.error("❌ Failed to save system settings: %s", str(e))
-        return jsonify({"error": f"Failed to save system settings: {str(e)}"}), 500
+    db.session.commit()
+    return jsonify({"success": True})
+
 
 
 # Web endpoints for form actions (for completeness)

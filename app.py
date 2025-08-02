@@ -1279,7 +1279,12 @@ def system_settings():
     if current_user != team_number and not claims.get("is_global_admin"):
         return jsonify({"error": "Unauthorized"}), 403
 
-    system = System.query.filter_by(team_id=team.id, robot_name=robot_name, system_name=system_name).first()
+    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
+    if not robot:
+        return jsonify({"error": "Robot not found"}), 404
+
+    system = System.query.filter_by(robot_id=robot.id, name=system_name).first()
+
     if request.method == "GET":
         if not system:
             return jsonify({"error": "System not found"}), 404

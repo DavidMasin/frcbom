@@ -855,8 +855,8 @@ def fetch_bom():
     app.logger.info("📥 Incoming BOM fetch request: %s", data)
 
     team_number = data.get("team_number")
-    robot_name = data.get("robot")
-    system_name = data.get("system")
+    robot_name = data.get("robot_name")
+    system_name = data.get("system_name")
 
     if system_name == "Main":
         return jsonify({"error": "Cannot fetch BOM into 'Main'. Select a specific system."}), 400

@@ -1,5 +1,4 @@
 const API_BASE_URL = '/'; // Use relative path for API requests
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
 const socket = io(API_BASE_URL, {
     auth: {

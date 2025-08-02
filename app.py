@@ -962,9 +962,13 @@ def fetch_bom():
         # Subassemblies
         sub_boms = []
         sub_names_to_remove = []
+        print("🔗 Subassemblies saved:", system.subassembly_urls)
         for sub_url in (system.subassembly_urls or []):
             sub_json = fetch_bom_from_url(sub_url)
+            print(sub_json)
             sub_parts = extract_part_data(sub_json, old_bom_by_id)
+            print(sub_parts)
+
             if sub_parts:
                 # Try to detect a "placeholder card" by scanning for common names in subassembly
                 likely_names = set(p.get("Part Name") for p in sub_parts if p.get("Part Name"))

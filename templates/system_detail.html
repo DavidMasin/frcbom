@@ -515,11 +515,7 @@
                 })
                     .then(res => res.json())
                     .then(data => {
-                        if (data.success) {
-                            window.location.href = `/${payload.team_number}/Admin/${payload.robot_name}/${payload.system_name}`;
-                        } else {
-                            alert("❌ Failed to fetch BOM: " + (data.error || "Unknown error"));
-                        }
+                        window.location.href = `/${payload.team_number}/Admin/${payload.robot_name}/${payload.system_name}`;
                     });
             });
     }

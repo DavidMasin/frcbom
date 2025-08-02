@@ -859,11 +859,6 @@ function loadPartsFromBackend(teamNumber, robotName, systemName) {
 // Optional: dynamically populate the machine types dropdown
 function populateFilterDropdown() {
     const filter = document.getElementById("machineFilter");
-    if (!filter) {
-        console.warn("⚠️ machineFilter element not found!");
-        return;
-    }
-
     const machines = new Set(["All"]);
 
     allParts.forEach(p => {
@@ -879,7 +874,6 @@ function populateFilterDropdown() {
         filter.appendChild(opt);
     });
 }
-
 
 // Filtering logic
 document.getElementById("machineFilter").addEventListener("change", (e) => {

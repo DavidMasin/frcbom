@@ -851,6 +851,8 @@ def fetch_bom():
     from onshape_client.onshape_url import OnshapeElement
     import json as jsonlib
     import re
+    import traceback
+
     def safe_json(data):
         if isinstance(data, (bytes, bytearray)):
             return jsonlib.loads(data.decode("utf-8"))
@@ -859,6 +861,7 @@ def fetch_bom():
         if isinstance(data, dict):
             return data
         raise ValueError("❌ Invalid JSON payload type")
+
     data = request.get_json()
     team_number = data.get("team_number")
     robot_name = data.get("robot_name")
@@ -882,6 +885,8 @@ def fetch_bom():
     if not system.assembly_url or not system.access_key or not system.secret_key:
         return jsonify({"error": "Missing required Onshape credentials or assembly URL"}), 400
 
+    print(f"🚀 Starting BOM fetch for {team_number}/{robot_name}/{system_name}", flush=True)
+
     client = Client(configuration={
         "base_url": "https://cad.onshape.com",
         "access_key": system.access_key,
@@ -889,6 +894,7 @@ def fetch_bom():
     })
 
     def fetch_bom_from_url(url):
+        print(f"📥 Fetching BOM from: {url}", flush=True)
         element = OnshapeElement(url)
         did, wid, eid = element.did, element.wvmid, element.eid
         bom_url = f"/api/v10/assemblies/d/{did}/w/{wid}/e/{eid}/bom"
@@ -902,6 +908,29 @@ def fetch_bom():
         )
         return safe_json(response.data)
 
+    def fetch_subassembly_names(document_id, workspace_id):
+        print(f"📂 Fetching subassembly names from contents: {document_id}/{workspace_id}", flush=True)
+        url = f"https://cad.onshape.com/api/v12/documents/d/{document_id}/w/{workspace_id}/contents"
+        r = client.api_client.request('GET', url=url)
+        content = safe_json(r.data)
+        assembly_map = {el["id"]: el["name"] for el in content.get("elements", []) if el.get("elementType") == "ASSEMBLY"}
+        print(f"🔧 Found subassemblies: {assembly_map}", flush=True)
+        return assembly_map
+
+    def fetch_thumbnail_url(document_id):
+        print(f"🖼️ Fetching thumbnail for document {document_id}", flush=True)
+        url = f"https://cad.onshape.com/api/v12/documents/{document_id}"
+        r = client.api_client.request('GET', url=url)
+        doc_data = safe_json(r.data)
+        thumbnail = doc_data.get("thumbnail")
+        print("📦 Thumbnail field:", thumbnail, flush=True)
+        if not thumbnail:
+            return None
+        sizes = thumbnail.get("sizes", [])
+        if not sizes or not isinstance(sizes, list):
+            return thumbnail.get("href")
+        best = max(sizes, key=lambda s: int(s.get("size", "0x0").split("x")[0]), default=None)
+        return best.get("href") if best else thumbnail.get("href")
 
     def extract_part_data(bom_json, old_bom_by_id, multiplier=1):
         def get_id(name):
@@ -937,12 +966,10 @@ def fetch_bom():
                 "partId": part_id
             }
 
-            # Normalize
             for key in ["Material", "materialBOM"]:
                 if isinstance(entry[key], dict):
                     entry[key] = entry[key].get("displayName", "Unknown")
 
-            # Restore progress
             old = old_bom_by_id.get(part_id)
             if old:
                 entry["done_preprocess"] = old.get("done_preprocess", 0)
@@ -954,92 +981,61 @@ def fetch_bom():
 
         return part_list
 
-
-
-    def fetch_subassembly_names(document_id, workspace_id):
-        print("Im HERE")
-        url = f"https://cad.onshape.com/api/v12/documents/d/{document_id}/w/{workspace_id}/contents"
-        r = client.api_client.request('GET', url=url)
-        print("HERE @")
-        content = safe_json(r.data)
-        print("Hola")
-        return {el["id"]: el["name"] for el in content.get("elements", []) if el.get("elementType") == "ASSEMBLY"}
-
-    def fetch_thumbnail_url(document_id):
-        url = f"https://cad.onshape.com/api/v12/documents/{document_id}"
-        r = client.api_client.request('GET', url=url)
-        doc_data = safe_json(r.data)
-
-        thumbnail = doc_data.get("thumbnail")
-        print("📦 Thumbnail raw:", doc_data.get("thumbnail"))
-        if not thumbnail:
-            print("❌ No 'thumbnail' field in document response")
-            return None
-
-        sizes = thumbnail.get("sizes")
-        if not sizes or not isinstance(sizes, list):
-            print("❌ No valid 'sizes' list in thumbnail data")
-            return None
-
-        # Prefer the largest size
-        best = max(sizes, key=lambda s: int(s.get("size", "0x0").split("x")[0]), default=None)
-        if best and "href" in best:
-            return best["href"]
-
-        print("❌ No valid thumbnail href found in sizes")
-        return None
-
-    # Load old BOM
+    # Load previous progress
     old_bom_by_id = {p.get("partId"): p for p in (system.bom_data or [])}
 
     try:
-        # Main BOM
+        # === Main BOM ===
         main_json = fetch_bom_from_url(system.assembly_url)
         main_parts = extract_part_data(main_json, old_bom_by_id)
+        print(f"✅ Main BOM has {len(main_parts)} parts", flush=True)
 
-        # Parse main assembly info
+        # === Parse base document ===
         main_element = OnshapeElement(system.assembly_url)
         did, wid, _ = main_element.did, main_element.wvmid, main_element.eid
 
-        # Save thumbnail
+        # === Save thumbnail ===
         thumbnail_url = fetch_thumbnail_url(did)
-
-        print(thumbnail_url)
+        print(f"🖼️ Thumbnail URL: {thumbnail_url}", flush=True)
         if thumbnail_url:
             system.thumbnail_url = thumbnail_url
 
-        # Map subassembly ID -> name
+        # === Get subassembly names ===
         subassembly_names = fetch_subassembly_names(did, wid)
-
-        final_parts = []
         sub_part_names = set()
-        print("HOLA2")
+        final_parts = []
+
+        print("🔗 Starting subassembly processing...", flush=True)
+
         for row in main_json.get("rows", []):
             values = row.get("headerIdToValue", {})
             sub_name = values.get("Name")
             qty = values.get("Quantity", 1)
             qty = int(qty) if isinstance(qty, (int, str)) and str(qty).isdigit() else 1
-            print("WOW")
+
             for sub_url in (system.subassembly_urls or []):
                 sub_elem = OnshapeElement(sub_url)
                 if sub_elem.eid in subassembly_names:
                     expected_name = subassembly_names[sub_elem.eid]
                     if sub_name == expected_name:
+                        print(f"🔁 Found matching subassembly '{sub_name}' with qty={qty}", flush=True)
                         sub_json = fetch_bom_from_url(sub_url)
                         sub_parts = extract_part_data(sub_json, old_bom_by_id, multiplier=qty)
                         final_parts.extend(sub_parts)
                         sub_part_names.add(sub_name)
 
-        # Remove subassembly placeholders
-        main_cleaned = [p for p in main_parts if p["Part Name"] not in sub_part_names]
-        final_bom = main_cleaned + final_parts
+        # === Merge all parts ===
+        cleaned_main = [p for p in main_parts if p["Part Name"] not in sub_part_names]
+        final_bom = cleaned_main + final_parts
 
         system.bom_data = final_bom
         db.session.commit()
 
+        print(f"✅ Final BOM has {len(final_bom)} parts", flush=True)
         return jsonify({"msg": "✅ BOM successfully fetched and saved!", "bom_data": final_bom}), 200
 
     except Exception as e:
+        traceback.print_exc()
         db.session.rollback()
         return jsonify({"error": f"Failed to process BOM: {str(e)}"}), 500
 
@@ -1381,7 +1377,6 @@ def update_system_settings():
     old_system_name = data.get("old_system_name")
     new_system_name = data.get("new_system_name")
 
-    print(old_system_name)
     if old_system_name is None:
         system_name = data.get("system_name")
     else:

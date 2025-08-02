@@ -975,6 +975,7 @@ def fetch_bom():
 
         # Save thumbnail
         thumbnail_url = fetch_thumbnail_url(did)
+        print(thumbnail_url)
         if thumbnail_url:
             system.thumbnail_url = thumbnail_url
 

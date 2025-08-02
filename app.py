@@ -1322,6 +1322,7 @@ def update_system_settings():
     robot_name = data.get("robot_name")
     old_system_name = data.get("old_system_name")
     new_system_name = data.get("new_system_name")
+
     print(old_system_name)
     if old_system_name is None:
         system_name = data.get("system_name")
@@ -1345,6 +1346,7 @@ def update_system_settings():
     system.access_key = data.get("access_key")
     system.secret_key = data.get("secret_key")
     system.partstudio_urls = data.get("partstudio_urls")
+    system.subassembly_urls = data.get("subassembly_urls", [])
 
     db.session.commit()
     return jsonify({"success": True})

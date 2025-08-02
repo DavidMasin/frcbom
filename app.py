@@ -1273,8 +1273,7 @@ def update_system_settings():
     data = request.get_json()
     team_number = data.get("team_number")
     robot_name = data.get("robot_name")
-    old_system_name = data.get("old_system_name")
-    new_system_name = data.get("new_system_name")
+    system_name = data.get("system_name")
 
     current_user = get_jwt_identity()
     claims = get_jwt()
@@ -1283,12 +1282,11 @@ def update_system_settings():
 
     team = Team.query.filter_by(team_number=team_number).first()
     robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
-    system = System.query.filter_by(robot_id=robot.id, name=old_system_name).first()
+    system = System.query.filter_by(robot_id=robot.id, name=system_name).first()
 
     if not system:
         return jsonify({"error": "System not found"}), 404
 
-    system.name = new_system_name
     system.assembly_url = data.get("assembly_url")
     system.access_key = data.get("access_key")
     system.secret_key = data.get("secret_key")

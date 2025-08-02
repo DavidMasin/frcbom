@@ -7,7 +7,13 @@
        class="text-sm text-blue-300 hover:underline">
         &larr; Back to {{ current_robot }} Details
     </a>
-    <h1 class="text-3xl font-bold text-white mt-2">{{ filter_system }} BOM</h1>
+    <h1 id="systemNameHeader"
+        class="text-3xl font-bold text-white mt-2"
+        contenteditable="true"
+        spellcheck="false"
+        onblur="submitSystemNameEdit(this)">
+        {{ filter_system }} BOM 🖉
+    </h1>
 </div>
 {% if is_admin %}
 <div class="mb-6">
@@ -510,6 +516,41 @@
                         }
                     });
             });
+    }
+</script>
+<script>
+    async function submitSystemNameEdit(el) {
+        const newName = el.textContent.trim().replace(/\s+BOM$/, '');
+        const oldName = "{{ filter_system }}";
+        if (newName === oldName || !newName) return;
+
+        const payload = {
+            team_number: "{{ team_number }}",
+            robot_name: "{{ current_robot }}",
+            old_system_name: oldName,
+            new_system_name: newName,
+            assembly_url: "{{ system.assembly_url }}",
+            access_key: "{{ system.access_key }}",
+            secret_key: "{{ system.secret_key }}",
+            partstudio_urls: {{ system.partstudio_urls | tojson }}
+    };
+
+        const res = await fetch("/api/update_system_settings", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${localStorage.getItem("jwt_token")}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            window.location.href = `/${payload.team_number}/Admin/${payload.robot_name}/${newName}`;
+        } else {
+            alert("❌ Failed to rename system: " + (data.error || "Unknown error"));
+            el.textContent = oldName + " BOM"; // rollback
+        }
     }
 </script>
 

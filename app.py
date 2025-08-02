@@ -966,9 +966,25 @@ def fetch_bom():
         url = f"https://cad.onshape.com/api/v12/documents/{document_id}"
         r = client.api_client.request('GET', url=url)
         doc_data = safe_json(r.data)
-        sizes = doc_data.get("thumbnail", {}).get("sizes", [])
-        large = max(sizes, key=lambda x: int(x["size"].split("x")[0]), default=None)
-        return large.get("href") if large else None
+
+        thumbnail = doc_data.get("thumbnail")
+        print("📦 Thumbnail raw:", doc_data.get("thumbnail"))
+        if not thumbnail:
+            print("❌ No 'thumbnail' field in document response")
+            return None
+
+        sizes = thumbnail.get("sizes")
+        if not sizes or not isinstance(sizes, list):
+            print("❌ No valid 'sizes' list in thumbnail data")
+            return None
+
+        # Prefer the largest size
+        best = max(sizes, key=lambda s: int(s.get("size", "0x0").split("x")[0]), default=None)
+        if best and "href" in best:
+            return best["href"]
+
+        print("❌ No valid thumbnail href found in sizes")
+        return None
 
     # Load old BOM
     old_bom_by_id = {p.get("partId"): p for p in (system.bom_data or [])}
@@ -984,6 +1000,7 @@ def fetch_bom():
 
         # Save thumbnail
         thumbnail_url = fetch_thumbnail_url(did)
+
         print(thumbnail_url)
         if thumbnail_url:
             system.thumbnail_url = thumbnail_url

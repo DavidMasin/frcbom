@@ -1241,6 +1241,34 @@ def download_settings_dict():
         settings_data_dict[team.team_number] = team_settings
     return jsonify({"settings_data_dict": settings_data_dict}), 200
 
+@app.route("/api/system_settings", methods=["GET"])
+@jwt_required()
+def get_system_settings():
+    team_number = request.args.get("team_number")
+    robot_name = request.args.get("robot_name")
+    system_name = request.args.get("system_name")
+
+    if not team_number or not robot_name or not system_name:
+        return jsonify({"error": "Missing parameters"}), 400
+
+    team = Team.query.filter_by(team_number=team_number).first()
+    if not team:
+        return jsonify({"error": "Team not found"}), 404
+
+    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
+    if not robot:
+        return jsonify({"error": "Robot not found"}), 404
+
+    system = System.query.filter_by(robot_id=robot.id, name=system_name).first()
+    if not system:
+        return jsonify({"error": "System not found"}), 404
+
+    return jsonify({
+        "assembly_url": system.assembly_url,
+        "access_key": system.access_key,
+        "secret_key": system.secret_key,
+        "partstudio_urls": system.partstudio_urls or []
+    }), 200
 
 @app.route("/api/update_system_settings", methods=["POST"])
 @jwt_required()

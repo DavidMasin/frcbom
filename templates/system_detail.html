@@ -429,7 +429,7 @@
         document.getElementById("settingsModal").classList.remove("hidden");
 
         // Pre-fill current values
-        fetch(`/api/update_system_settings?team_number={{ team_number }}&robot_name={{ current_robot }}&system_name={{ system.name }}`, {
+        fetch(`/api/system_settings?team_number={{ team_number }}&robot_name={{ current_robot }}&system_name={{ system.name }}`, {
             headers: {Authorization: `Bearer ${localStorage.getItem("jwt_token")}`}
         })
             .then(res => res.json())
@@ -464,8 +464,8 @@
     function saveAndFetchBOM() {
         const payload = {
             team_number: "{{ team_number }}",
-            robot_name: "{{ robot_name }}",
-            old_system_name: "{{ system_name }}",
+            robot_name: "{{ current_robot }}",
+            old_system_name: "{{ system.name }}",
             new_system_name: document.getElementById("renameInput").value,
             assembly_url: document.getElementById("assemblyUrlInput").value,
             access_key: document.getElementById("accessKeyInput").value,

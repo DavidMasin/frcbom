@@ -851,8 +851,6 @@ def fetch_bom():
     import json as jsonlib
 
     data = request.get_json()
-    app.logger.info("📥 Incoming BOM fetch request: %s", data)
-
     team_number = data.get("team_number")
     robot_name = data.get("robot_name")
     system_name = data.get("system_name")
@@ -875,94 +873,117 @@ def fetch_bom():
     if not system.assembly_url or not system.access_key or not system.secret_key:
         return jsonify({"error": "Missing required Onshape credentials or assembly URL"}), 400
 
-    try:
-        client = Client(configuration={
-            "base_url": "https://cad.onshape.com",
-            "access_key": system.access_key,
-            "secret_key": system.secret_key
-        })
-    except Exception as e:
-        return jsonify({"error": f"Onshape client init failed: {str(e)}"}), 500
+    def fetch_bom_from_url(url):
+        try:
+            client = Client(configuration={
+                "base_url": "https://cad.onshape.com",
+                "access_key": system.access_key,
+                "secret_key": system.secret_key
+            })
+            element = OnshapeElement(url)
+            did, wid, eid = element.did, element.wvmid, element.eid
 
-    try:
-        element = OnshapeElement(system.assembly_url)
-        did, wid, eid = element.did, element.wvmid, element.eid
+            bom_url = f"/api/v10/assemblies/d/{did}/w/{wid}/e/{eid}/bom"
+            headers = {'Accept': 'application/vnd.onshape.v1+json', 'Content-Type': 'application/json'}
+            response = client.api_client.request(
+                'GET',
+                url="https://cad.onshape.com" + bom_url,
+                query_params={"indented": False},
+                headers=headers,
+                body={}
+            )
+            raw = response.data
+            if isinstance(raw, (bytes, bytearray)):
+                return jsonlib.loads(raw.decode("utf-8"))
+            elif isinstance(raw, str):
+                return jsonlib.loads(raw)
+            return raw
+        except Exception as e:
+            raise RuntimeError(f"❌ Failed to fetch BOM from URL: {str(e)}")
 
-        bom_url = f"/api/v10/assemblies/d/{did}/w/{wid}/e/{eid}/bom"
-        headers = {'Accept': 'application/vnd.onshape.v1+json', 'Content-Type': 'application/json'}
-        response = client.api_client.request(
-            'GET',
-            url="https://cad.onshape.com" + bom_url,
-            query_params={"indented": False},
-            headers=headers,
-            body={}
-        )
-        bom_json = response.data
-        if isinstance(bom_json, (bytes, bytearray)):
-            bom_json = jsonlib.loads(bom_json.decode("utf-8"))
-        elif isinstance(bom_json, str):
-            bom_json = jsonlib.loads(bom_json)
-    except Exception as e:
-        return jsonify({"error": f"❌ Failed to fetch BOM: {str(e)}"}), 500
+    def extract_part_data(bom_json, old_bom_by_id):
+        def get_id(name):
+            for header in bom_json.get("headers", []):
+                if header.get("name") == name:
+                    return header.get("id")
+            return None
 
-    def find_id_by_name(bom_dict, name):
-        for header in bom_dict.get("headers", []):
-            if header.get('name') == name:
-                return header.get('id')
-        return None
+        part_name_id = get_id("Name")
+        desc_id = get_id("Description")
+        qty_id = get_id("Quantity") or get_id("QTY")
+        material_id = get_id("Material")
+        material_bom_id = get_id("Bom Material") or material_id
+        preproc_id = get_id("Pre Process")
+        proc1_id = get_id("Process 1")
+        proc2_id = get_id("Process 2")
 
-    part_name_id = find_id_by_name(bom_json, "Name")
-    desc_id = find_id_by_name(bom_json, "Description")
-    qty_id = find_id_by_name(bom_json, "Quantity") or find_id_by_name(bom_json, "QTY")
-    material_id = find_id_by_name(bom_json, "Material")
-    material_bom_id = find_id_by_name(bom_json, "Bom Material") or material_id
-    preproc_id = find_id_by_name(bom_json, "Pre Process")
-    proc1_id = find_id_by_name(bom_json, "Process 1")
-    proc2_id = find_id_by_name(bom_json, "Process 2")
+        part_list = []
+        for row in bom_json.get("rows", []):
+            values = row.get("headerIdToValue", {})
+            part_id = row.get("itemSource", {}).get("partId", "")
+            entry = {
+                "Part Name": values.get(part_name_id, "Unknown"),
+                "Description": values.get(desc_id, "Unknown"),
+                "Quantity": values.get(qty_id, "N/A"),
+                "Material": values.get(material_id, "Unknown"),
+                "materialBOM": values.get(material_bom_id, "Unknown"),
+                "Pre Process": values.get(preproc_id, "Unknown"),
+                "Process 1": values.get(proc1_id, "Unknown"),
+                "Process 2": values.get(proc2_id, "Unknown"),
+                "partId": part_id
+            }
 
-    # Get old BOM (if any) and index by partId
+            # Normalize dict values
+            for key in ["Material", "materialBOM"]:
+                if isinstance(entry[key], dict):
+                    entry[key] = entry[key].get("displayName", "Unknown")
+
+            # Restore progress
+            old = old_bom_by_id.get(part_id)
+            if old:
+                entry["done_preprocess"] = old.get("done_preprocess", 0)
+                entry["done_process1"] = old.get("done_process1", 0)
+                entry["done_process2"] = old.get("done_process2", 0)
+                entry["available_qty"] = old.get("available_qty", 0)
+
+            part_list.append(entry)
+
+        return part_list
+
+    # Load old BOM for carry-over of progress
     old_bom = system.bom_data or []
     old_bom_by_id = {p.get("partId"): p for p in old_bom}
 
-    bom_data_list = []
-    for row in bom_json.get("rows", []):
-        values = row.get("headerIdToValue", {})
-        part_id = row.get("itemSource", {}).get("partId", "")
-        part_entry = {
-            "Part Name": values.get(part_name_id, "Unknown") if part_name_id else "Unknown",
-            "Description": values.get(desc_id, "Unknown") if desc_id else "Unknown",
-            "Quantity": values.get(qty_id, "N/A") if qty_id else "N/A",
-            "Material": values.get(material_id, "Unknown") if material_id else "Unknown",
-            "materialBOM": values.get(material_bom_id, "Unknown") if material_bom_id else "Unknown",
-            "Pre Process": values.get(preproc_id, "Unknown") if preproc_id else "Unknown",
-            "Process 1": values.get(proc1_id, "Unknown") if proc1_id else "Unknown",
-            "Process 2": values.get(proc2_id, "Unknown") if proc2_id else "Unknown",
-            "partId": part_id
-        }
-
-        # Normalize dict values
-        for key in ["Material", "materialBOM"]:
-            if isinstance(part_entry[key], dict):
-                part_entry[key] = part_entry[key].get("displayName", "Unknown")
-
-        # Restore progress if exists
-        old = old_bom_by_id.get(part_id)
-        if old:
-            part_entry["done_preprocess"] = old.get("done_preprocess", 0)
-            part_entry["done_process1"] = old.get("done_process1", 0)
-            part_entry["done_process2"] = old.get("done_process2", 0)
-            part_entry["available_qty"] = old.get("available_qty", 0)
-
-        bom_data_list.append(part_entry)
-
-    system.bom_data = bom_data_list
-
     try:
+        # Main BOM
+        main_json = fetch_bom_from_url(system.assembly_url)
+        main_bom = extract_part_data(main_json, old_bom_by_id)
+
+        # Subassemblies
+        sub_boms = []
+        sub_names_to_remove = []
+        for sub_url in (system.subassembly_urls or []):
+            sub_json = fetch_bom_from_url(sub_url)
+            sub_parts = extract_part_data(sub_json, old_bom_by_id)
+            if sub_parts:
+                # Remove top-level part name if it exists in the main BOM
+                top_name = sub_parts[0].get("Assem") or sub_parts[0].get("Part Name")
+                if top_name:
+                    sub_names_to_remove.append(top_name)
+                sub_boms.extend(sub_parts)
+
+        # Filter out any placeholders from main BOM
+        cleaned_main = [p for p in main_bom if p.get("Part Name") not in sub_names_to_remove]
+
+        # Merge BOMs
+        final_bom = cleaned_main + sub_boms
+        system.bom_data = final_bom
         db.session.commit()
-        return jsonify({"msg": "✅ BOM successfully fetched and saved!", "bom_data": bom_data_list}), 200
+
+        return jsonify({"msg": "✅ BOM successfully fetched and saved!", "bom_data": final_bom}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": f"Failed to save BOM data: {str(e)}"}), 500
+        return jsonify({"error": f"Failed to process BOM: {str(e)}"}), 500
 
 
 # Global admin endpoints
@@ -1239,34 +1260,53 @@ def download_settings_dict():
     return jsonify({"settings_data_dict": settings_data_dict}), 200
 
 
-@app.route("/api/system_settings", methods=["GET"])
+@app.route("/api/system_settings", methods=["GET", "POST"])
 @jwt_required()
-def get_system_settings():
+def system_settings():
     team_number = request.args.get("team_number")
     robot_name = request.args.get("robot_name")
     system_name = request.args.get("system_name")
 
-    if not team_number or not robot_name or not system_name:
-        return jsonify({"error": "Missing parameters"}), 400
+    if not all([team_number, robot_name, system_name]):
+        return jsonify({"error": "Missing required parameters"}), 400
 
     team = Team.query.filter_by(team_number=team_number).first()
     if not team:
         return jsonify({"error": "Team not found"}), 404
 
-    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
-    if not robot:
-        return jsonify({"error": "Robot not found"}), 404
+    current_user = get_jwt_identity()
+    claims = get_jwt()
+    if current_user != team_number and not claims.get("is_global_admin"):
+        return jsonify({"error": "Unauthorized"}), 403
 
-    system = System.query.filter_by(robot_id=robot.id, name=system_name).first()
+    system = System.query.filter_by(team_id=team.id, robot_name=robot_name, system_name=system_name).first()
+    if request.method == "GET":
+        if not system:
+            return jsonify({"error": "System not found"}), 404
+
+        return jsonify({
+            "assembly_url": system.assembly_url,
+            "access_key": system.access_key,
+            "secret_key": system.secret_key,
+            "partstudio_urls": system.partstudio_urls or [],
+            "subassembly_urls": system.subassembly_urls or []  # ✅ Include this
+        })
+
+    # POST method — Save system settings
+    data = request.get_json()
     if not system:
-        return jsonify({"error": "System not found"}), 404
+        system = System(team_id=team.id, robot_name=robot_name, system_name=system_name)
+        db.session.add(system)
 
-    return jsonify({
-        "assembly_url": system.assembly_url,
-        "access_key": system.access_key,
-        "secret_key": system.secret_key,
-        "partstudio_urls": system.partstudio_urls or []
-    }), 200
+    system.assembly_url = data.get("assembly_url")
+    system.access_key = data.get("access_key")
+    system.secret_key = data.get("secret_key")
+    system.partstudio_urls = data.get("partstudio_urls", [])
+    system.subassembly_urls = data.get("subassembly_urls", [])  # ✅ Save it
+
+    db.session.commit()
+    return jsonify({"message": "System settings saved."})
+
 
 
 @app.route("/api/update_system_settings", methods=["POST"])

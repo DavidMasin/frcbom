@@ -42,7 +42,14 @@
 
         <label class="block mb-2 font-semibold">Assembly URL:</label>
         <input id="assemblyUrlInput" type="text" class="w-full border px-3 py-2 rounded mb-4"/>
-
+        <!-- Subassembly URLs -->
+        <label class="block text-sm font-semibold text-gray-800 mt-4">Subassembly URLs</label>
+        <div id="subassemblyUrls" class="space-y-2 mt-2 mb-4">
+            <!-- Dynamic inputs will be injected here -->
+        </div>
+        <button type="button" onclick="addSubassemblyUrl()" class="text-blue-600 hover:underline text-sm">
+            + Add Subassembly
+        </button>
         <label class="block mb-2 font-semibold">Part Studio URLs:</label>
         <div id="studioUrlsWrapper" class="space-y-2 mb-4">
             <input type="text" class="studio-input w-full border px-3 py-2 rounded"/>
@@ -431,6 +438,33 @@
     }
 
     document.addEventListener("DOMContentLoaded", loadAndRenderBOM);
+
+    function addSubassemblyUrl(value = "") {
+        const container = document.getElementById("subassemblyUrls");
+        const inputWrapper = document.createElement("div");
+        inputWrapper.className = "flex gap-2";
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "w-full px-2 py-1 border rounded";
+        input.value = value;
+
+        const removeBtn = document.createElement("button");
+        removeBtn.innerHTML = "✕";
+        removeBtn.type = "button";
+        removeBtn.className = "text-red-500 font-bold";
+        removeBtn.onclick = () => inputWrapper.remove();
+
+        inputWrapper.appendChild(input);
+        inputWrapper.appendChild(removeBtn);
+        container.appendChild(inputWrapper);
+    }
+
+    function getSubassemblyUrls() {
+        const inputs = document.querySelectorAll("#subassemblyUrls input");
+        return Array.from(inputs).map(input => input.value.trim()).filter(v => v);
+    }
+
 </script>
 <script type="importmap">
     {
@@ -464,6 +498,8 @@
                     input.value = url;
                     wrapper.appendChild(input);
                 });
+                (data.subassembly_urls || []).forEach(url => addSubassemblyUrl(url));
+
             });
     }
 
@@ -486,8 +522,11 @@
             assembly_url: document.getElementById("assemblyUrlInput").value,
             access_key: document.getElementById("accessKeyInput").value,
             secret_key: document.getElementById("secretKeyInput").value,
-            partstudio_urls: Array.from(document.getElementsByClassName("studio-input")).map(input => input.value)
+            partstudio_urls: Array.from(document.getElementsByClassName("studio-input")).map(input => input.value),
+            subassembly_urls:getSubassemblyUrls()
+
         };
+
 
         fetch("/api/update_system_settings", {
             method: "POST",

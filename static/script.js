@@ -1,4 +1,20 @@
 const API_BASE_URL = '/'; // Use relative path for API requests
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+const socket = io(API_BASE_URL, {
+    auth: {
+        token: localStorage.getItem('jwt_token')
+    }
+});
+
+// Listen for updates
+socket.on('qty_update', ({ partId, field, newValue }) => {
+    const part = window.bomData.find(p => p.partId === partId);
+    if (part) {
+        part[field] = newValue;
+        renderBOM(window.bomData);  // or just update that one cell if you prefer
+    }
+});
 
 /**
  * Main initialization function that runs when the DOM is fully loaded.
@@ -214,43 +230,6 @@ function handleLogout() {
 }
 
 
-
-
-async function setupBOMView(robotName, systemName) {
-    const bomData = await fetchBOMDataFromServer(robotName, systemName);
-    if (bomData) {
-        localStorage.setItem('current_bom', JSON.stringify(bomData));
-        const currentFilter = localStorage.getItem('current_filter') || 'All';
-        handleFilterBOM(currentFilter);
-    }
-}
-
-
-async function fetchBOMDataFromServer(robotName, system = 'Main') {
-    const teamNum = localStorage.getItem('team_number');
-    const token = getAuthToken();
-    if (!teamNum || !robotName) return null;
-    try {
-        const response = await fetch(`${API_BASE_URL}api/robot_exists?team_number=${teamNumber}`, {
-            method: "GET",
-            headers: {
-                "Authorization": `Bearer ${localStorage.getItem("jwt_token")}`,
-                "Content-Type": "application/json"
-            }
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-            return data.bom_data;
-        }
-        console.error(`Failed to get BOM for ${robotName}/${system}:`, data.error);
-        return null;
-    } catch (error) {
-        console.error('Fetch BOM Data Error:', error);
-        return null;
-    }
-}
-
 async function savePartQuantities(part) {
     const modal = document.getElementById('editModal');
     const teamNumber = localStorage.getItem('team_number');
@@ -277,6 +256,9 @@ async function savePartQuantities(part) {
         updates: updates
     };
 
+    // Yellow when started locally
+    highlightPartRow(part.partId, 'yellow');
+
     try {
         const response = await fetch(`${API_BASE_URL}api/update_part`, {
             method: 'POST',
@@ -288,19 +270,328 @@ async function savePartQuantities(part) {
         });
         const data = await response.json();
         if (response.ok) {
-            alert('Part updated successfully!');
+            // Green if update successful
+            highlightPartRow(part.partId, 'green');
+            socket.emit('qty_update', {
+                team_number: teamNumber,
+                robot_name: robotName,
+                system_name: systemName,
+                partId: part.partId,
+                updates: updates
+            });
             modal.style.display = 'none';
-            // Refresh BOM view
-            await setupBOMView(robotName, systemName);
         } else {
             alert(`Error updating part: ${data.error}`);
+            highlightPartRow(part.partId, 'red');
         }
     } catch (error) {
         console.error('Error saving part quantities:', error);
         alert('An error occurred while saving the part quantities.');
+        highlightPartRow(part.partId, 'red');
     }
 }
 
+// Live update receiver
+socket.on('qty_update', ({ partId, updates }) => {
+    const part = window.bomData.find(p => p.partId === partId);
+    if (part) {
+        Object.assign(part, updates);
+        highlightPartRow(partId, 'green');
+        renderBOM(window.bomData);
+    }
+});
+
+// Color highlight
+function highlightPartRow(partId, color) {
+    const row = document.querySelector(`[data-part-id="${partId}"]`);
+    if (row) {
+        row.style.backgroundColor = color;
+        setTimeout(() => {
+            row.style.backgroundColor = '';
+        }, 1000);
+    }
+}
+function applyFilter(name) {
+    currentFilter = name;
+    renderBOM();
+}
+
+function getCurrentProcessStatus(part, qty) {
+    const donePre = parseInt(part.done_preprocess || 0);
+    const doneP1 = parseInt(part.done_process1 || 0);
+    const doneP2 = parseInt(part.done_process2 || 0);
+    const pp = part["Pre Process"]?.trim();
+    const p1 = part["Process 1"]?.trim();
+    const p2 = part["Process 2"]?.trim();
+
+    if (pp && donePre < qty) return pp;
+    if (p1 && (!pp || donePre >= qty) && doneP1 < qty) return p1;
+    if (p2 && (!p1 || doneP1 >= qty) && doneP2 < qty) return p2;
+    return null;
+}
+
+
+function getStatusColor(part, qty) {
+    const donePre = parseInt(part.done_preprocess || 0);
+    const doneP1 = parseInt(part.done_process1 || 0);
+    const doneP2 = parseInt(part.done_process2 || 0);
+    const pp = part["Pre Process"]?.trim();
+    const p1 = part["Process 1"]?.trim();
+    const p2 = part["Process 2"]?.trim();
+
+    if (pp || p1 || p2) {
+        if ((p2 && doneP2 >= qty) || (!p2 && p1 && doneP1 >= qty) || (!p2 && !p1 && donePre >= qty)) {
+            return "bg-green-100";
+        } else if (donePre > 0 || doneP1 > 0 || doneP2 > 0) {
+            return "bg-yellow-100";
+        }
+    }
+    return "bg-white";
+}
+document.getElementById("materialDropdown")?.addEventListener("change", function () {
+    const selectedMaterial = this.value;
+    if (selectedMaterial) {
+        downloadAllOfMaterial(selectedMaterial);
+        this.value = ""; // Reset dropdown after download starts
+    }
+});
+
+function populateMaterialDropdown() {
+    const dropdown = document.getElementById("materialDropdown");
+    dropdown.innerHTML = `<option value="">-- Select Material --</option>`;
+
+    const shownParts = fullBOM.filter(part => {
+        const p1 = part["Process 1"]?.trim();
+        const p2 = part["Process 2"]?.trim();
+        const clean = str => !str || str.trim().toUpperCase() === "N/A";
+
+        const isCOTS = clean(part["Pre Process"]) && clean(p1) && clean(p2);
+        const isInHouse = !isCOTS;
+
+        if (!currentFilter) return true;
+        if (currentFilter === "COTS") return isCOTS;
+        if (currentFilter === "InHouse") return isInHouse;
+        return [part["Pre Process"], p1, p2].includes(currentFilter);
+    });
+
+    const materials = new Set();
+    shownParts.forEach(part => {
+        const mat = part.materialBOM || part.Material || null;
+        if (mat) materials.add(mat.trim());
+    });
+
+    [...materials].sort().forEach(mat => {
+        const option = document.createElement("option");
+        option.value = mat;
+        option.textContent = mat;
+        dropdown.appendChild(option);
+    });
+}
+
+async function downloadAllOfMaterial(materialName) {
+    if (!materialName) return;
+
+    const shownParts = fullBOM.filter(part => {
+        const p1 = part["Process 1"]?.trim();
+        const p2 = part["Process 2"]?.trim();
+        const isCOTS = !part["Pre Process"] && !p1 && !p2;
+        const isInHouse = !isCOTS;
+
+        if (!currentFilter) return true;
+        if (currentFilter === "COTS") return isCOTS;
+        if (currentFilter === "InHouse") return isInHouse;
+        return [part["Pre Process"], p1, p2].includes(currentFilter);
+    });
+
+    const filtered = shownParts.filter(p => {
+        const mat = p.materialBOM || p.Material || "";
+        return mat.trim() === materialName.trim();
+    });
+
+    for (const part of filtered) {
+        const partId = part.partId;
+        const qty = parseInt(part.Quantity || 1);
+        const name = part["Part Name"]?.trim().replace(/[^a-zA-Z0-9-_]/g, "_") || "Unnamed";
+        const mat = materialName.replace(/[^a-zA-Z0-9-_]/g, "_");
+        const curProcess = getCurrentProcessStatus(part, qty);
+        const fileType = (machineMap[curProcess] || "STEP").toUpperCase();
+
+        const filename = `${name}x${qty}-${mat}.${fileType.toLowerCase()}`;
+
+        const res = await fetch("/api/download_cad", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                team_number: teamNumber,
+                robot: robotName,
+                system: systemName,
+                id: partId,
+                format: fileType
+            })
+        });
+
+        if (!res.ok) {
+            const err = await res.json();
+            alert(err.error || "Download failed");
+            return;
+        }
+
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+
+        const sanitizedName = name.replace(/[<>:"/\\|?*\n\r]+/g, "_"); // Avoid illegal characters
+        const fileName = `${sanitizedName} x${qty} - ${mat}.${fileType.toLowerCase()}`;
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }
+}
+
+function updateProcessQty(partId, key, newQty) {
+    const part = fullBOM.find(p => p.partId === partId);
+    if (part) part[key] = newQty;
+    fetch("/api/save_bom_for_robot_system", {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            team_number: teamNumber,
+            robot_name: robotName,
+            system_name: systemName,
+            bom_data: fullBOM
+        })
+    });
+}
+
+async function downloadPartCad(partId, fileType, partName = "Part", qty = 1, material = "Material") {
+    if (!partId) return alert("Part ID missing");
+
+    const res = await fetch("/api/download_cad", {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            team_number: teamNumber,
+            robot: robotName,
+            system: systemName,
+            id: partId,
+            format: fileType
+        })
+    });
+
+    if (!res.ok) {
+        const err = await res.json();
+        alert(err.error || "Download failed");
+        return;
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    const sanitizedName = partName.replace(/[<>:"/\\|?*\n\r]+/g, "_"); // Avoid illegal characters
+    const fileName = `${sanitizedName} x${qty} - ${material}.${fileType.toLowerCase()}`;
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
+
+
+function renderCard(part) {
+    const partId = part.partId;
+    const qty = parseInt(part.Quantity || 0);
+    const curProcess = getCurrentProcessStatus(part, qty);
+    const bg = getStatusColor(part, qty);
+    const p1 = part["Process 1"]?.trim();
+    const p2 = part["Process 2"]?.trim();
+
+    const fileType = machineMap[curProcess] || "STEP";
+    const name = part["Part Name"] || "Unnamed";
+    const mat = part.materialBOM || part.Material || "N/A";
+    const desc = part.Description || "N/A";
+    const donePre = part.done_preprocess || 0;
+    const doneP1 = part.done_process1 || 0;
+    const doneP2 = part.done_process2 || 0;
+    const avail = part.available_qty || 0;
+
+    const clean = str => !str || str.trim().toUpperCase() === "N/A";
+    const isCOTS = clean(part["Pre Process"]) && clean(p1) && clean(p2);
+    const isInHouse = !isCOTS;
+
+    return `
+        <div class="rounded border shadow-md p-4 relative hover:shadow-lg transition ${bg}">
+            <h3 class="text-lg font-bold text-blue-700">${name}</h3>
+            <p><strong>Material:</strong> ${mat}</p>
+            <p><strong>Description:</strong> ${desc}</p>
+            <p><strong>Quantity Needed:</strong> ${qty}</p>
+            ${isInHouse && curProcess ? `<p class="text-sm text-gray-600 italic">🔧 Current Process: ${curProcess}</p>` : ""}
+            ${part["Pre Process"] ? `<label>✅ Done ${part["Pre Process"]}: <input type="number" value="${donePre}" onchange="updateProcessQty('${partId}', 'done_preprocess', this.value)" class="border px-2 py-1 rounded w-20" /></label><br/>` : ""}
+            ${p1 ? `<label>✅ Done ${p1}: <input type="number" value="${doneP1}" onchange="updateProcessQty('${partId}', 'done_process1', this.value)" class="border px-2 py-1 rounded w-20" /></label><br/>` : ""}
+            ${p2 ? `<label>✅ Done ${p2}: <input type="number" value="${doneP2}" onchange="updateProcessQty('${partId}', 'done_process2', this.value)" class="border px-2 py-1 rounded w-20" /></label><br/>` : ""}
+            ${isCOTS ? `<label>📦 Qty In Stock: <input type="number" value="${avail}" onchange="updateProcessQty('${partId}', 'available_qty', this.value)" class="border px-2 py-1 rounded w-20" /></label>` : ""}
+            <button title="Download CAD" class="absolute top-2 right-2 text-blue-600 hover:text-blue-900" <button onclick="downloadPartCad('${partId}', '${fileType}', '${name}', '${part.materialBOM}')">
+                <i class="fas fa-download fa-lg"></i>
+            </button>
+            <button class="text-green-600 hover:text-green-900" onclick="loadPartViewer('${partId}')">
+                <i class="fas fa-eye fa-lg"></i>
+            </button>
+        </div>
+    `;
+}
+
+function renderBOM() {
+    const grid = document.getElementById("bomPartsGrid");
+    const noMsg = document.getElementById("noPartsMessage");
+    grid.innerHTML = '';
+
+    const shownParts = fullBOM
+        .filter(part => {
+            const p1 = part["Process 1"]?.trim();
+            const p2 = part["Process 2"]?.trim();
+            const isCOTS = !part["Pre Process"] && !p1 && !p2;
+            const isInHouse = !isCOTS;
+
+            if (!currentFilter) return true;
+            if (currentFilter === "COTS") return isCOTS;
+            if (currentFilter === "InHouse") return isInHouse;
+            return [part["Pre Process"], p1, p2].includes(currentFilter);
+        })
+        .sort((a, b) => (a["Part Name"] || "").localeCompare(b["Part Name"] || ""));
+
+    shownParts.forEach(part => {
+        grid.innerHTML += renderCard(part);
+    });
+
+    noMsg.style.display = shownParts.length === 0 ? "block" : "none";
+    populateMaterialDropdown();
+}
+
+async function loadAndRenderBOM() {
+    const res = await fetch(`/api/get_bom?team_number=${teamNumber}&robot=${robotName}&system=${systemName}`, {
+        headers: {Authorization: `Bearer ${token}`}
+    });
+    const data = await res.json();
+    if (!res.ok || !data.bom_data) return;
+    fullBOM = data.bom_data;
+    renderBOM();
+    populateMaterialDropdown();
+}
 
 // --- BOM Display and Filtering ---
 

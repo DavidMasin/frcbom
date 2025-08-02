@@ -893,7 +893,7 @@ def fetch_bom():
         response = client.api_client.request(
             'GET',
             url="https://cad.onshape.com" + bom_url,
-            query_params={"indented": True},
+            query_params={"indented": False},
             headers=headers,
             body={}
         )

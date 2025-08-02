@@ -167,7 +167,10 @@
         const shownParts = fullBOM.filter(part => {
             const p1 = part["Process 1"]?.trim();
             const p2 = part["Process 2"]?.trim();
-            const isCOTS = !part["Pre Process"] && !p1 && !p2;
+            const clean = str => !str || str.trim().toUpperCase() === "N/A";
+
+            const isCOTS = clean(part["Pre Process"]) && clean(p1) && clean(p2);
+            const isInHouse = !isCOTS;
             const isInHouse = !isCOTS;
 
             if (!currentFilter) return true;

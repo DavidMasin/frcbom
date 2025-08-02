@@ -1505,38 +1505,13 @@ def debug_system_url():
     })
 
 
-@socketio.on("update_qty")
-def handle_update_qty(data):
-    team_number = data.get("team_number")
-    robot_name = data.get("robot_name")
-    system_name = data.get("system_name")
-    part_id = data.get("partId")
-    field = data.get("field")
-    new_value = data.get("newValue")
+@socketio.on('qty_update')
+def handle_qty_update(data):
+    print("📦 Received qty_update:", data)
 
-    system = (
-        db.session.query(System)
-        .join(Robot)
-        .join(Team)
-        .filter(Team.team_number == team_number,
-                Robot.name == robot_name,
-                System.name == system_name)
-        .first()
-    )
-    if not system or not part_id or field not in ["preProcessQuantity", "process1Quantity", "process2Quantity"]:
-        return
+    # Just echo it back to all for now
+    emit("qty_update", data, broadcast=True)
 
-    bom = system.bom_data or []
-    for part in bom:
-        if part.get("partId") == part_id:
-            part[field] = new_value
-            break
-
-    db.session.commit()
-
-    # Broadcast the update to everyone in that system room
-    room = f"{team_number}/{robot_name}/{system_name}"
-    emit("qty_update", {"partId": part_id, "field": field, "newValue": new_value}, room=room, include_self=False)
 @socketio.on('join_room')
 def on_join(data):
     team_number = data.get("team_number")
@@ -1544,7 +1519,9 @@ def on_join(data):
     system_name = data.get("system_name")
     room = f"{team_number}/{robot_name}/{system_name}"
     join_room(room)
-
+@socketio.on('connect')
+def on_connect():
+    print("✅ Client connected")
 
 def run():
     print("✅ Flask app is starting via socketio.run() (Gunicorn)")

@@ -1,19 +1,19 @@
 const API_BASE_URL = '/'; // Use relative path for API requests
 
-const socket = io(API_BASE_URL, {
+const socket = io("/", {
     auth: {
-        token: localStorage.getItem('jwt_token')
+        token: localStorage.getItem("jwt_token")
     }
 });
 
-// Listen for updates
-socket.on('qty_update', ({ partId, field, newValue }) => {
-    const part = window.bomData.find(p => p.partId === partId);
-    if (part) {
-        part[field] = newValue;
-        renderBOM(window.bomData);  // or just update that one cell if you prefer
-    }
+socket.on("connect", () => {
+    console.log("✅ Socket connected");
 });
+
+socket.on("qty_update", (data) => {
+    console.log("📡 Received qty_update via socket:", data);
+});
+
 
 /**
  * Main initialization function that runs when the DOM is fully loaded.

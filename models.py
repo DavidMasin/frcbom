@@ -52,6 +52,8 @@ class System(db.Model):
     robot_id = db.Column(db.Integer, db.ForeignKey('robot.id'), nullable=False)
     robot = db.relationship('Robot', back_populates='systems')
     subassembly_urls = db.Column(JSON)
+    thumbnail_url = db.Column(db.String)
+
 
 
 

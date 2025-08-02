@@ -4,23 +4,27 @@
 
 <div class="mb-6">
     <a href="{{ url_for('team_admin_robot', team_number=team_number, robot_name=current_robot) }}"
-       class="text-sm text-blue-300 hover:underline">
+       class="text-sm text-blue-300 hover:underline block mb-2">
         &larr; Back to {{ current_robot }} Details
     </a>
-    {% if filter_system != "Main" %}
-    <span id="systemNameHeader"
-          contenteditable="true"
-          spellcheck="false"
-          onblur="submitSystemNameEdit(this)">
-    {{ filter_system }}
-    </span>
-    {% else %}
-    <span>{{ filter_system }}</span>
-    {% endif %}
-    BOM 🖉
 
-
+    <h1 class="text-3xl font-bold text-white flex items-center gap-2">
+        {% if filter_system != "Main" %}
+        <span id="systemNameHeader"
+              contenteditable="true"
+              spellcheck="false"
+              onblur="submitSystemNameEdit(this)"
+              class="outline-none border-b border-dashed border-transparent hover:border-blue-400 focus:border-blue-500 focus:outline-none px-1">
+            {{ filter_system }}
+        </span>
+        {% else %}
+        <span>{{ filter_system }}</span>
+        {% endif %}
+        <span class="text-white">BOM</span>
+        <span class="text-blue-400 text-xl">🖉</span>
+    </h1>
 </div>
+
 {% if is_admin %}
 <div class="mb-6">
     <button onclick="openSettingsModal()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">⚙️ Edit
@@ -35,9 +39,6 @@
             &times;
         </button>
         <h2 class="text-xl font-bold mb-4">🛠 Edit System Details</h2>
-
-        <label class="block mb-2 font-semibold">Rename System:</label>
-        <input id="renameInput" type="text" class="w-full border px-3 py-2 rounded mb-4" value="{{ system.name }}"/>
 
         <label class="block mb-2 font-semibold">Assembly URL:</label>
         <input id="assemblyUrlInput" type="text" class="w-full border px-3 py-2 rounded mb-4"/>
@@ -477,8 +478,7 @@
         const payload = {
             team_number: "{{ team_number }}",
             robot_name: "{{ current_robot }}",
-            old_system_name: "{{ system.name }}",
-            new_system_name: document.getElementById("renameInput").value,
+            system_name: "{{ system.name }}",
             assembly_url: document.getElementById("assemblyUrlInput").value,
             access_key: document.getElementById("accessKeyInput").value,
             secret_key: document.getElementById("secretKeyInput").value,
@@ -510,13 +510,13 @@
                     body: JSON.stringify({
                         team_number: payload.team_number,
                         robot_name: payload.robot_name,
-                        system_name: payload.new_system_name
+                        system_name: payload.system_name
                     })
                 })
                     .then(res => res.json())
                     .then(data => {
                         if (data.success) {
-                            window.location.href = `/${payload.team_number}/Admin/${payload.robot_name}/${payload.new_system_name}`;
+                            window.location.href = `/${payload.team_number}/Admin/${payload.robot_name}/${payload.system_name}`;
                         } else {
                             alert("❌ Failed to fetch BOM: " + (data.error || "Unknown error"));
                         }

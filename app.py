@@ -850,7 +850,6 @@ def fetch_bom():
     from onshape_client.client import Client
     from onshape_client.onshape_url import OnshapeElement
     import json as jsonlib
-    import re
     import traceback
 
     def safe_json(data):
@@ -913,7 +912,8 @@ def fetch_bom():
         url = f"https://cad.onshape.com/api/v12/documents/d/{document_id}/w/{workspace_id}/contents"
         r = client.api_client.request('GET', url=url, query_params={})
         content = safe_json(r.data)
-        assembly_map = {el["id"]: el["name"] for el in content.get("elements", []) if el.get("elementType") == "ASSEMBLY"}
+        assembly_map = {el["id"]: el["name"] for el in content.get("elements", []) if
+                        el.get("elementType") == "ASSEMBLY"}
         print(f"🔧 Found subassemblies: {assembly_map}", flush=True)
         return assembly_map
 
@@ -1367,7 +1367,6 @@ def system_settings():
     return jsonify({"message": "System settings saved."})
 
 
-
 @app.route("/api/update_system_settings", methods=["POST"])
 @jwt_required()
 def update_system_settings():
@@ -1456,7 +1455,7 @@ def delete_robot(robot_id):
 
 
 @app.route('/<team_number>/delete_machine/<int:machine_id>', methods=['POST'])
-def delete_machine_web(team_number, machine_id):
+def delete_machine_web(team_number, machine_id, isAdmin):
     machine = Machine.query.get_or_404(machine_id)
     if machine.icon_file:
         file_path = os.path.join(app.root_path, 'static', machine.icon_file)
@@ -1467,7 +1466,10 @@ def delete_machine_web(team_number, machine_id):
                 pass
     db.session.delete(machine)
     db.session.commit()
-    return redirect(f"/{team_number}/manage_machines")
+    if isAdmin:
+        return redirect(f"/{team_number}/Admin/machines")
+    else:
+        return redirect(f"/{team_number}/machines")
 
 
 # SocketIO events

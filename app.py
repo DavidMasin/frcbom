@@ -859,29 +859,23 @@ def fetch_bom():
     system_name = data.get("system")
 
     if system_name == "Main":
-        app.logger.warning("❌ Attempted to fetch BOM to 'Main' — not allowed.")
         return jsonify({"error": "Cannot fetch BOM into 'Main'. Select a specific system."}), 400
 
     team = Team.query.filter_by(team_number=team_number).first()
     if not team:
-        app.logger.warning("❌ Team not found: %s", team_number)
         return jsonify({"error": "Team not found"}), 404
 
     robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
     if not robot:
-        app.logger.warning("❌ Robot not found: %s", robot_name)
         return jsonify({"error": "Robot not found"}), 404
 
     system = System.query.filter_by(robot_id=robot.id, name=system_name).first()
     if not system:
-        app.logger.warning("❌ System not found: %s", system_name)
         return jsonify({"error": "System not found"}), 404
 
     if not system.assembly_url or not system.access_key or not system.secret_key:
-        app.logger.warning("❌ Missing credentials or assembly_url for system %s", system_name)
         return jsonify({"error": "Missing required Onshape credentials or assembly URL"}), 400
 
-    app.logger.info("🔐 Initializing Onshape client...")
     try:
         client = Client(configuration={
             "base_url": "https://cad.onshape.com",
@@ -889,15 +883,11 @@ def fetch_bom():
             "secret_key": system.secret_key
         })
     except Exception as e:
-        app.logger.error("❌ Onshape client init failed: %s", str(e))
         return jsonify({"error": f"Onshape client init failed: {str(e)}"}), 500
 
-    app.logger.info("📡 Fetching BOM from Onshape for %s/%s", robot_name, system_name)
     try:
         element = OnshapeElement(system.assembly_url)
-        did = element.did
-        wid = element.wvmid
-        eid = element.eid
+        did, wid, eid = element.did, element.wvmid, element.eid
 
         bom_url = f"/api/v10/assemblies/d/{did}/w/{wid}/e/{eid}/bom"
         headers = {'Accept': 'application/vnd.onshape.v1+json', 'Content-Type': 'application/json'}
@@ -908,17 +898,12 @@ def fetch_bom():
             headers=headers,
             body={}
         )
-        print(response.data)
         bom_json = response.data
-
-        # Handle all possible types from Onshape response
         if isinstance(bom_json, (bytes, bytearray)):
             bom_json = jsonlib.loads(bom_json.decode("utf-8"))
         elif isinstance(bom_json, str):
             bom_json = jsonlib.loads(bom_json)
-
     except Exception as e:
-        app.logger.error("❌ BOM fetch failed: %s", str(e))
         return jsonify({"error": f"❌ Failed to fetch BOM: {str(e)}"}), 500
 
     def find_id_by_name(bom_dict, name):
@@ -936,9 +921,14 @@ def fetch_bom():
     proc1_id = find_id_by_name(bom_json, "Process 1")
     proc2_id = find_id_by_name(bom_json, "Process 2")
 
+    # Get old BOM (if any) and index by partId
+    old_bom = system.bom_data or []
+    old_bom_by_id = {p.get("partId"): p for p in old_bom}
+
     bom_data_list = []
     for row in bom_json.get("rows", []):
         values = row.get("headerIdToValue", {})
+        part_id = row.get("itemSource", {}).get("partId", "")
         part_entry = {
             "Part Name": values.get(part_name_id, "Unknown") if part_name_id else "Unknown",
             "Description": values.get(desc_id, "Unknown") if desc_id else "Unknown",
@@ -948,24 +938,31 @@ def fetch_bom():
             "Pre Process": values.get(preproc_id, "Unknown") if preproc_id else "Unknown",
             "Process 1": values.get(proc1_id, "Unknown") if proc1_id else "Unknown",
             "Process 2": values.get(proc2_id, "Unknown") if proc2_id else "Unknown",
-            "partId": row.get("itemSource", {}).get("partId", "")
+            "partId": part_id
         }
-        if isinstance(part_entry["Material"], dict):
-            part_entry["Material"] = part_entry["Material"].get("displayName", "Unknown")
-        if isinstance(part_entry["materialBOM"], dict):
-            part_entry["materialBOM"] = part_entry["materialBOM"].get("displayName", "Unknown")
+
+        # Normalize dict values
+        for key in ["Material", "materialBOM"]:
+            if isinstance(part_entry[key], dict):
+                part_entry[key] = part_entry[key].get("displayName", "Unknown")
+
+        # Restore progress if exists
+        old = old_bom_by_id.get(part_id)
+        if old:
+            part_entry["done_preprocess"] = old.get("done_preprocess", 0)
+            part_entry["done_process1"] = old.get("done_process1", 0)
+            part_entry["done_process2"] = old.get("done_process2", 0)
+            part_entry["available_qty"] = old.get("available_qty", 0)
+
         bom_data_list.append(part_entry)
 
-    app.logger.info("✅ Parsed %d BOM parts. Saving...", len(bom_data_list))
-
     system.bom_data = bom_data_list
+
     try:
         db.session.commit()
-        app.logger.info("✅ BOM saved to DB for %s/%s", robot_name, system_name)
         return jsonify({"msg": "✅ BOM successfully fetched and saved!", "bom_data": bom_data_list}), 200
     except Exception as e:
         db.session.rollback()
-        app.logger.error("❌ Failed to save BOM: %s", str(e))
         return jsonify({"error": f"Failed to save BOM data: {str(e)}"}), 500
 
 

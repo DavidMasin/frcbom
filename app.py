@@ -125,7 +125,6 @@ def team_admin_bom(team_number, robot_name, system):
                            system=system_obj)  # ✅ Pass this in
 
 
-
 @app.route("/<team_number>/<robot_name>/<system>")
 def team_bom_filtered(team_number, robot_name, system):
     team = Team.query.filter_by(team_number=str(team_number)).first()
@@ -1180,7 +1179,8 @@ def view_gltf():
             )
 
             if parts_res.status_code != 200:
-                return jsonify({"error": "Failed to fetch part list", "status": parts_res.status_code, "details": parts_res.text}), parts_res.status_code
+                return jsonify({"error": "Failed to fetch part list", "status": parts_res.status_code,
+                                "details": parts_res.text}), parts_res.status_code
 
             for part in parts_res.json():
                 if part["partId"] == part_id:
@@ -1238,6 +1238,7 @@ def download_settings_dict():
         settings_data_dict[team.team_number] = team_settings
     return jsonify({"settings_data_dict": settings_data_dict}), 200
 
+
 @app.route("/api/system_settings", methods=["GET"])
 @jwt_required()
 def get_system_settings():
@@ -1267,14 +1268,20 @@ def get_system_settings():
         "partstudio_urls": system.partstudio_urls or []
     }), 200
 
+
 @app.route("/api/update_system_settings", methods=["POST"])
 @jwt_required()
 def update_system_settings():
     data = request.get_json()
     team_number = data.get("team_number")
     robot_name = data.get("robot_name")
-    system_name = data.get("system_name")
+    old_system_name = data.get("old_system_name")
+    new_system_name = data.get("new_system_name")
 
+    if old_system_name == "":
+        system_name = data.get("system_name")
+    else:
+        system_name = old_system_name
     current_user = get_jwt_identity()
     claims = get_jwt()
     if current_user != team_number and not claims.get("is_global_admin"):
@@ -1287,6 +1294,8 @@ def update_system_settings():
     if not system:
         return jsonify({"error": "System not found"}), 404
 
+    if old_system_name != "":
+        system.name = new_system_name
     system.assembly_url = data.get("assembly_url")
     system.access_key = data.get("access_key")
     system.secret_key = data.get("secret_key")
@@ -1294,7 +1303,6 @@ def update_system_settings():
 
     db.session.commit()
     return jsonify({"success": True})
-
 
 
 # Web endpoints for form actions (for completeness)

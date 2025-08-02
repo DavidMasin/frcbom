@@ -71,18 +71,30 @@
 {% endif %}
 
 <!-- 🧹 BOM Filter Buttons -->
-<div class="mb-6">
+<div class="mb-6 flex flex-wrap gap-4 items-center">
+    <!-- Filter Buttons -->
     <div class="flex flex-wrap gap-2" id="filterButtons">
-        <button class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600" onclick="applyFilter(null)">All
-            Parts
+        <button class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600" onclick="applyFilter(null)">
+            All Parts
         </button>
-        <button class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600" onclick="applyFilter('COTS')">COTS
+        <button class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600" onclick="applyFilter('COTS')">
+            COTS
         </button>
         <button class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600" onclick="applyFilter('InHouse')">
             In-House
         </button>
     </div>
+
+    <!-- Machine Filter Dropdown -->
+    <div>
+        <label for="machineFilter" class="text-white text-sm mr-2">Machine:</label>
+        <select id="machineFilter"
+                class="bg-white text-gray-900 border border-gray-300 rounded px-3 py-2">
+            <option value="All">All</option>
+        </select>
+    </div>
 </div>
+
 <!-- 🧲 Material Download Dropdown -->
 <div class="mb-6">
     <label for="materialDropdown" class="block text-sm font-medium text-white mb-2">

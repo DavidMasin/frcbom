@@ -30,9 +30,9 @@
     {% if robot.systems %}
     <div class="space-y-4">
         {% for system in robot.systems %}
-        <a href="{{ url_for('team_admin_bom', team_number=team.team_number, robot_name=robot.name, system=system.name) }}"
-           class="group block bg-gray-900/70 hover:bg-gray-700/80 border border-gray-700 rounded-lg p-4 transition-all duration-200">
-            <div class="flex items-center gap-4">
+        <div class="group block bg-gray-900/70 hover:bg-gray-700/80 border border-gray-700 rounded-lg p-4 transition-all duration-200">
+            <div class="flex items-center gap-4 cursor-pointer"
+                 onclick="window.location.href='{{ url_for('team_admin_bom', team_number=team.team_number, robot_name=robot.name, system=system.name) }}'">
                 {% if system.thumbnail_url %}
                 <img src="{{ system.thumbnail_url }}" alt="Thumbnail" class="w-24 h-16 rounded object-cover">
                 {% endif %}
@@ -40,20 +40,18 @@
             </div>
             <div class="flex gap-2 mt-2 ml-28">
                 <!-- Show Full Assembly -->
-                <button onclick="viewSystemAssembly('{{ team.team_number }}', '{{ robot.name }}', '{{ system.name }}', false)"
+                <button onclick="event.stopPropagation(); viewSystemAssembly('{{ team.team_number }}', '{{ robot.name }}', '{{ system.name }}', false)"
                         class="text-blue-400 hover:text-blue-600 text-lg" title="Show Full Assembly">
                     <i class="fas fa-eye"></i>
                 </button>
 
                 <!-- Show Completed Parts Only -->
-                <button onclick="viewSystemAssembly('{{ team.team_number }}', '{{ robot.name }}', '{{ system.name }}', true)"
+                <button onclick="event.stopPropagation(); viewSystemAssembly('{{ team.team_number }}', '{{ robot.name }}', '{{ system.name }}', true)"
                         class="text-green-400 hover:text-green-600 text-lg" title="Show Completed Parts Only">
                     <i class="fas fa-search"></i>
                 </button>
             </div>
-
-
-        </a>
+        </div>
         {% endfor %}
     </div>
     {% else %}
@@ -63,6 +61,7 @@
         <p class="text-gray-500 mt-1">Add a system to begin assembling your robot.</p>
     </div>
     {% endif %}
+
 </div>
 {% endblock %}
 {% block scripts %}

@@ -1133,9 +1133,9 @@ def viewer_gltf_batch():
         "distanceTolerance": 0.01,
         "maximumChordLength": 0.01,
         "allowFaultyParts": False,
-        "advancedParams": {
-            "partIds": part_id_string
-        }
+        # "advancedParams": {
+        #     "partIds": part_id_string
+        # }
     }
 
     start_res = requests.post(start_url, json=payload, auth=auth, headers={"Accept": "application/json"})

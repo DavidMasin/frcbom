@@ -48,8 +48,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById("settingsMessage").textContent =
                 data.msg || data.error || "✅ BOM fetched successfully!";
         });
-    } else {
-        console.warn("⚠️ fetchBom button NOT found on this page");
     }
 
     // Page-specific initializations
@@ -102,7 +100,7 @@ function parseURL() {
  * It also handles routing based on the URL structure.
  */
 async function initializeDashboard() {
-    const { teamNumber, robotName, system, admin } = parseURL();
+    const {teamNumber, robotName, system, admin} = parseURL();
     const currentPath = window.location.pathname;
 
     // 🚫 Avoid running this logic on pages where robotName isn't valid
@@ -210,8 +208,6 @@ function handleLogout() {
     localStorage.clear();
     window.location.href = '/';
 }
-
-
 
 
 async function setupBOMView(robotName, systemName) {
@@ -542,17 +538,18 @@ function renderParts(parts) {
 }
 
 
-
 // Filtering logic
-document.getElementById("machineFilter").addEventListener("change", (e) => {
-    const selected = e.target.value;
-    if (selected === "All") {
-        renderParts(allParts);
-    } else {
-        const filtered = allParts.filter(p =>
-            p["Process 1"] === selected || p["Process 2"] === selected
-        );
-        renderParts(filtered);
-    }
-});
+if (document.getElementById("machineFilter")) {
+    document.getElementById("machineFilter").addEventListener("change", (e) => {
+        const selected = e.target.value;
+        if (selected === "All") {
+            renderParts(allParts);
+        } else {
+            const filtered = allParts.filter(p =>
+                p["Process 1"] === selected || p["Process 2"] === selected
+            );
+            renderParts(filtered);
+        }
+    });
+}
 

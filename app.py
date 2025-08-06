@@ -1124,7 +1124,7 @@ def viewer_gltf_batch():
     try:
         element = OnshapeElement(system.assembly_url)
         did = element.did
-        wv = element.wvm  # 'w'
+        wv = element.wvm  # 'w' or 'v'
         wvmid = element.wvmid
         eid = element.eid
         auth = (system.access_key, system.secret_key)
@@ -1132,14 +1132,21 @@ def viewer_gltf_batch():
         url = f"https://cad.onshape.com/api/v12/assemblies/d/{did}/{wv}/{wvmid}/e/{eid}/export/gltf"
 
         export_body = {
-            "destinationName": "frcbom_viewer",
+            "destinationName": "frcbom_export",
             "storeInDocument": False,
             "excludeHiddenEntities": False,
             "grouping": True,
-            "triggerAutoDownload": False,
-            "isYAxisUp": False,
             "includeExportIds": True,
             "notifyUser": False,
+            "triggerAutoDownload": False,
+            "isYAxisUp": False,
+            "meshParams": {
+                "angularTolerance": 0.001,
+                "distanceTolerance": 0.001,
+                "maximumChordLength": 0.01,
+                "resolution": "FINE",
+                "unit": "METER"
+            },
             "advancedParams": {
                 "partIds": ",".join(part_ids),
                 "partsExportFilter": {
@@ -1148,13 +1155,6 @@ def viewer_gltf_batch():
                     "skipCurves": True,
                     "skipPartialMesh": False
                 }
-            },
-            "meshParams": {
-                "angularTolerance": 0.001,
-                "distanceTolerance": 0.001,
-                "maximumChordLength": 0.01,
-                "resolution": "FINE",
-                "unit": "METER"
             }
         }
 
@@ -1172,7 +1172,10 @@ def viewer_gltf_batch():
         )
 
         if response.status_code != 200:
-            return jsonify({"error": "GLTF fetch failed", "details": response.text}), response.status_code
+            return jsonify({
+                "error": "GLTF fetch failed",
+                "details": response.text
+            }), response.status_code
 
         return Response(response.content, content_type="model/gltf+json")
 

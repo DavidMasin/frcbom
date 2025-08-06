@@ -49,7 +49,15 @@ window.showGLTFViewer = async function (blobUrl) {
     loader.load(blobUrl, function (gltf) {
         const model = gltf.scene;
         scene.add(model);
-
+        if (window.visiblePartIds && window.visiblePartIds.length > 0) {
+            gltf.scene.traverse((obj) => {
+                if (obj.userData && obj.userData.partId) {
+                    if (!window.visiblePartIds.includes(obj.userData.partId)) {
+                        obj.visible = false;
+                    }
+                }
+            });
+        }
         const box = new THREE.Box3().setFromObject(model);
         const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());

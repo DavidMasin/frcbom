@@ -606,7 +606,6 @@ def api_robot_data():
     })
 
 
-
 @app.route('/api/machines', methods=['POST'])
 @jwt_required()
 def add_machine():
@@ -1095,6 +1094,8 @@ def download_bom_dict():
             team_dict[robot.name] = robot_dict
         bom_data_dict[team.team_number] = team_dict
     return jsonify({"bom_data_dict": bom_data_dict}), 200
+
+
 @app.route("/api/viewer_gltf_batch", methods=["POST"])
 @jwt_required()
 def viewer_gltf_batch():
@@ -1106,6 +1107,7 @@ def viewer_gltf_batch():
     team_number = data.get("team_number")
     robot_name = data.get("robot")
     system_name = data.get("system")
+    part_ids = data.get("part_ids", [])
 
     team = Team.query.filter_by(team_number=team_number).first()
     if not team:
@@ -1119,29 +1121,59 @@ def viewer_gltf_batch():
     if not system:
         return jsonify({"error": "System not found"}), 404
 
-    try:
-        element = OnshapeElement(system.assembly_url)
-        did = element.did
-        wv = element.wvm  # either 'w' or 'v'
-        wvid = element.wvmid
-        eid = element.eid
+    auth = (system.access_key, system.secret_key)
 
-        auth = (system.access_key, system.secret_key)
+    # ✅ Collect all real Onshape part IDs from the Part Studios
+    matched_part_ids = []
 
-        url = f"https://cad.onshape.com/api/assemblies/d/{did}/{wv}/{wvid}/e/{eid}/export/gltf"
+    for ps_url in system.partstudio_urls or []:
+        try:
+            element = OnshapeElement(ps_url)
+            did, wid, eid = element.did, element.wvmid, element.eid
 
-        res = requests.get(url, headers={"Accept": "application/octet-stream"}, auth=auth, stream=True)
+            parts_res = requests.get(
+                f"https://cad.onshape.com/api/parts/d/{did}/w/{wid}/e/{eid}",
+                headers={"Accept": "application/json"},
+                auth=auth
+            )
 
-        if res.status_code != 200:
-            return jsonify({
-                "error": "GLTF fetch failed",
-                "details": res.text
-            }), res.status_code
+            if parts_res.status_code != 200:
+                continue
 
-        return Response(res.content, content_type="model/gltf+json")
+            parts_json = parts_res.json()
+            for part in parts_json:
+                if part["partId"] in part_ids:
+                    matched_part_ids.append(part["partId"])
 
-    except Exception as e:
-        return jsonify({"error": "Internal server error", "details": str(e)}), 500
+        except Exception as e:
+            continue
+
+    if not matched_part_ids:
+        return jsonify({"error": "No matching parts found"}), 400
+
+    # ✅ Request filtered GLTF for matched parts only
+    element = OnshapeElement(system.assembly_url)
+    did, wid, eid = element.did, element.wvmid, element.eid
+
+    url = f"https://cad.onshape.com/api/assemblies/d/{did}/w/{wid}/e/{eid}/gltf"
+    params = {
+        "partIds": ",".join(matched_part_ids),
+        "outputSeparateFaceNodes": "false",
+        "outputFaceAppearances": "false",
+        "angleTolerance": "0.5",
+        "chordTolerance": "0.05",
+        "maxFacetWidth": "0.1"
+    }
+
+    gltf_res = requests.get(url, headers={"Accept": "*/*"}, auth=auth, params=params, stream=True)
+
+    if gltf_res.status_code == 200:
+        return Response(gltf_res.content, content_type="model/gltf+json")
+    else:
+        return jsonify({
+            "error": "GLTF fetch failed",
+            "details": gltf_res.text
+        }), gltf_res.status_code
 
 
 @app.route("/api/download_cad", methods=["POST"])

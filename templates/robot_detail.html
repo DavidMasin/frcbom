@@ -148,6 +148,7 @@
                 const err = await blobRes.json();
                 throw new Error(err.error || "Failed to load model");
             }
+            window.visiblePartIds = partIds;
 
             const blob = await blobRes.blob();
             const url = URL.createObjectURL(blob);

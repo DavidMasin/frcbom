@@ -1109,35 +1109,45 @@ def viewer_gltf_batch():
     system_name = data.get("system")
 
     team = Team.query.filter_by(team_number=team_number).first()
-    if not team: return jsonify({"error": "Team not found"}), 404
+    if not team:
+        return jsonify({"error": "Team not found"}), 404
 
     robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
-    if not robot: return jsonify({"error": "Robot not found"}), 404
+    if not robot:
+        return jsonify({"error": "Robot not found"}), 404
 
     system = System.query.filter_by(robot_id=robot.id, name=system_name).first()
-    if not system: return jsonify({"error": "System not found"}), 404
+    if not system:
+        return jsonify({"error": "System not found"}), 404
 
-    element = OnshapeElement(system.assembly_url)
-    did = element.did
-    wv = element.wvm
-    wvmid = element.wvmid
-    eid = element.eid
-    auth = (system.access_key, system.secret_key)
+    try:
+        element = OnshapeElement(system.assembly_url)
+        did = element.did
+        wv = element.wvm   # 'w' or 'v'
+        wvmid = element.wvmid
+        eid = element.eid
+        auth = (system.access_key, system.secret_key)
 
-    url = f"https://cad.onshape.com/api/assemblies/d/{did}/{wv}/{wvmid}/e/{eid}/export/gltf"
+        url = f"https://cad.onshape.com/api/assemblies/d/{did}/{wv}/{wvmid}/e/{eid}/export/gltf"
 
-    response = requests.post(url, headers={
-        "Accept": "application/octet-stream",
-        "Content-Type": "application/json"
-    }, auth=auth, json={}, stream=True)
+        res = requests.post(
+            url,
+            headers={
+                "Accept": "application/octet-stream",
+                "Content-Type": "application/json"
+            },
+            auth=auth,
+            json={}, 
+            stream=True
+        )
 
-    if response.status_code != 200:
-        return jsonify({
-            "error": "GLTF fetch failed",
-            "details": response.text
-        }), response.status_code
+        if res.status_code != 200:
+            return jsonify({"error": "GLTF fetch failed", "details": res.text}), res.status_code
 
-    return Response(response.content, content_type="model/gltf+json")
+        return Response(res.content, content_type="model/gltf+json")
+
+    except Exception as e:
+        return jsonify({"error": "Server error", "details": str(e)}), 500
 
 
 @app.route("/api/download_cad", methods=["POST"])

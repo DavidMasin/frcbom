@@ -145,6 +145,7 @@
         currentFilter = name;
         renderBOM();
     }
+
     function toggleDownloadQueue() {
         const panel = document.getElementById("downloadQueuePanel");
         panel.classList.toggle("hidden");
@@ -176,6 +177,8 @@
                 break;
             }
         }
+    }
+
     function getCurrentProcessStatus(part, qty) {
         const donePre = parseInt(part.done_preprocess || 0);
         const doneP1 = parseInt(part.done_process1 || 0);
@@ -208,6 +211,7 @@
         }
         return "bg-white";
     }
+
     document.getElementById("materialDropdown")?.addEventListener("change", function () {
         const selectedMaterial = this.value;
         if (selectedMaterial) {
@@ -593,7 +597,7 @@
             access_key: document.getElementById("accessKeyInput").value,
             secret_key: document.getElementById("secretKeyInput").value,
             partstudio_urls: Array.from(document.getElementsByClassName("studio-input")).map(input => input.value),
-            subassembly_urls:getSubassemblyUrls()
+            subassembly_urls: getSubassemblyUrls()
 
         };
 
@@ -628,7 +632,7 @@
                 })
                     .then(res => res.json())
                     .then(data => {
-                         window.location.href = `/${payload.team_number}/Admin/${payload.robot_name}/${payload.system_name}`;
+                        window.location.href = `/${payload.team_number}/Admin/${payload.robot_name}/${payload.system_name}`;
                     });
             });
     }

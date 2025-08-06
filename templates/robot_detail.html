@@ -67,10 +67,6 @@
 {% block scripts %}
 <script>
     <!-- (System modals omitted for brevity) -->
-    {%
-        endblock %
-    }
-
     async function viewSystemAssembly(teamNumber, robotName, systemName, onlyCompleted) {
         const loadingOverlay = document.getElementById("viewerLoading");
         const viewerModal = document.getElementById("viewerModal");

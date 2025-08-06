@@ -64,12 +64,25 @@
         <p class="text-gray-500 mt-1">Add a system to begin assembling your robot.</p>
     </div>
     {% endif %}
+    <!-- 🔄 Loading Overlay -->
+    <div id="viewerLoading" class="fixed inset-0 z-50 bg-black bg-opacity-70 hidden flex items-center justify-center">
+        <div class="text-white text-xl font-semibold animate-pulse">
+            <i class="fas fa-spinner fa-spin mr-2"></i> Loading 3D Model...
+        </div>
+    </div>
 
+    <!-- 🖼️ 3D Viewer Modal -->
+    <div id="viewerModal" class="fixed inset-0 z-40 bg-black bg-opacity-90 hidden">
+        <div class="absolute top-4 right-4">
+            <button onclick="closeViewer()" class="text-white text-2xl">&times;</button>
+        </div>
+        <canvas id="gltfCanvas" class="w-full h-full"></canvas>
+    </div>
 
 </div>
 {% endblock %}
 {% block scripts %}
-
+<script src="{{ url_for('static', filename='gltf_viewer.js') }}"></script>
 <script>
     <!-- (System modals omitted for brevity) -->
     async function viewSystemAssembly(teamNumber, robotName, systemName, onlyCompleted) {

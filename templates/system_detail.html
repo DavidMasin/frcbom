@@ -276,7 +276,14 @@
             const mat = p.materialBOM || p.Material || "";
             return mat.trim() === materialName.trim();
         });
+        for (const part of filtered) {
+            const qty = parseInt(part.Quantity || 1);
+            const name = part["Part Name"]?.trim().replace(/[^a-zA-Z0-9-_]/g, "_") || "Unnamed";
+            const curProcess = getCurrentProcessStatus(part, qty);
+            const fileType = (machineMap[curProcess] || "STEP").toUpperCase();
 
+            addToDownloadQueue(name, fileType);
+        }
         for (const part of filtered) {
             const partId = part.partId;
             const qty = parseInt(part.Quantity || 1);
@@ -285,7 +292,6 @@
             const curProcess = getCurrentProcessStatus(part, qty);
             const fileType = (machineMap[curProcess] || "STEP").toUpperCase();
 
-            addToDownloadQueue(name, fileType);
 
             const res = await fetch("/api/download_cad", {
                 method: "POST",

@@ -1099,8 +1099,8 @@ def download_bom_dict():
 @app.route("/api/viewer_gltf_batch", methods=["POST"])
 @jwt_required()
 def viewer_gltf_batch():
-    import requests
-    from flask import Response, jsonify
+    import requests, time
+    from flask import Response
     from onshape_client.onshape_url import OnshapeElement
 
     data = request.get_json()
@@ -1110,63 +1110,66 @@ def viewer_gltf_batch():
     part_ids = data.get("part_ids", [])
 
     team = Team.query.filter_by(team_number=team_number).first()
-    if not team:
-        return jsonify({"error": "Team not found"}), 404
-
+    if not team: return jsonify({"error": "Team not found"}), 404
     robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
-    if not robot:
-        return jsonify({"error": "Robot not found"}), 404
-
+    if not robot: return jsonify({"error": "Robot not found"}), 404
     system = System.query.filter_by(robot_id=robot.id, name=system_name).first()
-    if not system:
-        return jsonify({"error": "System not found"}), 404
+    if not system: return jsonify({"error": "System not found"}), 404
 
-    try:
-        element = OnshapeElement(system.assembly_url)
-        did = element.did
-        wv = element.wvm  # 'w' or 'v'
-        wvmid = element.wvmid
-        eid = element.eid
-        auth = (system.access_key, system.secret_key)
+    auth = (system.access_key, system.secret_key)
+    element = OnshapeElement(system.assembly_url)
+    did, wvm, wvmid, eid = element.did, element.wvm, element.wvmid, element.eid
 
-        url = f"https://cad.onshape.com/api/v12/assemblies/d/{did}/{wv}/{wvmid}/e/{eid}/export/gltf"
+    # Step 1: Start translation
+    start_url = f"https://cad.onshape.com/api/v12/assemblies/d/{did}/{wvm}/{wvmid}/e/{eid}/export/gltf"
+    part_id_string = ",".join(part_ids)
 
-        export_body = {
-            "formatName": "GLTF",
-            "destinationName": "FilteredAssembly",
-            "storeInDocument": False,
-            "importWithinDocument": False,
-            "angularTolerance": 0.01,
-            "distanceTolerance": 0.01,
-            "maximumChordLength": 0.01,
-            "allowFaultyParts": False,
-            "advancedParams": {
-                "partIds": ",".join(part_ids)
-            }
+    payload = {
+        "formatName": "GLTF",
+        "destinationName": "FRCAssembly",
+        "storeInDocument": False,
+        "importWithinDocument": False,
+        "angularTolerance": 0.01,
+        "distanceTolerance": 0.01,
+        "maximumChordLength": 0.01,
+        "allowFaultyParts": False,
+        "advancedParams": {
+            "partIds": part_id_string
         }
+    }
 
-        headers = {
-            "Accept": "application/json",           # ✅ Required
-            "Content-Type": "application/json"      # ✅ Required
-        }
+    start_res = requests.post(start_url, json=payload, auth=auth, headers={"Accept": "application/json"})
+    if start_res.status_code != 200:
+        return jsonify({"error": "GLTF export failed to start", "details": start_res.text}), start_res.status_code
 
-        response = requests.post(
-            url,
-            headers=headers,
-            auth=auth,
-            json=export_body
-        )
+    job = start_res.json()
+    translation_id = job.get("id")
+    if not translation_id:
+        return jsonify({"error": "Missing translation job ID"}), 500
 
-        if response.status_code != 200:
-            return jsonify({
-                "error": "GLTF fetch failed",
-                "details": response.text
-            }), response.status_code
+    # Step 2: Poll the translation until ready
+    poll_url = f"https://cad.onshape.com/api/v12/translations/{translation_id}"
+    for _ in range(20):  # ~20s max
+        poll_res = requests.get(poll_url, auth=auth)
+        if poll_res.status_code != 200:
+            return jsonify({"error": "Polling failed", "details": poll_res.text}), poll_res.status_code
 
-        return jsonify(response.json())  # response contains a translation object (with href to download)
+        poll_data = poll_res.json()
+        if poll_data.get("requestState") == "DONE":
+            break
+        elif poll_data.get("requestState") == "FAILED":
+            return jsonify({"error": "GLTF export failed"}), 500
+        time.sleep(1)
+    else:
+        return jsonify({"error": "GLTF export timed out"}), 504
 
-    except Exception as e:
-        return jsonify({"error": "Server error", "details": str(e)}), 500
+    # Step 3: Download the actual GLTF
+    download_url = f"https://cad.onshape.com/api/documents/d/{did}/externaldata/{translation_id}"
+    file_res = requests.get(download_url, auth=auth, stream=True)
+    if file_res.status_code == 200:
+        return Response(file_res.content, content_type="model/gltf+json")
+    else:
+        return jsonify({"error": "Failed to fetch exported GLTF", "details": file_res.text}), file_res.status_code
 
 
 @app.route("/api/download_cad", methods=["POST"])

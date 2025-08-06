@@ -90,7 +90,7 @@
       }
     }
 </script>
-<script src="{{ url_for('static', filename='js/gltf_viewer.js') }}"></script>
+<script type="module" src="{{ url_for('static', filename='js/gltf_viewer.js') }}"></script>
 <script>
     <!-- (System modals omitted for brevity) -->
     async function viewSystemAssembly(teamNumber, robotName, systemName, onlyCompleted) {

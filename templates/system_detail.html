@@ -24,7 +24,21 @@
         <span class="text-blue-400 text-xl">🖉</span>
     </h1>
 </div>
+<div class="fixed top-4 right-4 z-50">
+    <button onclick="toggleDownloadQueue()"
+            class="relative bg-gray-800 text-white p-3 rounded-full shadow hover:bg-gray-700 transition">
+        <i class="fas fa-bell"></i>
+        <span id="queueBadge"
+              class="absolute -top-1 -right-1 bg-red-500 text-xs font-bold rounded-full px-1.5 py-0.5 hidden">0</span>
+    </button>
 
+    <!-- Floating Queue Panel -->
+    <div id="downloadQueuePanel"
+         class="hidden mt-2 w-80 max-h-96 overflow-y-auto bg-gray-900 border border-gray-600 rounded-lg shadow-lg p-4 text-white">
+        <h3 class="text-lg font-semibold mb-2">⬇️ Download Queue</h3>
+        <ul id="queueList" class="list-disc list-inside text-sm space-y-1"></ul>
+    </div>
+</div>
 {% if is_admin %}
 <div class="mb-6">
     <button onclick="openSettingsModal()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">⚙️ Edit
@@ -99,15 +113,9 @@
 <div class="mb-8">
     <h2 class="text-2xl font-bold text-gray-100 mb-4">Parts in {{ filter_system }}</h2>
     <div id="bomPartsGrid" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"></div>
-    <div id="downloadQueue" class="mt-4 p-4 rounded-lg bg-gray-800 text-white hidden">
-        <h3 class="text-lg font-bold mb-2">⬇️ Download Queue</h3>
-        <ul id="queueList" class="list-disc list-inside text-sm space-y-1"></ul>
-    </div>
     <p id="noPartsMessage" class="text-center text-gray-500 mt-4">No parts to display.</p>
 </div>
-<div id="viewerLoading" class="fixed inset-0 z-40 bg-black bg-opacity-70 hidden flex items-center justify-center">
-    <div class="text-white text-xl font-bold animate-pulse">🔄 Loading 3D Model...</div>
-</div>
+
 <!-- 👁️ Onshape Viewer Modal -->
 <div id="viewerModal" class="fixed inset-0 z-50 bg-black bg-opacity-70 hidden flex items-center justify-center">
     <div class="bg-white rounded shadow-lg w-4/5 h-4/5 relative">
@@ -116,7 +124,11 @@
         <canvas id="gltfCanvas" class="w-full h-full rounded"></canvas>
     </div>
 </div>
-
+<div id="viewerLoading" class="fixed inset-0 z-50 bg-black bg-opacity-70 hidden flex items-center justify-center">
+    <div class="text-white text-xl font-semibold animate-pulse">
+        <i class="fas fa-spinner fa-spin mr-2"></i> Loading 3D Model...
+    </div>
+</div>
 
 {% endblock %}
 {% block scripts %}
@@ -133,13 +145,27 @@
         currentFilter = name;
         renderBOM();
     }
+    function toggleDownloadQueue() {
+        const panel = document.getElementById("downloadQueuePanel");
+        panel.classList.toggle("hidden");
+    }
+
+    function updateQueueBadge(count) {
+        const badge = document.getElementById("queueBadge");
+        if (count > 0) {
+            badge.textContent = count;
+            badge.classList.remove("hidden");
+        } else {
+            badge.classList.add("hidden");
+        }
+    }
+
     function addToDownloadQueue(partName, format) {
-        const queue = document.getElementById("downloadQueue");
         const list = document.getElementById("queueList");
         const li = document.createElement("li");
         li.textContent = `Downloading ${partName} as ${format}...`;
         list.appendChild(li);
-        queue.classList.remove("hidden");
+        updateQueueBadge(list.children.length);
     }
 
     function markDownloadComplete(partName, format) {
@@ -150,7 +176,6 @@
                 break;
             }
         }
-    }
     function getCurrentProcessStatus(part, qty) {
         const donePre = parseInt(part.done_preprocess || 0);
         const doneP1 = parseInt(part.done_process1 || 0);

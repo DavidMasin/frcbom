@@ -6,8 +6,9 @@ let renderer, camera, scene, controls;
 
 window.showGLTFViewer = async function (blobUrl) {
     const canvas = document.getElementById("gltfCanvas");
-    document.getElementById("viewerLoading").classList.remove("hidden");
-    document.getElementById("viewerModal").classList.remove("hidden");
+    document.getElementById("viewerLoading").classList.remove("hidden");  // BEFORE load
+
+
 
     if (renderer) renderer.dispose();
 
@@ -28,6 +29,7 @@ window.showGLTFViewer = async function (blobUrl) {
 
     const loader = new GLTFLoader();
     loader.load(blobUrl, function (gltf) {
+        document.getElementById("viewerLoading").classList.add("hidden");
         const model = gltf.scene;
         scene.add(model);
 

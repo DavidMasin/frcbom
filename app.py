@@ -1107,6 +1107,7 @@ def viewer_gltf_batch():
     team_number = data.get("team_number")
     robot_name = data.get("robot")
     system_name = data.get("system")
+    part_ids = data.get("part_ids", [])
 
     team = Team.query.filter_by(team_number=team_number).first()
     if not team:
@@ -1123,28 +1124,57 @@ def viewer_gltf_batch():
     try:
         element = OnshapeElement(system.assembly_url)
         did = element.did
-        wv = element.wvm   # 'w' or 'v'
+        wv = element.wvm  # 'w'
         wvmid = element.wvmid
         eid = element.eid
         auth = (system.access_key, system.secret_key)
 
-        url = f"https://cad.onshape.com/api/assemblies/d/{did}/{wv}/{wvmid}/e/{eid}/export/gltf"
+        url = f"https://cad.onshape.com/api/v12/assemblies/d/{did}/{wv}/{wvmid}/e/{eid}/export/gltf"
 
-        res = requests.post(
-            url,
-            headers={
-                "Accept": "application/octet-stream",
-                "Content-Type": "application/json"
+        export_body = {
+            "destinationName": "frcbom_viewer",
+            "storeInDocument": False,
+            "excludeHiddenEntities": False,
+            "grouping": True,
+            "triggerAutoDownload": False,
+            "isYAxisUp": False,
+            "includeExportIds": True,
+            "notifyUser": False,
+            "advancedParams": {
+                "partIds": ",".join(part_ids),
+                "partsExportFilter": {
+                    "btType": "BTPartsExportFilter-4308",
+                    "skipAllMesh": False,
+                    "skipCurves": True,
+                    "skipPartialMesh": False
+                }
             },
+            "meshParams": {
+                "angularTolerance": 0.001,
+                "distanceTolerance": 0.001,
+                "maximumChordLength": 0.01,
+                "resolution": "FINE",
+                "unit": "METER"
+            }
+        }
+
+        headers = {
+            "Accept": "model/gltf+json",
+            "Content-Type": "application/json"
+        }
+
+        response = requests.post(
+            url,
+            headers=headers,
             auth=auth,
-            json={}, 
+            json=export_body,
             stream=True
         )
 
-        if res.status_code != 200:
-            return jsonify({"error": "GLTF fetch failed", "details": res.text}), res.status_code
+        if response.status_code != 200:
+            return jsonify({"error": "GLTF fetch failed", "details": response.text}), response.status_code
 
-        return Response(res.content, content_type="model/gltf+json")
+        return Response(response.content, content_type="model/gltf+json")
 
     except Exception as e:
         return jsonify({"error": "Server error", "details": str(e)}), 500

@@ -1124,50 +1124,28 @@ def viewer_gltf_batch():
     try:
         element = OnshapeElement(system.assembly_url)
         did = element.did
-        wv = element.wvm  # 'w' or 'v'
-        wvmid = element.wvmid
+        wid = element.wvmid
         eid = element.eid
         auth = (system.access_key, system.secret_key)
 
-        url = f"https://cad.onshape.com/api/v12/assemblies/d/{did}/{wv}/{wvmid}/e/{eid}/export/gltf"
-
-        export_body = {
-            "destinationName": "frcbom_export",
-            "storeInDocument": False,
-            "excludeHiddenEntities": False,
-            "grouping": True,
-            "includeExportIds": True,
-            "notifyUser": False,
-            "triggerAutoDownload": False,
-            "isYAxisUp": False,
-            "meshParams": {
-                "angularTolerance": 0.001,
-                "distanceTolerance": 0.001,
-                "maximumChordLength": 0.01,
-                "resolution": "FINE",
-                "unit": "METER"
-            },
-            "advancedParams": {
-                "partIds": ",".join(part_ids),
-                "partsExportFilter": {
-                    "btType": "BTPartsExportFilter-4308",
-                    "skipAllMesh": False,
-                    "skipCurves": True,
-                    "skipPartialMesh": False
-                }
-            }
+        # Compose query string
+        params = {
+            "outputSeparateFaceNodes": "false",
+            "outputFaceAppearances": "false",
+            "angleTolerance": "0.5",
+            "chordTolerance": "0.05",
+            "maxFacetWidth": "0.1"
         }
+        if part_ids:
+            params["partIds"] = ",".join(part_ids)
 
-        headers = {
-            "Accept": "application/octet-stream",
-            "Content-Type": "application/json"
-        }
+        url = f"https://cad.onshape.com/api/assemblies/d/{did}/w/{wid}/e/{eid}/gltf"
 
-        response = requests.post(
+        response = requests.get(
             url,
-            headers=headers,
+            headers={"Accept": "application/json"},
             auth=auth,
-            json=export_body,
+            params=params,
             stream=True
         )
 

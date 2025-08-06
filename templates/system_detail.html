@@ -278,7 +278,6 @@
         });
 
         for (const part of filtered) {
-
             const partId = part.partId;
             const qty = parseInt(part.Quantity || 1);
             const name = part["Part Name"]?.trim().replace(/[^a-zA-Z0-9-_]/g, "_") || "Unnamed";
@@ -286,7 +285,7 @@
             const curProcess = getCurrentProcessStatus(part, qty);
             const fileType = (machineMap[curProcess] || "STEP").toUpperCase();
 
-            const filename = `${name}x${qty}-${mat}.${fileType.toLowerCase()}`;
+            addToDownloadQueue(name, fileType);
 
             const res = await fetch("/api/download_cad", {
                 method: "POST",
@@ -312,7 +311,7 @@
             const blob = await res.blob();
             const url = window.URL.createObjectURL(blob);
 
-            const sanitizedName = name.replace(/[<>:"/\\|?*\n\r]+/g, "_"); // Avoid illegal characters
+            const sanitizedName = name.replace(/[<>:"/\\|?*\n\r]+/g, "_");
             const fileName = `${sanitizedName} x${qty} - ${mat}.${fileType.toLowerCase()}`;
 
             const a = document.createElement("a");
@@ -322,6 +321,8 @@
             a.click();
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
+
+            markDownloadComplete(name, fileType);
         }
     }
 
@@ -418,13 +419,23 @@
             <button title="Download CAD" class="absolute top-2 right-2 text-blue-600 hover:text-blue-900" <button onclick="downloadPartCad('${partId}', '${fileType}', '${name}', '${part.materialBOM}')">
                 <i class="fas fa-download fa-lg"></i>
             </button>
-            <button class="text-green-600 hover:text-green-900" onclick="loadPartViewer('${partId}')">
+            <button class="text-green-600 hover:text-green-900" onclick="startViewer('${partId}')">
                 <i class="fas fa-eye fa-lg"></i>
             </button>
         </div>
     `;
     }
+    function startViewer(partId) {
+        // 👁️ Show the loading spinner immediately
+        const loadingOverlay = document.getElementById("viewerLoading");
+        const viewerModal = document.getElementById("viewerModal");
 
+        loadingOverlay.classList.remove("hidden");
+        viewerModal.classList.remove("hidden");
+
+        // Proceed to load the viewer
+        loadPartViewer(partId);
+    }
     function renderBOM() {
         const grid = document.getElementById("bomPartsGrid");
         const noMsg = document.getElementById("noPartsMessage");

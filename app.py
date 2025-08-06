@@ -1159,7 +1159,7 @@ def viewer_gltf_batch():
         }
 
         headers = {
-            "Accept": "model/gltf+json",
+            "Accept": "application/octet-stream",
             "Content-Type": "application/json"
         }
 

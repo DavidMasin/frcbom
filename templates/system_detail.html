@@ -163,10 +163,15 @@
 
     function addToDownloadQueue(partName, format) {
         const list = document.getElementById("queueList");
+        const panel = document.getElementById("downloadQueuePanel");
+
         const li = document.createElement("li");
         li.textContent = `Downloading ${partName} as ${format}...`;
         list.appendChild(li);
+
         updateQueueBadge(list.children.length);
+
+        panel.classList.remove("hidden");
     }
 
     function markDownloadComplete(partName, format) {
@@ -273,6 +278,7 @@
         });
 
         for (const part of filtered) {
+
             const partId = part.partId;
             const qty = parseInt(part.Quantity || 1);
             const name = part["Part Name"]?.trim().replace(/[^a-zA-Z0-9-_]/g, "_") || "Unnamed";

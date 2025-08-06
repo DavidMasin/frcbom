@@ -6,30 +6,47 @@ let renderer, camera, scene, controls;
 
 window.showGLTFViewer = async function (blobUrl) {
     const canvas = document.getElementById("gltfCanvas");
-    document.getElementById("viewerLoading").classList.remove("hidden");  // BEFORE load
+    const viewerModal = document.getElementById("viewerModal");
+    const loadingOverlay = document.getElementById("viewerLoading");
 
+    // 🔄 Show loader and modal
+    loadingOverlay.classList.remove("hidden");
+    viewerModal.classList.remove("hidden");
 
-
-    if (renderer) renderer.dispose();
+    // Clean up old scene/renderer
+    if (renderer) {
+        renderer.dispose();
+        renderer.forceContextLoss?.();
+        renderer = null;
+    }
 
     scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.01, 1000);
+    camera = new THREE.PerspectiveCamera(
+        75,
+        canvas.clientWidth / canvas.clientHeight,
+        0.01,
+        1000
+    );
+
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     renderer.setSize(canvas.clientWidth, canvas.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 1));
+    const light = new THREE.AmbientLight(0xffffff, 1);
+    scene.add(light);
+
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.1;
+    controls.screenSpacePanning = true;
     controls.enableZoom = true;
     controls.enablePan = true;
     controls.minPolarAngle = 0;
     controls.maxPolarAngle = Math.PI;
 
     const loader = new GLTFLoader();
+
     loader.load(blobUrl, function (gltf) {
-        document.getElementById("viewerLoading").classList.add("hidden");
         const model = gltf.scene;
         scene.add(model);
 
@@ -47,7 +64,7 @@ window.showGLTFViewer = async function (blobUrl) {
         controls.target.set(0, 0, 0);
         controls.update();
 
-        model.traverse((child) => {
+        model.traverse(child => {
             if (child.isMesh) {
                 const edges = new THREE.EdgesGeometry(child.geometry);
                 const line = new THREE.LineSegments(
@@ -58,7 +75,15 @@ window.showGLTFViewer = async function (blobUrl) {
             }
         });
 
-        document.getElementById("viewerLoading").classList.add("hidden");
+        // ✅ Hide loading when ready
+        loadingOverlay.classList.add("hidden");
+
+        animate();
+    }, undefined, (error) => {
+        console.error("❌ GLTF Load Failed:", error);
+        loadingOverlay.classList.add("hidden");
+        alert("Failed to load 3D model.");
+        viewerModal.classList.add("hidden");
     });
 
     function animate() {
@@ -67,14 +92,13 @@ window.showGLTFViewer = async function (blobUrl) {
         renderer.render(scene, camera);
     }
 
-    animate();
 };
-
 window.closeViewer = function () {
     document.getElementById("viewerModal").classList.add("hidden");
     document.getElementById("viewerLoading").classList.add("hidden");
-    const canvas = document.getElementById("gltfCanvas");
-    const clone = canvas.cloneNode(true);
-    canvas.parentNode.replaceChild(clone, canvas);
-};
 
+    // Reset canvas cleanly
+    const canvas = document.getElementById("gltfCanvas");
+    const newCanvas = canvas.cloneNode(true);
+    canvas.parentNode.replaceChild(newCanvas, canvas);
+};

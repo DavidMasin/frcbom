@@ -99,7 +99,14 @@
 <div class="mb-8">
     <h2 class="text-2xl font-bold text-gray-100 mb-4">Parts in {{ filter_system }}</h2>
     <div id="bomPartsGrid" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"></div>
+    <div id="downloadQueue" class="mt-4 p-4 rounded-lg bg-gray-800 text-white hidden">
+        <h3 class="text-lg font-bold mb-2">⬇️ Download Queue</h3>
+        <ul id="queueList" class="list-disc list-inside text-sm space-y-1"></ul>
+    </div>
     <p id="noPartsMessage" class="text-center text-gray-500 mt-4">No parts to display.</p>
+</div>
+<div id="viewerLoading" class="fixed inset-0 z-40 bg-black bg-opacity-70 hidden flex items-center justify-center">
+    <div class="text-white text-xl font-bold animate-pulse">🔄 Loading 3D Model...</div>
 </div>
 <!-- 👁️ Onshape Viewer Modal -->
 <div id="viewerModal" class="fixed inset-0 z-50 bg-black bg-opacity-70 hidden flex items-center justify-center">
@@ -126,7 +133,24 @@
         currentFilter = name;
         renderBOM();
     }
+    function addToDownloadQueue(partName, format) {
+        const queue = document.getElementById("downloadQueue");
+        const list = document.getElementById("queueList");
+        const li = document.createElement("li");
+        li.textContent = `Downloading ${partName} as ${format}...`;
+        list.appendChild(li);
+        queue.classList.remove("hidden");
+    }
 
+    function markDownloadComplete(partName, format) {
+        const items = document.querySelectorAll("#queueList li");
+        for (const item of items) {
+            if (item.textContent.includes(partName) && item.textContent.includes(format)) {
+                item.textContent = `✅ ${partName} (${format}) downloaded`;
+                break;
+            }
+        }
+    }
     function getCurrentProcessStatus(part, qty) {
         const donePre = parseInt(part.done_preprocess || 0);
         const doneP1 = parseInt(part.done_process1 || 0);
@@ -286,6 +310,7 @@
 
     async function downloadPartCad(partId, fileType, partName = "Part", qty = 1, material = "Material") {
         if (!partId) return alert("Part ID missing");
+        addToDownloadQueue(partName, fileType);
 
         const res = await fetch("/api/download_cad", {
             method: "POST",
@@ -310,10 +335,7 @@
 
         const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);
-
-        const sanitizedName = partName.replace(/[<>:"/\\|?*\n\r]+/g, "_"); // Avoid illegal characters
-        const fileName = `${sanitizedName} x${qty} - ${material}.${fileType.toLowerCase()}`;
-
+        const fileName = `${partName.replace(/[<>:"/\\|?*\n\r]+/g, "_")} x${qty} - ${material}.${fileType.toLowerCase()}`;
         const a = document.createElement("a");
         a.href = url;
         a.download = fileName;
@@ -321,6 +343,8 @@
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
+
+        markDownloadComplete(partName, fileType);
     }
 
 

@@ -6,39 +6,23 @@ let renderer, camera, scene, controls;
 
 window.showGLTFViewer = async function (blobUrl) {
     const canvas = document.getElementById("gltfCanvas");
+    document.getElementById("viewerLoading").classList.remove("hidden");
     document.getElementById("viewerModal").classList.remove("hidden");
 
-    // Clear previous WebGL context (in case of refresh)
-    if (renderer) {
-        renderer.dispose();
-    }
+    if (renderer) renderer.dispose();
 
     scene = new THREE.Scene();
-
-    camera = new THREE.PerspectiveCamera(
-        75,
-        canvas.clientWidth / canvas.clientHeight,
-        0.01,
-        1000
-    );
-
+    camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.01, 1000);
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     renderer.setSize(canvas.clientWidth, canvas.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
 
-    // Lights
-    const light = new THREE.AmbientLight(0xffffff, 1);
-    scene.add(light);
-
-    // Controls
+    scene.add(new THREE.AmbientLight(0xffffff, 1));
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.1;
-    controls.screenSpacePanning = true;
     controls.enableZoom = true;
     controls.enablePan = true;
-
-    // 🚨 Full orbit freedom
     controls.minPolarAngle = 0;
     controls.maxPolarAngle = Math.PI;
 
@@ -47,7 +31,6 @@ window.showGLTFViewer = async function (blobUrl) {
         const model = gltf.scene;
         scene.add(model);
 
-        // Auto-center & scale
         const box = new THREE.Box3().setFromObject(model);
         const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
@@ -59,11 +42,9 @@ window.showGLTFViewer = async function (blobUrl) {
 
         camera.position.set(distance, distance, distance);
         camera.lookAt(0, 0, 0);
-
         controls.target.set(0, 0, 0);
         controls.update();
 
-        // Add outlines
         model.traverse((child) => {
             if (child.isMesh) {
                 const edges = new THREE.EdgesGeometry(child.geometry);
@@ -74,6 +55,8 @@ window.showGLTFViewer = async function (blobUrl) {
                 child.add(line);
             }
         });
+
+        document.getElementById("viewerLoading").classList.add("hidden");
     });
 
     function animate() {
@@ -85,10 +68,11 @@ window.showGLTFViewer = async function (blobUrl) {
     animate();
 };
 
-// 🧹 Cleanup + reload
 window.closeViewer = function () {
     document.getElementById("viewerModal").classList.add("hidden");
+    document.getElementById("viewerLoading").classList.add("hidden");
     const canvas = document.getElementById("gltfCanvas");
     const clone = canvas.cloneNode(true);
     canvas.parentNode.replaceChild(clone, canvas);
 };
+

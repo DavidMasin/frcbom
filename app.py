@@ -1124,29 +1124,37 @@ def viewer_gltf_batch():
     try:
         element = OnshapeElement(system.assembly_url)
         did = element.did
-        wid = element.wvmid
+        wv = element.wvm  # 'w' or 'v'
+        wvmid = element.wvmid
         eid = element.eid
         auth = (system.access_key, system.secret_key)
 
-        # Compose query string
-        params = {
-            "outputSeparateFaceNodes": "false",
-            "outputFaceAppearances": "false",
-            "angleTolerance": "0.5",
-            "chordTolerance": "0.05",
-            "maxFacetWidth": "0.1"
+        url = f"https://cad.onshape.com/api/v12/assemblies/d/{did}/{wv}/{wvmid}/e/{eid}/export/gltf"
+
+        export_body = {
+            "formatName": "GLTF",
+            "destinationName": "FilteredAssembly",
+            "storeInDocument": False,
+            "importWithinDocument": False,
+            "angularTolerance": 0.01,
+            "distanceTolerance": 0.01,
+            "maximumChordLength": 0.01,
+            "allowFaultyParts": False,
+            "advancedParams": {
+                "partIds": ",".join(part_ids)
+            }
         }
-        if part_ids:
-            params["partIds"] = ",".join(part_ids)
 
-        url = f"https://cad.onshape.com/api/assemblies/d/{did}/w/{wid}/e/{eid}/gltf"
+        headers = {
+            "Accept": "application/json",           # ✅ Required
+            "Content-Type": "application/json"      # ✅ Required
+        }
 
-        response = requests.get(
+        response = requests.post(
             url,
-            headers={"Accept": "application/json"},
+            headers=headers,
             auth=auth,
-            params=params,
-            stream=True
+            json=export_body
         )
 
         if response.status_code != 200:
@@ -1155,7 +1163,7 @@ def viewer_gltf_batch():
                 "details": response.text
             }), response.status_code
 
-        return Response(response.content, content_type="model/gltf+json")
+        return jsonify(response.json())  # response contains a translation object (with href to download)
 
     except Exception as e:
         return jsonify({"error": "Server error", "details": str(e)}), 500

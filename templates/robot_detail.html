@@ -38,6 +38,20 @@
                 {% endif %}
                 <h3 class="text-lg font-semibold text-gray-200 group-hover:text-white">{{ system.name }}</h3>
             </div>
+            <div class="flex gap-2 mt-2 ml-28">
+                <!-- Show Full Assembly -->
+                <button onclick="viewSystemAssembly('{{ team.team_number }}', '{{ robot.name }}', '{{ system.name }}', false)"
+                        class="text-blue-400 hover:text-blue-600 text-lg" title="Show Full Assembly">
+                    <i class="fas fa-eye"></i>
+                </button>
+
+                <!-- Show Completed Parts Only -->
+                <button onclick="viewSystemAssembly('{{ team.team_number }}', '{{ robot.name }}', '{{ system.name }}', true)"
+                        class="text-green-400 hover:text-green-600 text-lg" title="Show Completed Parts Only">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+
 
         </a>
         {% endfor %}
@@ -50,6 +64,90 @@
     </div>
     {% endif %}
 </div>
+{% block scripts %}
+<script>
+    <!-- (System modals omitted for brevity) -->
+    {%
+        endblock %
+    }
 
-<!-- (System modals omitted for brevity) -->
+    async function viewSystemAssembly(teamNumber, robotName, systemName, onlyCompleted) {
+        const loadingOverlay = document.getElementById("viewerLoading");
+        const viewerModal = document.getElementById("viewerModal");
+        loadingOverlay.classList.remove("hidden");
+        viewerModal.classList.remove("hidden");
+
+        const token = localStorage.getItem("jwt_token");
+
+        try {
+            const res = await fetch(`/api/get_bom?team_number=${teamNumber}&robot=${robotName}&system=${systemName}`, {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+
+            const data = await res.json();
+            if (!res.ok || !data.bom_data) throw new Error("Failed to get BOM");
+
+            const parts = data.bom_data;
+
+            const completed = parts.filter(p => {
+                const qty = parseInt(p.Quantity || 0);
+                const pre = parseInt(p.done_preprocess || 0);
+                const p1 = parseInt(p.done_process1 || 0);
+                const p2 = parseInt(p.done_process2 || 0);
+                const isCOTS = !p["Pre Process"] && !p["Process 1"] && !p["Process 2"];
+                if (!onlyCompleted) return true;
+                if (isCOTS) return parseInt(p.available_qty || 0) >= qty;
+                return pre >= qty && p1 >= qty && p2 >= qty;
+            });
+
+            if (completed.length === 0) {
+                alert("⚠️ No parts match the selected criteria.");
+                loadingOverlay.classList.add("hidden");
+                viewerModal.classList.add("hidden");
+                return;
+            }
+
+            const systemRes = await fetch(`/api/system_settings?team_number=${teamNumber}&robot_name=${robotName}&system_name=${systemName}`, {
+                headers: {Authorization: `Bearer ${token}`}
+            });
+
+            const systemSettings = await systemRes.json();
+            const partIds = completed.map(p => p.partId).filter(Boolean);
+
+            const blobRes = await fetch("/api/viewer_gltf_batch", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    team_number: teamNumber,
+                    robot: robotName,
+                    system: systemName,
+                    part_ids: partIds
+                })
+            });
+
+            if (!blobRes.ok) {
+                const err = await blobRes.json();
+                throw new Error(err.error || "Failed to load model");
+            }
+
+            const blob = await blobRes.blob();
+            const url = URL.createObjectURL(blob);
+            showGLTFViewer(url);
+
+        } catch (err) {
+            console.error("❌ Viewer Error:", err);
+            alert("Failed to load system view.");
+            loadingOverlay.classList.add("hidden");
+            viewerModal.classList.add("hidden");
+        }
+    }
+
+</script>
+
+
 {% endblock %}

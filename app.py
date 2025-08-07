@@ -921,7 +921,9 @@ def save_bom_for_robot_system():
                             "gltf_url": gltf_url,
                             "ts": datetime.utcnow().isoformat()
                         })
-                        robot.recent_completion[system_name] = recent_list
+                        rc_map = dict(robot.recent_completion or {})
+                        rc_map[system_name] = recent_list
+                        robot.recent_completion = rc_map
             except Exception as e:
                 print("❌ Unexpected recent_completion format:", rc, type(rc))
 
@@ -1611,7 +1613,9 @@ def recent_completions():
             continue
 
     # Update DB with cleaned list (remove expired)
-    robot.recent_completion[system_key] = valid
+    rc_map = dict(robot.recent_completion or {})
+    rc_map[system_key] = valid
+    robot.recent_completion = rc_map
     db.session.commit()
 
     return jsonify({"parts": valid})

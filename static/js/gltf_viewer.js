@@ -50,10 +50,12 @@ export function showGLTFViewer(url, canvasId = 'gltfCanvas', rotate = false, lau
             const box = new THREE.Box3().setFromObject(model);
             const size = box.getSize(new THREE.Vector3()).length();
             const center = box.getCenter(new THREE.Vector3());
-            model.position.sub(center);
 
-            camera.position.set(0, 0, size * 1.5);
-            controls.target.set(0, 0, 0);
+            // 🟢 Keep model in place, just frame it
+            camera.position.set(center.x + size * 0.5, center.y + size * 0.5, center.z + size * 0.5);
+            camera.lookAt(center);
+
+            controls.target.copy(center);
             controls.update();
 
             document.getElementById("viewerLoading")?.classList.add("hidden");
@@ -68,4 +70,5 @@ export function showGLTFViewer(url, canvasId = 'gltfCanvas', rotate = false, lau
             document.getElementById("viewerLoading")?.classList.add("hidden");
         }
     );
+
 }

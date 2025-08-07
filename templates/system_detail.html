@@ -132,9 +132,16 @@
 
 {% endblock %}
 {% block scripts %}
+<script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+</script>
+<script type="module" src="{{ url_for('static', filename='js/gltf_viewer.js') }}"></script>
 <script>
-    import {showGLTFViewer} from "../static/js/gltf_viewer";
-
     const token = localStorage.getItem("jwt_token");
     const teamNumber = "{{ team_number }}";
     const robotName = "{{ current_robot }}";
@@ -555,15 +562,7 @@
     }
 
 </script>
-<script type="importmap">
-    {
-      "imports": {
-        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-      }
-    }
-</script>
-<script type="module" src="{{ url_for('static', filename='js/gltf_viewer.js') }}"></script>
+
 <script>
     function openSettingsModal() {
         document.getElementById("settingsModal").classList.remove("hidden");

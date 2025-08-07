@@ -906,20 +906,24 @@ def save_bom_for_robot_system():
         if finished:
             # Only mark if not already in recent_completion
             rc = robot.recent_completion.get(system_name)
-            if not rc or rc.get("part_id") != part_id:
-                # You may want to generate this GLTF elsewhere — placeholder for now:
-                gltf_url = f"/api/viewer_gltf?team_number={team_number}&robot={robot_name}&system={system_name}&id={part_id}"
+            try:
 
-                recent_list = robot.recent_completion.get(system_name, [])
-                already_there = any(p["part_id"] == part_id for p in recent_list)
+                if not isinstance(rc, dict) or rc.get("part_id") != part_id:
+                    # You may want to generate this GLTF elsewhere — placeholder for now:
+                    gltf_url = f"/api/viewer_gltf?team_number={team_number}&robot={robot_name}&system={system_name}&id={part_id}"
 
-                if not already_there:
-                    recent_list.append({
-                        "part_id": part_id,
-                        "gltf_url": gltf_url,
-                        "ts": datetime.utcnow().isoformat()
-                    })
-                    robot.recent_completion[system_name] = recent_list
+                    recent_list = robot.recent_completion.get(system_name, [])
+                    already_there = any(p["part_id"] == part_id for p in recent_list)
+
+                    if not already_there:
+                        recent_list.append({
+                            "part_id": part_id,
+                            "gltf_url": gltf_url,
+                            "ts": datetime.utcnow().isoformat()
+                        })
+                        robot.recent_completion[system_name] = recent_list
+            except Exception as e:
+                print("❌ Unexpected recent_completion format:", rc, type(rc))
 
     db.session.commit()
     return jsonify({"success": True})

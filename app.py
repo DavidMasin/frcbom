@@ -119,6 +119,7 @@ def team_admin_bom(team_number, robot_name, system):
                            team=team,
                            team_number=team_number,
                            team_id=team.id,
+                           robot=robot,
                            robots=robots,
                            current_robot=robot_name,
                            filter_system=system,

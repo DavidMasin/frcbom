@@ -100,17 +100,25 @@ async function pollForFinishedParts() {
   const res = await fetch(`/api/dashboard/recent_completions?team_number=${teamNumber}&robot_name=${robotName}&system_name=${systemName}`, {
     headers: { Authorization: `Bearer ${token}` }
   });
+  if (!res.ok) return;
   const data = await res.json();
-  if (!res.ok || !data.part_id) return;
+  const parts = Array.isArray(data.parts) ? data.parts : [];
+  if (!parts.length) return;
+
+  parts.sort((a, b) => new Date(b.ts) - new Date(a.ts));
+  const part = parts[0];
+
+  const gltfRes = await fetch("/api/viewer_gltf", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ team_number: teamNumber, robot: robotName, system: systemName, id: part.part_id })
+  });
+  if (!gltfRes.ok) return;
+  const blob = await gltfRes.blob();
+  const url = URL.createObjectURL(blob);
 
   document.getElementById("confettiModal").classList.remove("hidden");
-  showGLTFViewer(data.gltf_url, "confettiViewer", true, true);
+  showGLTFViewer(url, "confettiViewer", true, true);
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-  loadSystemStats();
-  showAssemblyViewer();
-  setInterval(pollForFinishedParts, 8000); // Check every 8s
-});
 </script>
 {% endblock %}

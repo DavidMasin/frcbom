@@ -1276,15 +1276,50 @@ def viewer_gltf_batch():
     download_url = f"https://cad.onshape.com/api/documents/d/{did}/externaldata/{data_ids[0]}"
     file_res = requests.get(download_url, auth=auth, stream=True)
     if file_res.status_code == 200:
+        import json, base64
         zip_bytes = io.BytesIO(file_res.content)
         with zipfile.ZipFile(zip_bytes) as zip_file:
+            # Pick main scene glTF (prefer 'scene.gltf' or largest .gltf)
+            best_name, best_size = None, -1
             for name in zip_file.namelist():
-                if name.endswith(".gltf"):
-                    gltf_text = zip_file.read(name)
-                    return Response(gltf_text, content_type="model/gltf+json")
-
-        return jsonify({"error": "GLTF not found in ZIP"}), 500
-
+                if name.lower().endswith(".gltf"):
+                    if "scene" in name.lower() or "assembly" in name.lower():
+                        best_name = name
+                        break
+                    size = zip_file.getinfo(name).file_size
+                    if size > best_size:
+                        best_name, best_size = name, size
+            if not best_name:
+                return jsonify({"error": "GLTF not found in ZIP"}), 500
+    
+            gltf_text = zip_file.read(best_name).decode("utf-8")
+            data = json.loads(gltf_text)
+    
+            # Inline buffers
+            for buf in data.get("buffers", []):
+                uri = buf.get("uri")
+                if uri and not uri.startswith("data:"):
+                    try:
+                        b = zip_file.read(uri)
+                        buf["uri"] = "data:application/octet-stream;base64," + base64.b64encode(b).decode("ascii")
+                    except KeyError:
+                        pass
+                    
+            # Inline images
+            for img in data.get("images", []):
+                uri = img.get("uri")
+                if uri and not uri.startswith("data:"):
+                    try:
+                        ib = zip_file.read(uri)
+                        # crude mime guess
+                        mt = "image/png" if uri.lower().endswith(".png") else "image/jpeg"
+                        img["uri"] = f"data:{mt};base64," + base64.b64encode(ib).decode("ascii")
+                    except KeyError:
+                        pass
+                    
+            out = json.dumps(data).encode("utf-8")
+            return Response(out, content_type="model/gltf+json")
+    
     return jsonify({"error": "GLTF download failed", "details": file_res.text}), file_res.status_code
 
 

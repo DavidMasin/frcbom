@@ -246,6 +246,48 @@ def list_robots():
         robot_list.append(robot_data)
     return jsonify({"robots": robot_list}), 200
 
+@app.route("/<team_number>/Admin/<robot_name>/Dashboard")
+@jwt_required()
+def robot_dashboard(team_number, robot_name):
+    team = Team.query.filter_by(team_number=team_number).first()
+    if not team:
+        return "Team not found", 404
+
+    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
+    if not robot:
+        return "Robot not found", 404
+
+    return render_template(
+        "robot_dashboard.html",
+        team=team,
+        robot=robot,
+        team_number=team_number,
+        robot_name=robot_name
+    )
+@app.route("/<team_number>/Admin/<robot_name>/<system_name>/Dashboard")
+@jwt_required()
+def system_dashboard(team_number, robot_name, system_name):
+    team = Team.query.filter_by(team_number=team_number).first()
+    if not team:
+        return "Team not found", 404
+
+    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
+    if not robot:
+        return "Robot not found", 404
+
+    system = System.query.filter_by(robot_id=robot.id, name=system_name).first()
+    if not system:
+        return "System not found", 404
+
+    return render_template(
+        "system_dashboard.html",
+        team=team,
+        robot=robot,
+        system=system,
+        team_number=team_number,
+        robot_name=robot_name,
+        system_name=system_name
+    )
 
 @app.route('/api/robots', methods=['POST'])
 @jwt_required()

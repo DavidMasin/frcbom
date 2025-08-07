@@ -363,6 +363,7 @@
             })
         });
     }
+    window.updateProcessQty = updateProcessQty;
 
     async function downloadPartCad(partId, fileType, partName = "Part", qty = 1, material = "Material") {
         if (!partId) return alert("Part ID missing");
@@ -403,6 +404,7 @@
         markDownloadComplete(partName, fileType);
     }
 
+    window.downloadPartCad = downloadPartCad;
 
     function renderCard(part) {
         const partId = part.partId;

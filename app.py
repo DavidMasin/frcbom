@@ -1218,7 +1218,7 @@ def viewer_gltf_batch():
     # Ensure parsed_vals is created from str, not bytes
     if isinstance(url, bytes):
         url = url.decode()
-
+    print("🔍 GLTF Batch URL:", repr(url))
     element = OnshapeElement(url)
     did, wvm, wvmid, eid = element.did, element.wvm, element.wvmid, element.eid
 

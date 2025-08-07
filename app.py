@@ -188,30 +188,36 @@ def logout():
 
 @app.route('/api/login', methods=['POST'])
 def login():
-    """Login a team (user or admin password) and return a JWT token and role info."""
+    """Login a team (user or admin password) and return a JWT token, role info, and redirect."""
     data = request.get_json()
     team_number = data.get('team_number')
     password = data.get('password')
+
     if not team_number or not password:
         return jsonify({"error": "Team number and password are required"}), 400
+
     team = Team.query.filter_by(team_number=team_number).first()
     if not team or not (
-            check_password_hash(team.password, password) or check_password_hash(team.adminPassword, password)):
+        check_password_hash(team.password, password) or
+        check_password_hash(team.adminPassword, password)
+    ):
         return jsonify({"error": "Invalid credentials"}), 401
 
-    is_admin = False
-    if check_password_hash(team.adminPassword, password):
-        is_admin = True
-    additional_claims = {"is_team_admin": False, "is_global_admin": False}
-    if is_admin:
-        additional_claims["is_team_admin"] = True
-        if team_number == "0000":  # global admin account
-            additional_claims["is_global_admin"] = True
+    is_admin = check_password_hash(team.adminPassword, password)
 
-    access_token = create_access_token(identity=team_number,additional_claims=additional_claims)
-    resp = jsonify({"login": True})
+    additional_claims = {
+        "is_team_admin": is_admin,
+        "is_global_admin": (is_admin and team_number == "0000")
+    }
+
+    access_token = create_access_token(identity=team_number, additional_claims=additional_claims)
+    resp = jsonify({
+        "login": True,
+        "redirect_to": f"/{team_number}/Admin" if is_admin else f"/{team_number}"
+    })
     set_access_cookies(resp, access_token)
     return resp
+
 
 
 @app.route('/api/team_exists', methods=['GET'])

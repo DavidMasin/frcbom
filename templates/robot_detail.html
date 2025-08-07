@@ -96,6 +96,17 @@
 </script>
 <script type="module" src="{{ url_for('static', filename='js/gltf_viewer.js') }}"></script>
 <script>
+    window.closeViewer = function () {
+        document.getElementById("viewerModal").classList.add("hidden");
+        document.getElementById("viewerLoading").classList.add("hidden");
+
+        // Reset canvas cleanly
+        const canvas = document.getElementById("gltfCanvas");
+        const newCanvas = canvas.cloneNode(true);
+        canvas.parentNode.replaceChild(newCanvas, canvas);
+    };
+</script>
+<script>
     <!-- (System modals omitted for brevity) -->
     async function viewSystemAssembly(teamNumber, robotName, systemName, onlyCompleted) {
         const loadingOverlay = document.getElementById("viewerLoading");

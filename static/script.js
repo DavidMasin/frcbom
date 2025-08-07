@@ -142,23 +142,24 @@ async function handleLogin(event) {
     const teamNum = document.getElementById('loginTeamNumber').value;
     const password = document.getElementById('loginPassword').value;
     const loginMessage = document.getElementById('loginMessage');
+
     if (!teamNum || !password) {
         loginMessage.textContent = "Please enter both team number and password.";
         return;
     }
+
     try {
         const response = await fetch(`${API_BASE_URL}api/login`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({team_number: teamNum, password: password})
+            body: JSON.stringify({team_number: teamNum, password: password}),
+            credentials: 'include'  // Important for cookies
         });
+
         const data = await response.json();
-        if (response.ok) {
-            localStorage.setItem('jwt_token', data.access_token);
-            localStorage.setItem('team_number', teamNum);
-            localStorage.setItem('role', data.isAdmin ? 'Admin' : 'User');
-            // Redirect based on role
-            window.location.href = data.isAdmin ? `/${teamNum}/Admin` : `/${teamNum}`;
+        if (response.ok && data.login) {
+            localStorage.setItem('team_number', teamNum);  // Optional: for UI logic
+            window.location.href = data.redirect_to;       // 🔁 Let server decide redirect
         } else {
             loginMessage.textContent = data.error || 'Login failed.';
         }
@@ -167,6 +168,7 @@ async function handleLogin(event) {
         loginMessage.textContent = 'An error occurred during login.';
     }
 }
+
 
 async function handleRegister(event) {
     event.preventDefault();

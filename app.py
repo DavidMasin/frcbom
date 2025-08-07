@@ -909,7 +909,6 @@ def save_bom_for_robot_system():
 
 
 @app.route("/api/robot_exists", methods=["POST"])
-@jwt_required()
 def robot_exists():
     data = request.get_json()
     team_number = data.get("team_number")
@@ -927,7 +926,6 @@ def robot_exists():
 
 
 @app.route("/api/bom", methods=["POST"])
-@jwt_required()
 def fetch_bom():
     from onshape_client.client import Client
     from onshape_client.onshape_url import OnshapeElement

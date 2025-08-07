@@ -65,22 +65,35 @@ async function loadSystemStats() {
 }
 
 async function showAssemblyViewer() {
-  const blob = await fetch("/api/viewer_gltf_batch", {
-    method: "POST",
+  // 1. Fetch the GLTF for the system
+  const res = await fetch('/api/viewer_gltf_batch', {
+    method: 'POST',
     headers: {
-      Authorization: `Bearer ${token}`,
+      "Authorization": `Bearer ${token}`,
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
       team_number: teamNumber,
       robot: robotName,
-      system: systemName,
-      part_ids: []
+      system: systemName
     })
-  }).then(r => r.blob());
+  });
 
-  const url = URL.createObjectURL(blob);
+  const blob = await res.blob();
+
+// 2. Sanity check (not HTML error page)
+  const text = await blob.text();
+  if (text.startsWith("<") || text.includes("DOCTYPE") || text.includes("Error")) {
+    console.error("❌ GLTF response is HTML or error:", text);
+    return;
+  }
+
+  const fixedBlob = new Blob([text], { type: "model/gltf+json" });
+  const url = URL.createObjectURL(fixedBlob);
+
+// 3. Load it into the dashboard canvas
   showGLTFViewer(url, "systemViewer", false, false);
+
 }
 
 async function pollForFinishedParts() {

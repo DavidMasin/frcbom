@@ -108,4 +108,10 @@ async function pollForFinishedParts() {
   showGLTFViewer(url, "confettiViewer", true, true);
 }
 </script>
+document.addEventListener("DOMContentLoaded", () => {
+  if (!token) { window.location.href = "/"; return; }
+  loadRobotStats();
+  showAssemblyViewer();
+  setInterval(pollForFinishedParts, 8000);
+});
 {% endblock %}

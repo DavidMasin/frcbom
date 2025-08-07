@@ -850,11 +850,16 @@ def save_bom_for_robot_system():
                 # You may want to generate this GLTF elsewhere — placeholder for now:
                 gltf_url = f"/api/viewer_gltf?team_number={team_number}&robot={robot_name}&system={system_name}&id={part_id}"
 
-                robot.recent_completion[system_name] = {
-                    "part_id": part_id,
-                    "gltf_url": gltf_url,
-                    "ts": datetime.utcnow().isoformat()
-                }
+                recent_list = robot.recent_completion.get(system_name, [])
+                already_there = any(p["part_id"] == part_id for p in recent_list)
+
+                if not already_there:
+                    recent_list.append({
+                        "part_id": part_id,
+                        "gltf_url": gltf_url,
+                        "ts": datetime.utcnow().isoformat()
+                    })
+                    robot.recent_completion[system_name] = recent_list
 
     db.session.commit()
     return jsonify({"success": True})
@@ -1513,23 +1518,25 @@ def recent_completions():
     if not robot or not robot.recent_completion:
         return jsonify({})
 
+    now = datetime.utcnow()
     system_key = system_name if system_name else "Main"
-    entry = robot.recent_completion.get(system_key)
-    if not entry:
-        return jsonify({})
+    entries = robot.recent_completion.get(system_key, [])
 
-    try:
-        ts = datetime.fromisoformat(entry.get("ts"))
-    except:
-        return jsonify({})
+    # Filter expired entries
+    valid = []
+    for entry in entries:
+        try:
+            ts = datetime.fromisoformat(entry.get("ts"))
+            if now - ts < timedelta(seconds=15):
+                valid.append(entry)
+        except:
+            continue
 
-    if datetime.utcnow() - ts < timedelta(seconds=15):
-        return jsonify({
-            "part_id": entry.get("part_id"),
-            "gltf_url": entry.get("gltf_url")
-        })
+    # Update DB with cleaned list (remove expired)
+    robot.recent_completion[system_key] = valid
+    db.session.commit()
 
-    return jsonify({})
+    return jsonify({"parts": valid})
 
 
 

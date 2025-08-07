@@ -15,6 +15,10 @@
         <h1 class="text-5xl md:text-6xl font-black text-white tracking-wider uppercase">{{ robot.name }}</h1>
         <p class="text-xl text-gray-300 font-light">Competition Year: {{ robot.year }}</p>
     </div>
+    <a href="{{ url_for('robot_dashboard', team_number=team.team_number, robot_name=robot.name) }}"
+       class="inline-block mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow transition duration-300">
+        📊 View Robot Dashboard
+    </a>
 </div>
 
 <!-- Systems Section -->

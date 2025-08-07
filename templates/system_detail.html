@@ -86,6 +86,11 @@
 
 <!-- 🧹 BOM Filter Buttons -->
 <div class="mb-6">
+    <a href="{{ url_for('system_dashboard', team_number=team.team_number, robot_name=robot.name, system_name=system.name) }}"
+       onclick="event.stopPropagation();"
+       class="text-yellow-400 hover:text-yellow-600 text-lg ml-2" title="View System Dashboard">
+        <i class="fas fa-chart-line"></i>
+    </a>
     <div class="flex flex-wrap gap-2" id="filterButtons">
         <button class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600" onclick="applyFilter(null)">All
             Parts

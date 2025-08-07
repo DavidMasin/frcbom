@@ -10,7 +10,8 @@ from flask_migrate import Migrate
 from flask_socketio import SocketIO, emit
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-
+import io
+import zipfile
 # Optional: Set level and format for clarity
 logging.basicConfig(level=logging.INFO)
 

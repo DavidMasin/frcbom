@@ -1189,8 +1189,8 @@ def download_bom_dict():
 @app.route("/api/viewer_gltf_batch", methods=["POST"])
 @jwt_required()
 def viewer_gltf_batch():
-    import requests, time
-    from flask import Response
+    import requests, time, io, zipfile
+    from flask import Response, jsonify
     from onshape_client.onshape_url import OnshapeElement
 
     data = request.get_json()
@@ -1212,7 +1212,8 @@ def viewer_gltf_batch():
         return jsonify({"error": "System not found"}), 404
 
     auth = (system.access_key, system.secret_key)
-    element = OnshapeElement(system.assembly_url)
+    url = system.assembly_url.decode() if isinstance(system.assembly_url, bytes) else system.assembly_url
+    element = OnshapeElement(url)
     did, wvm, wvmid, eid = element.did, element.wvm, element.wvmid, element.eid
 
     # Step 1: Start translation
@@ -1267,6 +1268,8 @@ def viewer_gltf_batch():
                     return Response(gltf_text, content_type="model/gltf+json")
 
         return jsonify({"error": "GLTF not found in ZIP"}), 500
+
+    return jsonify({"error": "GLTF download failed", "details": file_res.text}), file_res.status_code
 
 
 @app.route("/api/download_cad", methods=["POST"])

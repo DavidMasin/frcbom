@@ -133,6 +133,8 @@
 {% endblock %}
 {% block scripts %}
 <script>
+    import {showGLTFViewer} from "../static/js/gltf_viewer";
+
     const token = localStorage.getItem("jwt_token");
     const teamNumber = "{{ team_number }}";
     const robotName = "{{ current_robot }}";

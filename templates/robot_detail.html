@@ -135,7 +135,6 @@
                 headers: {Authorization: `Bearer ${token}`}
             });
 
-            const systemSettings = await systemRes.json();
             const partIds = completed.map(p => p.partId).filter(Boolean);
 
             const blobRes = await fetch("/api/viewer_gltf_batch", {

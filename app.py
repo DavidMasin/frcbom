@@ -1150,7 +1150,7 @@ def viewer_gltf_batch():
     # Step 2: Poll the translation until ready
     poll_url = f"https://cad.onshape.com/api/v12/translations/{translation_id}"
     print(poll_url)
-    for _ in range(30):  # ~30s max
+    while(True):  # ~30s max
         poll_res = requests.get(poll_url, auth=auth)
         if poll_res.status_code != 200:
             return jsonify({"error": "Polling failed", "details": poll_res.text}), poll_res.status_code

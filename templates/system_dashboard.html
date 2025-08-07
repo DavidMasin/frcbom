@@ -120,5 +120,14 @@ async function pollForFinishedParts() {
   document.getElementById("confettiModal").classList.remove("hidden");
   showGLTFViewer(url, "confettiViewer", true, true);
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  // optional: redirect if not logged in
+  // if (!token) { window.location.href = "/"; return; }
+
+  loadSystemStats();
+  showAssemblyViewer();
+  setInterval(pollForFinishedParts, 8000);
+});
 </script>
 {% endblock %}

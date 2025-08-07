@@ -4,7 +4,8 @@ from datetime import datetime, timedelta
 
 from flask import Flask, request, jsonify, render_template, redirect, session, flash, url_for
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, get_jwt, jwt_required
+from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, get_jwt, jwt_required, \
+    set_access_cookies
 from flask_migrate import Migrate
 from flask_socketio import SocketIO, emit
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -24,7 +25,10 @@ app.secret_key = os.getenv('SECRET_KEY', 'super-secret-session-key')
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'super-secure-jwt-key')
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'statiDec', 'uploads')
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=30)  # ⏳ Set token to last 30 days
-
+app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
+app.config["JWT_COOKIE_SECURE"] = False  # Set True in production (HTTPS)
+app.config["JWT_ACCESS_COOKIE_NAME"] = "access_token_cookie"
+app.config["JWT_COOKIE_CSRF_PROTECT"] = False  # Simplifies frontend for now
 # Initialize extensions
 from models import db, Team, Robot, System, Machine
 
@@ -203,8 +207,10 @@ def login():
         if team_number == "0000":  # global admin account
             additional_claims["is_global_admin"] = True
 
-    access_token = create_access_token(identity=team_number, additional_claims=additional_claims)
-    return jsonify(access_token=access_token, team_number=team_number, isAdmin=is_admin), 200
+    access_token = create_access_token(identity=team_number,additional_claims=additional_claims)
+    resp = jsonify({"login": True})
+    set_access_cookies(resp, access_token)
+    return resp
 
 
 @app.route('/api/team_exists', methods=['GET'])
@@ -909,6 +915,7 @@ def save_bom_for_robot_system():
 
 
 @app.route("/api/robot_exists", methods=["POST"])
+@jwt_required()
 def robot_exists():
     data = request.get_json()
     team_number = data.get("team_number")
@@ -926,6 +933,7 @@ def robot_exists():
 
 
 @app.route("/api/bom", methods=["POST"])
+@jwt_required()
 def fetch_bom():
     from onshape_client.client import Client
     from onshape_client.onshape_url import OnshapeElement

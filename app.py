@@ -797,38 +797,67 @@ def get_bom():
         return jsonify({"bom_data": bom_list}), 200
 
 
-@app.route('/api/save_bom_for_robot_system', methods=['POST'])
+@app.route("/api/save_bom_for_robot_system", methods=["POST"])
 @jwt_required()
 def save_bom_for_robot_system():
-    """Save provided BOM data for a given team, robot, and system."""
-    current_user = get_jwt_identity()
-    claims = get_jwt()
+    from datetime import datetime
     data = request.get_json()
     team_number = data.get("team_number")
     robot_name = data.get("robot_name")
-    system_name = data.get("system_name") or data.get("system")
-    bom_data = data.get("bom_data")
-    if not team_number or not robot_name or not system_name or bom_data is None:
-        return jsonify({"error": "Missing required data"}), 400
-    if current_user != team_number and not claims.get('is_global_admin'):
-        return jsonify({"error": "Unauthorized"}), 403
+    system_name = data.get("system_name")
+    bom_data = data.get("bom_data", [])
 
     team = Team.query.filter_by(team_number=team_number).first()
-    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first() if team else None
-    if not team or not robot:
-        return jsonify({"error": "Team or robot not found"}), 404
+    if not team:
+        return jsonify({"error": "Team not found"}), 404
+
+    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
+    if not robot:
+        return jsonify({"error": "Robot not found"}), 404
 
     system = System.query.filter_by(robot_id=robot.id, name=system_name).first()
     if not system:
-        system = System(robot=robot, name=system_name)
-        db.session.add(system)
+        return jsonify({"error": "System not found"}), 404
+
+    # Store updated BOM
     system.bom_data = bom_data
-    try:
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": f"Failed to save BOM data: {str(e)}"}), 500
-    return jsonify({"message": "BOM data saved successfully"}), 200
+
+    # Initialize recent completion map if needed
+    if robot.recent_completion is None:
+        robot.recent_completion = {}
+
+    # Check for finished parts
+    for part in bom_data:
+        part_id = part.get("partId")
+        qty = int(part.get("Quantity", 0))
+        done_pre = int(part.get("done_preprocess", 0))
+        done_p1 = int(part.get("done_process1", 0))
+        done_p2 = int(part.get("done_process2", 0))
+
+        is_cots = not part.get("Pre Process") and not part.get("Process 1") and not part.get("Process 2")
+        finished = False
+
+        if is_cots:
+            avail = int(part.get("available_qty", 0))
+            finished = avail >= qty
+        else:
+            finished = done_pre >= qty and done_p1 >= qty and done_p2 >= qty
+
+        if finished:
+            # Only mark if not already in recent_completion
+            rc = robot.recent_completion.get(system_name)
+            if not rc or rc.get("part_id") != part_id:
+                # You may want to generate this GLTF elsewhere — placeholder for now:
+                gltf_url = f"/api/viewer_gltf?team_number={team_number}&robot={robot_name}&system={system_name}&id={part_id}"
+
+                robot.recent_completion[system_name] = {
+                    "part_id": part_id,
+                    "gltf_url": gltf_url,
+                    "ts": datetime.utcnow().isoformat()
+                }
+
+    db.session.commit()
+    return jsonify({"success": True})
 
 
 @app.route("/api/robot_exists", methods=["POST"])
@@ -1470,18 +1499,38 @@ def system_stats():
 
 @app.route("/api/dashboard/recent_completions")
 @jwt_required()
-def recent_completions(RECENT_COMPLETIONS=None):
+def recent_completions():
+    from datetime import datetime, timedelta
     team_number = request.args.get("team_number")
     robot_name = request.args.get("robot_name")
-    system_name = request.args.get("system_name", None)
+    system_name = request.args.get("system_name", None)  # Optional
 
-    key = f"{team_number}-{robot_name}-{system_name or 'ALL'}"
-    recent = RECENT_COMPLETIONS.get(key)
+    team = Team.query.filter_by(team_number=team_number).first()
+    if not team:
+        return jsonify({"error": "Team not found"}), 404
 
-    if recent and (datetime.datetime.now() - recent["ts"]).seconds < 15:
-        return jsonify(part_id=recent["part_id"], gltf_url=recent["gltf_url"])
+    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
+    if not robot or not robot.recent_completion:
+        return jsonify({})
+
+    system_key = system_name if system_name else "Main"
+    entry = robot.recent_completion.get(system_key)
+    if not entry:
+        return jsonify({})
+
+    try:
+        ts = datetime.fromisoformat(entry.get("ts"))
+    except:
+        return jsonify({})
+
+    if datetime.utcnow() - ts < timedelta(seconds=15):
+        return jsonify({
+            "part_id": entry.get("part_id"),
+            "gltf_url": entry.get("gltf_url")
+        })
 
     return jsonify({})
+
 
 
 @app.route('/api/admin/download_settings_dict', methods=['GET'])

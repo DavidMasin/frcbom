@@ -39,7 +39,8 @@ class Robot(db.Model):
     team = db.relationship('Team', back_populates='robots')
     systems = db.relationship('System', back_populates='robot', cascade="all, delete-orphan")
     image_text = db.Column(db.String(100), nullable=True, default='uploads/robot_images/default_robot.png')
-    machines = db.relationship("Machine", backref="robot", cascade="all, delete-orphan")  # ✅ ADD THIS
+    machines = db.relationship("Machine", backref="robot", cascade="all, delete-orphan")
+    recent_completion = db.Column(JSON)
 
 
 

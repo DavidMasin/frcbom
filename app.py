@@ -1212,7 +1212,13 @@ def viewer_gltf_batch():
         return jsonify({"error": "System not found"}), 404
 
     auth = (system.access_key, system.secret_key)
-    url = system.assembly_url.decode() if isinstance(system.assembly_url, bytes) else system.assembly_url
+    raw_url = system.assembly_url
+    url = raw_url.decode() if isinstance(raw_url, bytes) else str(raw_url)
+
+    # Ensure parsed_vals is created from str, not bytes
+    if isinstance(url, bytes):
+        url = url.decode()
+
     element = OnshapeElement(url)
     did, wvm, wvmid, eid = element.did, element.wvm, element.wvmid, element.eid
 

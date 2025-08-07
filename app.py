@@ -1470,7 +1470,7 @@ def system_stats():
 
 @app.route("/api/dashboard/recent_completions")
 @jwt_required()
-def recent_completions():
+def recent_completions(RECENT_COMPLETIONS=None):
     team_number = request.args.get("team_number")
     robot_name = request.args.get("robot_name")
     system_name = request.args.get("system_name", None)

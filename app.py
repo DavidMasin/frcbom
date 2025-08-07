@@ -1110,11 +1110,16 @@ def viewer_gltf_batch():
     part_ids = data.get("part_ids", [])
 
     team = Team.query.filter_by(team_number=team_number).first()
-    if not team: return jsonify({"error": "Team not found"}), 404
+    if not team:
+        return jsonify({"error": "Team not found"}), 404
+
     robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
-    if not robot: return jsonify({"error": "Robot not found"}), 404
+    if not robot:
+        return jsonify({"error": "Robot not found"}), 404
+
     system = System.query.filter_by(robot_id=robot.id, name=system_name).first()
-    if not system: return jsonify({"error": "System not found"}), 404
+    if not system:
+        return jsonify({"error": "System not found"}), 404
 
     auth = (system.access_key, system.secret_key)
     element = OnshapeElement(system.assembly_url)
@@ -1122,8 +1127,6 @@ def viewer_gltf_batch():
 
     # Step 1: Start translation
     start_url = f"https://cad.onshape.com/api/v12/assemblies/d/{did}/{wvm}/{wvmid}/e/{eid}/export/gltf"
-    part_id_string = ",".join(part_ids)
-
     payload = {
         "formatName": "GLTF",
         "destinationName": "FRCAssembly",
@@ -1132,10 +1135,7 @@ def viewer_gltf_batch():
         "angularTolerance": 0.01,
         "distanceTolerance": 0.01,
         "maximumChordLength": 0.01,
-        "allowFaultyParts": False,
-        # "advancedParams": {
-        #     "partIds": part_id_string
-        # }
+        "allowFaultyParts": False
     }
 
     start_res = requests.post(start_url, json=payload, auth=auth, headers={"Accept": "application/json"})
@@ -1147,10 +1147,9 @@ def viewer_gltf_batch():
     if not translation_id:
         return jsonify({"error": "Missing translation job ID"}), 500
 
-    # Step 2: Poll the translation until ready
+    # Step 2: Poll until job is DONE
     poll_url = f"https://cad.onshape.com/api/v12/translations/{translation_id}"
-    print(poll_url)
-    while(True):  # ~30s max
+    while True:
         poll_res = requests.get(poll_url, auth=auth)
         if poll_res.status_code != 200:
             return jsonify({"error": "Polling failed", "details": poll_res.text}), poll_res.status_code
@@ -1161,11 +1160,13 @@ def viewer_gltf_batch():
         elif poll_data.get("requestState") == "FAILED":
             return jsonify({"error": "GLTF export failed"}), 500
         time.sleep(1)
-    else:
-        return jsonify({"error": "GLTF export timed out"}), 504
 
-    # Step 3: Download the actual GLTF
-    download_url = f"https://cad.onshape.com/api/documents/d/{did}/externaldata/{translation_id}"
+    # Step 3: Get resultExternalDataIds and fetch GLTF
+    data_ids = poll_data.get("resultExternalDataIds")
+    if not data_ids:
+        return jsonify({"error": "No exported data available"}), 500
+
+    download_url = f"https://cad.onshape.com/api/documents/d/{did}/externaldata/{data_ids[0]}"
     file_res = requests.get(download_url, auth=auth, stream=True)
     if file_res.status_code == 200:
         return Response(file_res.content, content_type="model/gltf+json")
@@ -1369,6 +1370,118 @@ def view_gltf():
             return jsonify({"error": f"Exception: {str(e)}"}), 500
 
     return jsonify({"error": f"Part '{part_id}' not found in any partstudio"}), 404
+
+def get_part_stats(bom_data):
+    total_parts = len(bom_data)
+    completed = 0
+    cots = 0
+    inhouse = 0
+    process_counter = {}
+
+    for part in bom_data:
+        qty = int(part.get("Quantity", 0))
+        pre = int(part.get("done_preprocess", 0))
+        p1 = int(part.get("done_process1", 0))
+        p2 = int(part.get("done_process2", 0))
+
+        is_cots = not part.get("Pre Process") and not part.get("Process 1") and not part.get("Process 2")
+        if is_cots:
+            cots += 1
+            if int(part.get("available_qty", 0)) >= qty:
+                completed += 1
+        else:
+            inhouse += 1
+            if pre >= qty and p1 >= qty and p2 >= qty:
+                completed += 1
+            for p in ["Pre Process", "Process 1", "Process 2"]:
+                proc = part.get(p)
+                if proc:
+                    process_counter[proc] = process_counter.get(proc, 0) + 1
+
+    percent = round((completed / total_parts) * 100) if total_parts else 0
+    top_proc = max(process_counter.items(), key=lambda x: x[1])[0] if process_counter else "N/A"
+    return total_parts, completed, cots, inhouse, percent, top_proc
+
+@app.route("/api/dashboard/robot_stats")
+@jwt_required()
+def robot_stats():
+    team_number = request.args.get("team_number")
+    robot_name = request.args.get("robot_name")
+    team = Team.query.filter_by(team_number=team_number).first()
+    if not team: return jsonify(error="Team not found"), 404
+    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
+    if not robot: return jsonify(error="Robot not found"), 404
+
+    total_parts = 0
+    completed = 0
+    cots = 0
+    inhouse = 0
+    material_count = {}
+
+    for system in robot.systems:
+        bom = system.bom_data or []
+        t, c, cots_, inhouse_, _, _ = get_part_stats(bom)
+        total_parts += t
+        completed += c
+        cots += cots_
+        inhouse += inhouse_
+        for p in bom:
+            mat = p.get("materialBOM") or p.get("Material")
+            if mat:
+                material_count[mat] = material_count.get(mat, 0) + 1
+
+    top_material = max(material_count.items(), key=lambda x: x[1])[0] if material_count else "N/A"
+    percent = round((completed / total_parts) * 100) if total_parts else 0
+
+    return jsonify({
+        "total_parts": total_parts,
+        "completed_parts": completed,
+        "percent_complete": percent,
+        "cots_parts": cots,
+        "inhouse_parts": inhouse,
+        "top_material": top_material
+    })
+
+@app.route("/api/dashboard/system_stats")
+@jwt_required()
+def system_stats():
+    team_number = request.args.get("team_number")
+    robot_name = request.args.get("robot_name")
+    system_name = request.args.get("system_name")
+
+    team = Team.query.filter_by(team_number=team_number).first()
+    if not team: return jsonify(error="Team not found"), 404
+    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
+    if not robot: return jsonify(error="Robot not found"), 404
+    system = System.query.filter_by(robot_id=robot.id, name=system_name).first()
+    if not system: return jsonify(error="System not found"), 404
+
+    bom = system.bom_data or []
+    total, completed, cots, inhouse, percent, top_proc = get_part_stats(bom)
+
+    return jsonify({
+        "total_parts": total,
+        "completed_parts": completed,
+        "percent_complete": percent,
+        "cots_parts": cots,
+        "inhouse_parts": inhouse,
+        "top_process": top_proc
+    })
+
+@app.route("/api/dashboard/recent_completions")
+@jwt_required()
+def recent_completions():
+    team_number = request.args.get("team_number")
+    robot_name = request.args.get("robot_name")
+    system_name = request.args.get("system_name", None)
+
+    key = f"{team_number}-{robot_name}-{system_name or 'ALL'}"
+    recent = RECENT_COMPLETIONS.get(key)
+
+    if recent and (datetime.datetime.now() - recent["ts"]).seconds < 15:
+        return jsonify(part_id=recent["part_id"], gltf_url=recent["gltf_url"])
+
+    return jsonify({})
 
 
 @app.route('/api/admin/download_settings_dict', methods=['GET'])

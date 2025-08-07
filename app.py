@@ -897,7 +897,11 @@ def save_bom_for_robot_system():
             avail = int(part.get("available_qty", 0))
             finished = avail >= qty
         else:
-            finished = done_pre >= qty and done_p1 >= qty and done_p2 >= qty
+            finished = (
+                    (not part.get("Pre Process") or done_pre >= qty) and
+                    (not part.get("Process 1") or done_p1 >= qty) and
+                    (not part.get("Process 2") or done_p2 >= qty)
+            )
 
         if finished:
             # Only mark if not already in recent_completion

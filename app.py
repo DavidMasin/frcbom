@@ -1252,9 +1252,14 @@ def viewer_gltf_batch():
     download_url = f"https://cad.onshape.com/api/documents/d/{did}/externaldata/{data_ids[0]}"
     file_res = requests.get(download_url, auth=auth, stream=True)
     if file_res.status_code == 200:
-        return Response(file_res.content, content_type="model/gltf+json")
-    else:
-        return jsonify({"error": "Failed to fetch exported GLTF", "details": file_res.text}), file_res.status_code
+        zip_bytes = io.BytesIO(file_res.content)
+        with zipfile.ZipFile(zip_bytes) as zip_file:
+            for name in zip_file.namelist():
+                if name.endswith(".gltf"):
+                    gltf_text = zip_file.read(name)
+                    return Response(gltf_text, content_type="model/gltf+json")
+
+        return jsonify({"error": "GLTF not found in ZIP"}), 500
 
 
 @app.route("/api/download_cad", methods=["POST"])

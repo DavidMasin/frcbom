@@ -147,7 +147,6 @@
 </script>
 <script type="module" src="{{ url_for('static', filename='js/gltf_viewer.js') }}"></script>
 <script type="module">
-    import {showGLTFViewer} from "../static/js/gltf_viewer";
     const token = localStorage.getItem("jwt_token");
     const teamNumber = "{{ team_number }}";
     const robotName = "{{ current_robot }}";
@@ -540,6 +539,7 @@
     }
 
     document.addEventListener("DOMContentLoaded", loadAndRenderBOM);
+    import {showGLTFViewer} from "../static/js/gltf_viewer";
 
     function addSubassemblyUrl(value = "") {
         const container = document.getElementById("subassemblyUrls");

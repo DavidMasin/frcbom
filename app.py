@@ -1617,14 +1617,16 @@ def robot_stats():
     top_material = max(material_count.items(), key=lambda x: x[1])[0] if material_count else "N/A"
     percent = round((completed / total_parts) * 100) if total_parts else 0
 
-    return jsonify({
+    return (jsonify({
         "total_parts": total_parts,
         "completed_parts": completed,
         "percent_complete": percent,
         "cots_parts": cots,
         "inhouse_parts": inhouse,
         "top_material": top_material
-    })@app.route("/api/dashboard/system_stats")
+    }))
+
+@app.route("/api/dashboard/system_stats")
 @jwt_required()
 def system_stats():
     team_number = request.args.get("team_number")

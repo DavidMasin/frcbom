@@ -1,29 +1,41 @@
 {% extends "team_base.html" %}
-{% block title %}System BOM - {{ current_robot }} {{ filter_system }}{% endblock %}
-{% block content %}
+{% set robot_name_var = current_robot if current_robot is defined else robot_name %}
+{% set sys_name = (system.name if (system is defined and system is not string and system.name is defined) else (system if system is defined else filter_system)) %}
 
+{% block title %}System BOM - {{ robot_name_var }} {{ sys_name }}{% endblock %}
+
+{% block content %}
 <div class="mb-6">
-    <a href="{{ url_for('team_admin_robot', team_number=team_number, robot_name=current_robot) }}"
+    {% if is_admin %}
+    <a href="{{ url_for('team_admin_robot', team_number=team_number, robot_name=robot_name_var) }}"
        class="text-sm text-blue-300 hover:underline block mb-2">
-        &larr; Back to {{ current_robot }} Details
+        &larr; Back to {{ robot_name_var }} Details
     </a>
+    {% else %}
+    <a href="{{ url_for('team_dashboard', team_number=team_number, robot_name=robot_name_var) }}"
+       class="text-sm text-blue-300 hover:underline block mb-2">
+        &larr; Back to {{ robot_name_var }}
+    </a>
+    {% endif %}
 
     <h1 class="text-3xl font-bold text-white flex items-center gap-2">
-        {% if filter_system != "Main" %}
+        {% if sys_name != "Main" and is_admin %}
         <span id="systemNameHeader"
               contenteditable="true"
               spellcheck="false"
               onblur="submitSystemNameEdit(this)"
               class="outline-none border-b border-dashed border-transparent hover:border-blue-400 focus:border-blue-500 focus:outline-none px-1">
-            {{ filter_system }}
-        </span>
+        {{ sys_name }}
+      </span>
         {% else %}
-        <span>{{ filter_system }}</span>
+        <span>{{ sys_name }}</span>
         {% endif %}
         <span class="text-white">BOM</span>
         <span class="text-blue-400 text-xl">🖉</span>
     </h1>
 </div>
+
+<!-- Download queue bell -->
 <div class="fixed top-4 right-4 z-50">
     <button onclick="toggleDownloadQueue()"
             class="relative bg-gray-800 text-white p-3 rounded-full shadow hover:bg-gray-700 transition">
@@ -31,45 +43,40 @@
         <span id="queueBadge"
               class="absolute -top-1 -right-1 bg-red-500 text-xs font-bold rounded-full px-1.5 py-0.5 hidden">0</span>
     </button>
-
-    <!-- Floating Queue Panel -->
     <div id="downloadQueuePanel"
          class="hidden mt-2 w-80 max-h-96 overflow-y-auto bg-gray-900 border border-gray-600 rounded-lg shadow-lg p-4 text-white">
         <h3 class="text-lg font-semibold mb-2">⬇️ Download Queue</h3>
         <ul id="queueList" class="list-disc list-inside text-sm space-y-1"></ul>
     </div>
 </div>
+
 {% if is_admin %}
-<div class="mb-6">
-    <button onclick="openSettingsModal()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">⚙️ Edit
-        System Settings
-    </button>
+<div class="mb-6 flex items-center gap-3">
+    <a href="{{ url_for('system_dashboard', team_number=team.team_number, robot_name=robot_name_var, system_name=sys_name) }}"
+       class="text-yellow-400 hover:text-yellow-600 text-lg" title="View System Dashboard">
+        <i class="fas fa-chart-line"></i>
+    </a>
+    <button onclick="openSettingsModal()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">⚙️ Edit System Settings</button>
 </div>
 
-<!-- ⚙️ Settings Modal -->
+<!-- Settings Modal -->
 <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
     <div class="bg-white rounded-lg p-6 w-full max-w-2xl relative">
-        <button onclick="closeSettingsModal()" class="absolute top-2 right-3 text-gray-600 hover:text-black text-xl">
-            &times;
-        </button>
+        <button onclick="closeSettingsModal()" class="absolute top-2 right-3 text-gray-600 hover:text-black text-xl">&times;</button>
         <h2 class="text-xl font-bold mb-4">🛠 Edit System Details</h2>
 
         <label class="block mb-2 font-semibold">Assembly URL:</label>
         <input id="assemblyUrlInput" type="text" class="w-full border px-3 py-2 rounded mb-4"/>
-        <!-- Subassembly URLs -->
+
         <label class="block text-sm font-semibold text-gray-800 mt-4">Subassembly URLs</label>
-        <div id="subassemblyUrls" class="space-y-2 mt-2 mb-4">
-            <!-- Dynamic inputs will be injected here -->
-        </div>
-        <button type="button" onclick="addSubassemblyUrl()" class="text-blue-600 hover:underline text-sm">
-            + Add Subassembly
-        </button>
+        <div id="subassemblyUrls" class="space-y-2 mt-2 mb-4"></div>
+        <button type="button" onclick="addSubassemblyUrl()" class="text-blue-600 hover:underline text-sm">+ Add Subassembly</button>
+
         <label class="block mb-2 font-semibold">Part Studio URLs:</label>
         <div id="studioUrlsWrapper" class="space-y-2 mb-4">
             <input type="text" class="studio-input w-full border px-3 py-2 rounded"/>
         </div>
         <button onclick="addStudioField()" class="text-blue-600 text-sm hover:underline mb-4">+ Add Part Studio</button>
-
 
         <label class="block mb-2 font-semibold">Access Key:</label>
         <input id="accessKeyInput" type="text" class="w-full border px-3 py-2 rounded mb-4"/>
@@ -77,55 +84,40 @@
         <label class="block mb-2 font-semibold">Secret Key:</label>
         <input id="secretKeyInput" type="text" class="w-full border px-3 py-2 rounded mb-4"/>
 
-        <button onclick="saveAndFetchBOM()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">🔄 Fetch
-            BOM
-        </button>
+        <button onclick="saveAndFetchBOM()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">🔄 Fetch BOM</button>
     </div>
 </div>
 {% endif %}
 
-<!-- 🧹 BOM Filter Buttons -->
+<!-- Filters -->
 <div class="mb-6">
-    <a href="{{ url_for('system_dashboard', team_number=team.team_number, robot_name=robot.name, system_name=system.name) }}"
-       onclick="event.stopPropagation();"
-       class="text-yellow-400 hover:text-yellow-600 text-lg ml-2" title="View System Dashboard">
-        <i class="fas fa-chart-line"></i>
-    </a>
     <div class="flex flex-wrap gap-2" id="filterButtons">
-        <button class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600" onclick="applyFilter(null)">All
-            Parts
-        </button>
-        <button class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600" onclick="applyFilter('COTS')">COTS
-        </button>
-        <button class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600" onclick="applyFilter('InHouse')">
-            In-House
-        </button>
+        <button class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600" onclick="applyFilter(null)">All Parts</button>
+        <button class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600" onclick="applyFilter('COTS')">COTS</button>
+        <button class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600" onclick="applyFilter('InHouse')">In-House</button>
     </div>
 </div>
-<!-- 🧲 Material Download Dropdown -->
+
+<!-- Material bulk download -->
 <div class="mb-6">
-    <label for="materialDropdown" class="block text-sm font-medium text-white mb-2">
-        Download All Material:
-    </label>
+    <label for="materialDropdown" class="block text-sm font-medium text-white mb-2">Download All Material:</label>
     <select id="materialDropdown"
             class="block w-full max-w-xs bg-white text-gray-800 border border-gray-300 rounded-lg shadow-sm px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
         <option value="">-- Select Material --</option>
     </select>
 </div>
 
-
-<!-- 🤩 BOM Parts Section -->
+<!-- Parts grid -->
 <div class="mb-8">
-    <h2 class="text-2xl font-bold text-gray-100 mb-4">Parts in {{ filter_system }}</h2>
+    <h2 class="text-2xl font-bold text-gray-100 mb-4">Parts in {{ sys_name }}</h2>
     <div id="bomPartsGrid" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"></div>
     <p id="noPartsMessage" class="text-center text-gray-500 mt-4">No parts to display.</p>
 </div>
 
-<!-- 👁️ Onshape Viewer Modal -->
+<!-- Viewer Modal -->
 <div id="viewerModal" class="fixed inset-0 z-50 bg-black bg-opacity-70 hidden flex items-center justify-center">
     <div class="bg-white rounded shadow-lg w-4/5 h-4/5 relative">
-        <button onclick="closeViewer()" class="absolute top-2 right-3 text-gray-600 hover:text-black text-xl">&times;
-        </button>
+        <button onclick="closeViewer()" class="absolute top-2 right-3 text-gray-600 hover:text-black text-xl">&times;</button>
         <canvas id="gltfCanvas" class="w-full h-full rounded"></canvas>
     </div>
 </div>
@@ -134,8 +126,8 @@
         <i class="fas fa-spinner fa-spin mr-2"></i> Loading 3D Model...
     </div>
 </div>
-
 {% endblock %}
+
 {% block scripts %}
 <script type="importmap">
     {
@@ -145,36 +137,44 @@
       }
     }
 </script>
+
+<script type="module" src="{{ url_for('static', filename='js/gltf_viewer.js') }}"></script>
+
 <script>
+    // --------- Safe, normalized template vars ----------
+    const token = localStorage.getItem("jwt_token");
+    const teamNumber = "{{ team_number }}";
+    const robotName = "{{ robot_name_var }}";
+    const systemName = "{{ sys_name }}";
+    const isAdmin = {{ 'true' if is_admin else 'false' }};
+
+    // Close viewer helper
     window.closeViewer = function () {
         document.getElementById("viewerModal").classList.add("hidden");
         document.getElementById("viewerLoading").classList.add("hidden");
-
-        // Reset canvas cleanly
         const canvas = document.getElementById("gltfCanvas");
         const newCanvas = canvas.cloneNode(true);
         canvas.parentNode.replaceChild(newCanvas, canvas);
     };
 </script>
-<script type="module" src="{{ url_for('static', filename='js/gltf_viewer.js') }}"></script>
+
 <script type="module">
-    const token = localStorage.getItem("jwt_token");
-    const teamNumber = "{{ team_number }}";
-    const robotName = "{{ current_robot }}";
-    const systemName = "{{ filter_system }}";
+    import { showGLTFViewer } from "/static/js/gltf_viewer.js";
+
     let fullBOM = [];
     let currentFilter = null;
-    let machineMap = {};
+    const machineMap = {}; // machine name -> CAD format
 
     function applyFilter(name) {
         currentFilter = name;
         renderBOM();
     }
+    window.applyFilter = applyFilter;
 
     function toggleDownloadQueue() {
-        const panel = document.getElementById("downloadQueuePanel");
-        panel.classList.toggle("hidden");
+        document.getElementById("downloadQueuePanel").classList.toggle("hidden");
     }
+    window.toggleDownloadQueue = toggleDownloadQueue;
 
     function updateQueueBadge(count) {
         const badge = document.getElementById("queueBadge");
@@ -188,34 +188,34 @@
 
     function addToDownloadQueue(partName, format) {
         const list = document.getElementById("queueList");
-        const panel = document.getElementById("downloadQueuePanel");
-
         const li = document.createElement("li");
         li.textContent = `Downloading ${partName} as ${format}...`;
         list.appendChild(li);
-
         updateQueueBadge(list.children.length);
-
-        panel.classList.remove("hidden");
+        document.getElementById("downloadQueuePanel").classList.remove("hidden");
     }
 
     function markDownloadComplete(partName, format) {
-        const items = document.querySelectorAll("#queueList li");
-        for (const item of items) {
+        document.querySelectorAll("#queueList li").forEach(item => {
             if (item.textContent.includes(partName) && item.textContent.includes(format)) {
                 item.textContent = `✅ ${partName} (${format}) downloaded`;
-                break;
             }
-        }
+        });
+    }
+
+    function cleanNA(v) {
+        if (!v) return "";
+        const s = String(v).trim();
+        return (s.toUpperCase() === "N/A") ? "" : s;
     }
 
     function getCurrentProcessStatus(part, qty) {
         const donePre = parseInt(part.done_preprocess || 0);
-        const doneP1 = parseInt(part.done_process1 || 0);
-        const doneP2 = parseInt(part.done_process2 || 0);
-        const pp = part["Pre Process"]?.trim();
-        const p1 = part["Process 1"]?.trim();
-        const p2 = part["Process 2"]?.trim();
+        const doneP1  = parseInt(part.done_process1 || 0);
+        const doneP2  = parseInt(part.done_process2 || 0);
+        const pp = cleanNA(part["Pre Process"]);
+        const p1 = cleanNA(part["Process 1"]);
+        const p2 = cleanNA(part["Process 2"]);
 
         if (pp && donePre < qty) return pp;
         if (p1 && (!pp || donePre >= qty) && doneP1 < qty) return p1;
@@ -223,14 +223,13 @@
         return null;
     }
 
-
     function getStatusColor(part, qty) {
         const donePre = parseInt(part.done_preprocess || 0);
-        const doneP1 = parseInt(part.done_process1 || 0);
-        const doneP2 = parseInt(part.done_process2 || 0);
-        const pp = part["Pre Process"]?.trim();
-        const p1 = part["Process 1"]?.trim();
-        const p2 = part["Process 2"]?.trim();
+        const doneP1  = parseInt(part.done_process1 || 0);
+        const doneP2  = parseInt(part.done_process2 || 0);
+        const pp = cleanNA(part["Pre Process"]);
+        const p1 = cleanNA(part["Process 1"]);
+        const p2 = cleanNA(part["Process 2"]);
 
         if (pp || p1 || p2) {
             if ((p2 && doneP2 >= qty) || (!p2 && p1 && doneP1 >= qty) || (!p2 && !p1 && donePre >= qty)) {
@@ -246,32 +245,21 @@
         const selectedMaterial = this.value;
         if (selectedMaterial) {
             downloadAllOfMaterial(selectedMaterial);
-            this.value = ""; // Reset dropdown after download starts
+            this.value = "";
         }
     });
 
     function populateMaterialDropdown() {
         const dropdown = document.getElementById("materialDropdown");
+        if (!dropdown) return;
         dropdown.innerHTML = `<option value="">-- Select Material --</option>`;
 
-        const shownParts = fullBOM.filter(part => {
-            const p1 = part["Process 1"]?.trim();
-            const p2 = part["Process 2"]?.trim();
-            const clean = str => !str || str.trim().toUpperCase() === "N/A";
-
-            const isCOTS = clean(part["Pre Process"]) && clean(p1) && clean(p2);
-            const isInHouse = !isCOTS;
-
-            if (!currentFilter) return true;
-            if (currentFilter === "COTS") return isCOTS;
-            if (currentFilter === "InHouse") return isInHouse;
-            return [part["Pre Process"], p1, p2].includes(currentFilter);
-        });
-
+        const shownParts = filterPartsForView();
         const materials = new Set();
+
         shownParts.forEach(part => {
-            const mat = part.materialBOM || part.Material || null;
-            if (mat) materials.add(mat.trim());
+            const mat = part.materialBOM || part.Material || "";
+            if (mat && String(mat).trim()) materials.add(String(mat).trim());
         });
 
         [...materials].sort().forEach(mat => {
@@ -283,77 +271,23 @@
     }
 
     async function downloadAllOfMaterial(materialName) {
-        if (!materialName) return;
+        const shownParts = filterPartsForView().filter(p => (p.materialBOM || p.Material || "").trim() === materialName.trim());
 
-        const shownParts = fullBOM.filter(part => {
-            const p1 = part["Process 1"]?.trim();
-            const p2 = part["Process 2"]?.trim();
-            const isCOTS = !part["Pre Process"] && !p1 && !p2;
-            const isInHouse = !isCOTS;
-
-            if (!currentFilter) return true;
-            if (currentFilter === "COTS") return isCOTS;
-            if (currentFilter === "InHouse") return isInHouse;
-            return [part["Pre Process"], p1, p2].includes(currentFilter);
-        });
-
-        const filtered = shownParts.filter(p => {
-            const mat = p.materialBOM || p.Material || "";
-            return mat.trim() === materialName.trim();
-        });
-        for (const part of filtered) {
+        // Show all items in queue first
+        for (const part of shownParts) {
             const qty = parseInt(part.Quantity || 1);
-            const name = part["Part Name"]?.trim().replace(/[^a-zA-Z0-9-_]/g, "_") || "Unnamed";
             const curProcess = getCurrentProcessStatus(part, qty);
             const fileType = (machineMap[curProcess] || "STEP").toUpperCase();
-
-            addToDownloadQueue(name, fileType);
+            addToDownloadQueue(safeName(part["Part Name"]), fileType);
         }
-        for (const part of filtered) {
-            const partId = part.partId;
+
+        // Then actually download them
+        for (const part of shownParts) {
             const qty = parseInt(part.Quantity || 1);
-            const name = part["Part Name"]?.trim().replace(/[^a-zA-Z0-9-_]/g, "_") || "Unnamed";
-            const mat = materialName.replace(/[^a-zA-Z0-9-_]/g, "_");
+            const name = safeName(part["Part Name"] || "Unnamed");
             const curProcess = getCurrentProcessStatus(part, qty);
             const fileType = (machineMap[curProcess] || "STEP").toUpperCase();
-
-
-            const res = await fetch("/api/download_cad", {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    team_number: teamNumber,
-                    robot: robotName,
-                    system: systemName,
-                    id: partId,
-                    format: fileType
-                })
-            });
-
-            if (!res.ok) {
-                const err = await res.json();
-                alert(err.error || "Download failed");
-                return;
-            }
-
-            const blob = await res.blob();
-            const url = window.URL.createObjectURL(blob);
-
-            const sanitizedName = name.replace(/[<>:"/\\|?*\n\r]+/g, "_");
-            const fileName = `${sanitizedName} x${qty} - ${mat}.${fileType.toLowerCase()}`;
-
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = fileName;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-
-            markDownloadComplete(name, fileType);
+            await downloadPartCad(part.partId, fileType, name, qty, materialName);
         }
     }
 
@@ -376,6 +310,10 @@
     }
     window.updateProcessQty = updateProcessQty;
 
+    function safeName(n) {
+        return String(n || "Part").replace(/[<>:"/\\|?*\n\r]+/g, "_");
+    }
+
     async function downloadPartCad(partId, fileType, partName = "Part", qty = 1, material = "Material") {
         if (!partId) return alert("Part ID missing");
         addToDownloadQueue(partName, fileType);
@@ -396,25 +334,25 @@
         });
 
         if (!res.ok) {
-            const err = await res.json();
-            alert(err.error || "Download failed");
+            const err = await safeJson(res);
+            alert((err && err.error) || "Download failed");
             return;
         }
 
         const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);
-        const fileName = `${partName.replace(/[<>:"/\\|?*\n\r]+/g, "_")} x${qty} - ${material}.${fileType.toLowerCase()}`;
+        const fileName = `${safeName(partName)} x${qty} - ${safeName(material)}.${fileType.toLowerCase()}`;
+
         const a = document.createElement("a");
         a.href = url;
         a.download = fileName;
         document.body.appendChild(a);
         a.click();
-        document.body.removeChild(a);
+        a.remove();
         window.URL.revokeObjectURL(url);
 
         markDownloadComplete(partName, fileType);
     }
-
     window.downloadPartCad = downloadPartCad;
 
     function renderCard(part) {
@@ -422,8 +360,8 @@
         const qty = parseInt(part.Quantity || 0);
         const curProcess = getCurrentProcessStatus(part, qty);
         const bg = getStatusColor(part, qty);
-        const p1 = part["Process 1"]?.trim();
-        const p2 = part["Process 2"]?.trim();
+        const p1 = cleanNA(part["Process 1"]);
+        const p2 = cleanNA(part["Process 2"]);
 
         const fileType = machineMap[curProcess] || "STEP";
         const name = part["Part Name"] || "Unnamed";
@@ -434,101 +372,80 @@
         const doneP2 = part.done_process2 || 0;
         const avail = part.available_qty || 0;
 
-        const clean = str => !str || str.trim().toUpperCase() === "N/A";
-        const isCOTS = clean(part["Pre Process"]) && clean(p1) && clean(p2);
-        const isInHouse = !isCOTS;
+        const isCOTS = !cleanNA(part["Pre Process"]) && !p1 && !p2;
 
         return `
-        <div class="rounded border shadow-md p-4 relative hover:shadow-lg transition ${bg}">
-            <h3 class="text-lg font-bold text-blue-700">${name}</h3>
-            <p><strong>Material:</strong> ${mat}</p>
-            <p><strong>Description:</strong> ${desc}</p>
-            <p><strong>Quantity Needed:</strong> ${qty}</p>
-            ${isInHouse && curProcess ? `<p class="text-sm text-gray-600 italic">🔧 Current Process: ${curProcess}</p>` : ""}
-            ${part["Pre Process"] ? `<label>✅ Done ${part["Pre Process"]}: <input type="number" value="${donePre}" onchange="updateProcessQty('${partId}', 'done_preprocess', this.value)" class="border px-2 py-1 rounded w-20" /></label><br/>` : ""}
-            ${p1 ? `<label>✅ Done ${p1}: <input type="number" value="${doneP1}" onchange="updateProcessQty('${partId}', 'done_process1', this.value)" class="border px-2 py-1 rounded w-20" /></label><br/>` : ""}
-            ${p2 ? `<label>✅ Done ${p2}: <input type="number" value="${doneP2}" onchange="updateProcessQty('${partId}', 'done_process2', this.value)" class="border px-2 py-1 rounded w-20" /></label><br/>` : ""}
-            ${isCOTS ? `<label>📦 Qty In Stock: <input type="number" value="${avail}" onchange="updateProcessQty('${partId}', 'available_qty', this.value)" class="border px-2 py-1 rounded w-20" /></label>` : ""}
-            <button title="Download CAD" class="absolute top-2 right-2 text-blue-600 hover:text-blue-900" <button onclick="downloadPartCad('${partId}', '${fileType}', '${name}', '${part.Quantity}','${part.materialBOM}')">
-                <i class="fas fa-download fa-lg"></i>
-            </button>
-            <button class="text-green-600 hover:text-green-900" onclick="startViewer('${partId}')">
-                <i class="fas fa-eye fa-lg"></i>
-            </button>
-        </div>
+      <div class="rounded border shadow-md p-4 relative hover:shadow-lg transition ${bg}">
+        <h3 class="text-lg font-bold text-blue-700">${name}</h3>
+        <p><strong>Material:</strong> ${mat}</p>
+        <p><strong>Description:</strong> ${desc}</p>
+        <p><strong>Quantity Needed:</strong> ${qty}</p>
+        ${!isCOTS && curProcess ? `<p class="text-sm text-gray-600 italic">🔧 Current Process: ${curProcess}</p>` : ""}
+        ${cleanNA(part["Pre Process"]) ? `<label>✅ Done ${part["Pre Process"]}: <input type="number" value="${donePre}" onchange="updateProcessQty('${partId}','done_preprocess', this.value)" class="border px-2 py-1 rounded w-20" /></label><br/>` : ""}
+        ${p1 ? `<label>✅ Done ${p1}: <input type="number" value="${doneP1}" onchange="updateProcessQty('${partId}','done_process1', this.value)" class="border px-2 py-1 rounded w-20" /></label><br/>` : ""}
+        ${p2 ? `<label>✅ Done ${p2}: <input type="number" value="${doneP2}" onchange="updateProcessQty('${partId}','done_process2', this.value)" class="border px-2 py-1 rounded w-20" /></label><br/>` : ""}
+        ${isCOTS ? `<label>📦 Qty In Stock: <input type="number" value="${avail}" onchange="updateProcessQty('${partId}','available_qty', this.value)" class="border px-2 py-1 rounded w-20" /></label>` : ""}
+        <button title="Download CAD"
+                class="absolute top-2 right-10 text-blue-600 hover:text-blue-900"
+                onclick="downloadPartCad('${partId}', '${fileType}', '${safeName(name)}', '${part.Quantity}','${safeName(part.materialBOM || part.Material || "Material")}')">
+          <i class="fas fa-download fa-lg"></i>
+        </button>
+        <button class="absolute top-2 right-2 text-green-600 hover:text-green-900"
+                title="Preview"
+                onclick="startViewer('${partId}')">
+          <i class="fas fa-eye fa-lg"></i>
+        </button>
+      </div>
     `;
     }
+
     function startViewer(partId) {
-        // 👁️ Show the loading spinner immediately
-        const loadingOverlay = document.getElementById("viewerLoading");
-        const viewerModal = document.getElementById("viewerModal");
-
-        loadingOverlay.classList.remove("hidden");
-        viewerModal.classList.remove("hidden");
-
-        // Proceed to load the viewer
+        document.getElementById("viewerLoading").classList.remove("hidden");
+        document.getElementById("viewerModal").classList.remove("hidden");
         loadPartViewer(partId);
     }
     window.startViewer = startViewer;
-    function renderBOM() {
-        const grid = document.getElementById("bomPartsGrid");
-        const noMsg = document.getElementById("noPartsMessage");
-        grid.innerHTML = '';
 
-        const shownParts = fullBOM
+    function filterPartsForView() {
+        return fullBOM
             .filter(part => {
-                const p1 = part["Process 1"]?.trim();
-                const p2 = part["Process 2"]?.trim();
-                const isCOTS = !part["Pre Process"] && !p1 && !p2;
+                const p1 = cleanNA(part["Process 1"]);
+                const p2 = cleanNA(part["Process 2"]);
+                const isCOTS = !cleanNA(part["Pre Process"]) && !p1 && !p2;
                 const isInHouse = !isCOTS;
 
                 if (!currentFilter) return true;
                 if (currentFilter === "COTS") return isCOTS;
                 if (currentFilter === "InHouse") return isInHouse;
-                return [part["Pre Process"], p1, p2].includes(currentFilter);
+                return [cleanNA(part["Pre Process"]), p1, p2].includes(currentFilter);
             })
             .sort((a, b) => (a["Part Name"] || "").localeCompare(b["Part Name"] || ""));
+    }
 
-        shownParts.forEach(part => {
-            grid.innerHTML += renderCard(part);
-        });
+    function renderBOM() {
+        const grid = document.getElementById("bomPartsGrid");
+        const noMsg = document.getElementById("noPartsMessage");
+        grid.innerHTML = "";
 
-        noMsg.style.display = shownParts.length === 0 ? "block" : "none";
+        const shownParts = filterPartsForView();
+        shownParts.forEach(part => { grid.innerHTML += renderCard(part); });
+
+        noMsg.style.display = shownParts.length ? "none" : "block";
         populateMaterialDropdown();
     }
 
     async function loadAndRenderBOM() {
-        const res = await fetch(`/api/get_bom?team_number=${teamNumber}&robot=${robotName}&system=${systemName}`, {
-            headers: {Authorization: `Bearer ${token}`}
+        const res = await fetch(`/api/get_bom?team_number=${teamNumber}&robot=${encodeURIComponent(robotName)}&system=${encodeURIComponent(systemName)}`, {
+            headers: { Authorization: `Bearer ${token}` }
         });
         const data = await res.json();
-        if (!res.ok || !data.bom_data) return;
+        if (!res.ok || !data.bom_data) {
+            console.error("Failed to load BOM", data);
+            return;
+        }
         fullBOM = data.bom_data;
         renderBOM();
-        populateMaterialDropdown();
     }
-
-
-    (async () => {
-        const token = localStorage.getItem("jwt_token");
-        const teamNumber = "{{ team_number }}";
-        const response = await fetch(`/api/machines?team_number=${teamNumber}`, {
-            headers: {Authorization: `Bearer ${token}`}
-        });
-        if (!response.ok) return;
-        const data = await response.json();
-        const filterDiv = document.getElementById("filterButtons");
-        (data.machines || []).forEach(m => {
-            const name = m.name.trim();
-            const cadFormat = m.cad_format?.trim() || "STEP";  // ✅ Get CAD format
-            machineMap[name] = cadFormat;                       // ✅ Set mapping
-            const btn = document.createElement("button");
-            btn.className = "bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600";
-            btn.innerText = name;
-            btn.onclick = () => applyFilter(name);
-            filterDiv.appendChild(btn);
-        });
-    })();
 
     async function loadPartViewer(partId) {
         const res = await fetch("/api/viewer_gltf", {
@@ -545,127 +462,140 @@
             })
         });
 
-        if (!res.ok) return alert("❌ Failed to fetch GLTF");
-
+        if (!res.ok) {
+            document.getElementById("viewerLoading").classList.add("hidden");
+            alert("❌ Failed to fetch GLTF");
+            return;
+        }
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         showGLTFViewer(url);
     }
 
-    document.addEventListener("DOMContentLoaded", loadAndRenderBOM);
-    import { showGLTFViewer } from "/static/js/gltf_viewer.js";
-
     function addSubassemblyUrl(value = "") {
         const container = document.getElementById("subassemblyUrls");
-        const inputWrapper = document.createElement("div");
-        inputWrapper.className = "flex gap-2";
-
+        const row = document.createElement("div");
+        row.className = "flex gap-2";
         const input = document.createElement("input");
         input.type = "text";
         input.className = "w-full px-2 py-1 border rounded";
         input.value = value;
-
-        const removeBtn = document.createElement("button");
-        removeBtn.innerHTML = "✕";
-        removeBtn.type = "button";
-        removeBtn.className = "text-red-500 font-bold";
-        removeBtn.onclick = () => inputWrapper.remove();
-
-        inputWrapper.appendChild(input);
-        inputWrapper.appendChild(removeBtn);
-        container.appendChild(inputWrapper);
-    }
-
-    function getSubassemblyUrls() {
-        const inputs = document.querySelectorAll("#subassemblyUrls input");
-        return Array.from(inputs).map(input => input.value.trim()).filter(v => v);
-    }
-
-</script>
-
-<script>
-    function openSettingsModal() {
-        document.getElementById("settingsModal").classList.remove("hidden");
-
-        // Pre-fill current values
-        fetch(`/api/system_settings?team_number={{ team_number }}&robot_name={{ current_robot }}&system_name={{ system.name }}`, {
-            headers: {Authorization: `Bearer ${localStorage.getItem("jwt_token")}`}
-        })
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById("assemblyUrlInput").value = data.assembly_url || "";
-                document.getElementById("accessKeyInput").value = data.access_key || "";
-                document.getElementById("secretKeyInput").value = data.secret_key || "";
-
-                const wrapper = document.getElementById("studioUrlsWrapper");
-                wrapper.innerHTML = "";
-                (data.partstudio_urls || [""]).forEach(url => addStudioField(url));
-                (data.subassembly_urls || []).forEach(url => addSubassemblyUrl(url));
-
-            });
-    }
-
-    function closeSettingsModal() {
-        document.getElementById("settingsModal").classList.add("hidden");
-    }
-
-    function addStudioField(value = "") {
-        const wrapper = document.getElementById("studioUrlsWrapper");
-
-        const row = document.createElement("div");
-        row.className = "flex gap-2";
-
-        const input = document.createElement("input");
-        input.type = "text";
-        input.className = "studio-input w-full border px-3 py-2 rounded";
-        input.value = value;
-
         const removeBtn = document.createElement("button");
         removeBtn.innerHTML = "✕";
         removeBtn.type = "button";
         removeBtn.className = "text-red-500 font-bold";
         removeBtn.onclick = () => row.remove();
+        row.appendChild(input);
+        row.appendChild(removeBtn);
+        container.appendChild(row);
+    }
+    window.addSubassemblyUrl = addSubassemblyUrl;
 
+    function getSubassemblyUrls() {
+        return Array.from(document.querySelectorAll("#subassemblyUrls input"))
+            .map(i => i.value.trim())
+            .filter(Boolean);
+    }
+
+    async function safeJson(res) {
+        try { return await res.json(); } catch { return null; }
+    }
+
+    // Load machine filters and map (machine -> output CAD format)
+    (async () => {
+        const resp = await fetch(`/api/machines?team_number=${teamNumber}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        if (resp.ok) {
+            const data = await resp.json();
+            const filterDiv = document.getElementById("filterButtons");
+            (data.machines || []).forEach(m => {
+                const name = (m.name || "").trim();
+                const cadFormat = (m.cad_format || "STEP").trim();
+                machineMap[name] = cadFormat;
+                const btn = document.createElement("button");
+                btn.className = "bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-600";
+                btn.innerText = name;
+                btn.onclick = () => applyFilter(name);
+                filterDiv.appendChild(btn);
+            });
+        }
+    })();
+
+    document.addEventListener("DOMContentLoaded", loadAndRenderBOM);
+
+    // ------- Admin-only helpers -------
+    window.openSettingsModal = function () {
+        if (!isAdmin) return;
+        document.getElementById("settingsModal").classList.remove("hidden");
+        fetch(`/api/system_settings?team_number={{ team_number }}&robot_name=${encodeURIComponent(robotName)}&system_name=${encodeURIComponent(systemName)}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        })
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById("assemblyUrlInput").value = data.assembly_url || "";
+                document.getElementById("accessKeyInput").value = data.access_key || "";
+                document.getElementById("secretKeyInput").value = data.secret_key || "";
+                const wrapper = document.getElementById("studioUrlsWrapper");
+                wrapper.innerHTML = "";
+                (data.partstudio_urls || [""]).forEach(url => addStudioField(url));
+                (data.subassembly_urls || []).forEach(url => addSubassemblyUrl(url));
+            });
+    };
+
+    window.closeSettingsModal = function () {
+        document.getElementById("settingsModal").classList.add("hidden");
+    };
+
+    window.addStudioField = function (value = "") {
+        const wrapper = document.getElementById("studioUrlsWrapper");
+        const row = document.createElement("div");
+        row.className = "flex gap-2";
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "studio-input w-full border px-3 py-2 rounded";
+        input.value = value;
+        const removeBtn = document.createElement("button");
+        removeBtn.innerHTML = "✕";
+        removeBtn.type = "button";
+        removeBtn.className = "text-red-500 font-bold";
+        removeBtn.onclick = () => row.remove();
         row.appendChild(input);
         row.appendChild(removeBtn);
         wrapper.appendChild(row);
-    }
+    };
 
-
-    function saveAndFetchBOM() {
+    window.saveAndFetchBOM = function () {
         const payload = {
             team_number: "{{ team_number }}",
-            robot_name: "{{ current_robot }}",
-            system_name: "{{ system.name }}",
+            robot_name: robotName,
+            system_name: systemName,
             assembly_url: document.getElementById("assemblyUrlInput").value,
             access_key: document.getElementById("accessKeyInput").value,
             secret_key: document.getElementById("secretKeyInput").value,
-            partstudio_urls: Array.from(document.getElementsByClassName("studio-input")).map(input => input.value),
+            partstudio_urls: Array.from(document.getElementsByClassName("studio-input")).map(i => i.value.trim()).filter(Boolean),
             subassembly_urls: getSubassemblyUrls()
-
         };
-
 
         fetch("/api/update_system_settings", {
             method: "POST",
             headers: {
-                "Authorization": `Bearer ${localStorage.getItem("jwt_token")}`,
+                "Authorization": `Bearer ${token}`,
                 "Content-Type": "application/json"
             },
             body: JSON.stringify(payload)
         })
-            .then(res => res.json())
-            .then(data => {
-                if (!data.success) {
-                    alert("❌ Failed to save system: " + (data.error || "Unknown error"));
+            .then(r => r.json())
+            .then(d => {
+                if (!d.success) {
+                    alert("❌ Failed to save system: " + (d.error || "Unknown error"));
                     return;
                 }
-
-                // ✅ Now fetch BOM
-                fetch("/api/bom", {
+                // Fetch BOM
+                return fetch("/api/bom", {
                     method: "POST",
                     headers: {
-                        "Authorization": `Bearer ${localStorage.getItem("jwt_token")}`,
+                        "Authorization": `Bearer ${token}`,
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
@@ -673,52 +603,41 @@
                         robot_name: payload.robot_name,
                         system_name: payload.system_name
                     })
-                })
-                    .then(res => res.json())
-                    .then(data => {
-                        window.location.href = `/${payload.team_number}/Admin/${payload.robot_name}/${payload.system_name}`;
-                    });
+                });
+            })
+            .then(() => {
+                window.location.href = `/${payload.team_number}/Admin/${encodeURIComponent(payload.robot_name)}/${encodeURIComponent(payload.system_name)}`;
             });
-    }
-</script>
-<script>
-    async function submitSystemNameEdit(el) {
-        const newName = el.textContent.trim();
-        const oldName = "{{ filter_system }}";
-        if (newName === oldName || !newName) return;
+    };
 
-        const partstudioUrls = JSON.parse('{{ system.partstudio_urls | default("[]") | tojson | safe }}');
-
-        const payload = {
-            team_number: "{{ team_number }}",
-            robot_name: "{{ current_robot }}",
-            old_system_name: oldName,
-            new_system_name: newName,
-            assembly_url: "{{ system.assembly_url | default('') }}",
-            access_key: "{{ system.access_key | default('') }}",
-            secret_key: "{{ system.secret_key | default('') }}",
-            partstudio_urls: partstudioUrls
-        };
+    window.submitSystemNameEdit = async function (el) {
+        const newName = (el.textContent || "").trim();
+        const oldName = systemName;
+        if (!newName || newName === oldName) return;
 
         const res = await fetch("/api/update_system_settings", {
             method: "POST",
             headers: {
-                "Authorization": `Bearer ${localStorage.getItem("jwt_token")}`,
+                "Authorization": `Bearer ${token}`,
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({
+                team_number: "{{ team_number }}",
+                robot_name: robotName,
+                old_system_name: oldName,
+                new_system_name: newName,
+                assembly_url: "", access_key: "", secret_key: "",
+                partstudio_urls: [],
+                subassembly_urls: []
+            })
         });
-
         const data = await res.json();
         if (data.success) {
-            window.location.href = `/${payload.team_number}/Admin/${payload.robot_name}/${newName}`;
+            window.location.href = `/${teamNumber}/Admin/${encodeURIComponent(robotName)}/${encodeURIComponent(newName)}`;
         } else {
             alert("❌ Failed to rename system: " + (data.error || "Unknown error"));
-            el.textContent = oldName; // rollback
+            el.textContent = oldName;
         }
-    }
-
+    };
 </script>
-
-
 {% endblock %}

@@ -3,14 +3,11 @@
 {% block content %}
 <div class="mb-6">
   <a href="{{ url_for('team_admin_bom', team_number=team_number, robot_name=robot_name, system=system_name) }}"
-     class="text-sm text-blue-300 hover:underline block mb-2">
-    &larr; Back to System BOM
-  </a>
+     class="text-sm text-blue-300 hover:underline block mb-2">&larr; Back to System BOM</a>
   <h1 class="text-3xl font-bold text-white">⚙️ System Dashboard: {{ system_name }}</h1>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-  <!-- Viewer card -->
   <div class="rounded-xl bg-gray-800/60 backdrop-blur border border-gray-700 hover:border-blue-500/50 shadow-xl hover:shadow-blue-500/20 transition p-4">
     <div class="relative">
       <div id="viewerLoading" class="absolute inset-0 flex items-center justify-center bg-black/40 rounded-lg z-10">
@@ -24,40 +21,30 @@
     </div>
   </div>
 
-  <!-- Stats card -->
   <div class="rounded-xl bg-gray-800/60 backdrop-blur border border-gray-700 hover:border-blue-500/50 shadow-xl hover:shadow-blue-500/20 transition p-6 text-white space-y-6">
     <div class="flex items-center gap-4">
       <div class="text-xl font-semibold">📊 Process Progress</div>
       <span class="text-xs text-gray-400">(auto-refreshes)</span>
     </div>
 
-    <!-- Progress ring -->
     <div class="flex items-center gap-4">
       <div class="relative w-20 h-20">
         <svg viewBox="0 0 36 36" class="w-20 h-20">
-          <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none" stroke="currentColor" stroke-width="2" class="text-gray-700"></path>
-          <path id="pctRing" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                class="text-blue-400" stroke-dasharray="0,100"></path>
+          <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-700"></path>
+          <path id="pctRing" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="text-blue-400" stroke-dasharray="0,100"></path>
         </svg>
         <div id="pctLabel" class="absolute inset-0 flex items-center justify-center text-white font-bold">0%</div>
       </div>
       <div class="text-sm text-gray-300">Overall completion</div>
     </div>
 
-    <div id="systemStats" class="text-gray-300 space-y-2 text-sm">
-      <!-- Stats populated via JS -->
-      <div class="opacity-60">Loading stats…</div>
-    </div>
+    <div id="systemStats" class="text-gray-300 space-y-2 text-sm"><div class="opacity-60">Loading stats…</div></div>
   </div>
 </div>
 
-<!-- Confetti modal -->
 <div id="confettiModal" class="fixed inset-0 bg-black bg-opacity-80 z-50 hidden items-center justify-center">
   <div class="bg-white rounded-lg p-6 max-w-3xl w-full relative">
-    <button onclick="document.getElementById('confettiModal').classList.add('hidden')"
-            class="absolute top-2 right-3 text-xl text-gray-500 hover:text-black" aria-label="Close">&times;</button>
+    <button onclick="document.getElementById('confettiModal').classList.add('hidden')" class="absolute top-2 right-3 text-xl text-gray-500 hover:text-black" aria-label="Close">&times;</button>
     <h2 class="text-2xl font-bold mb-4 text-center text-green-600">🎉 Finished Part!</h2>
     <div class="relative">
       <div id="confettiLoading" class="absolute inset-0 flex items-center justify-center bg-black/10 rounded z-10">
@@ -85,8 +72,6 @@
   const robotName = "{{ robot_name }}";
   const systemName = "{{ system_name }}";
   const token = localStorage.getItem("jwt_token");
-
-  // --- Utilities ---
   const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
 
   function updateProgressRing(percent) {
@@ -101,52 +86,44 @@
     const list = document.getElementById("nowMakingList");
     if (!list) return;
     const li = document.createElement("li");
-    li.innerHTML = `✅ <span class="text-white">${line}</span>`;
+    li.innerHTML = `✅ <span class=\"text-white\">${line}</span>`;
     list.prepend(li);
     while (list.children.length > 5) list.removeChild(list.lastChild);
   }
 
-  // --- Data loads ---
   async function loadSystemStats() {
     try {
       const res = await fetch(`/api/dashboard/system_stats?team_number=${teamNumber}&robot_name=${robotName}&system_name=${systemName}`, {
-        credentials: 'include',
-        headers: { ...authHeader }
+        credentials: 'include', headers: { ...authHeader }
       });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
 
       updateProgressRing(data.percent_complete);
-
       const el = document.getElementById("systemStats");
       el.innerHTML = `
-      <div>Total Parts: <strong class="text-white">${data.total_parts ?? 0}</strong></div>
-      <div>Completed: <strong class="text-green-400">${data.completed_parts ?? 0}</strong> (${data.percent_complete ?? 0}%)</div>
+      <div>Total Parts: <strong class=\"text-white\">${data.total_parts ?? 0}</strong></div>
+      <div>Completed: <strong class=\"text-green-400\">${data.completed_parts ?? 0}</strong> (${data.percent_complete ?? 0}%)</div>
       <div>COTS: ${data.cots_parts ?? 0}, In-House: ${data.inhouse_parts ?? 0}</div>
-      <div>Top Process: ${data.top_process ?? '—'}</div>
-    `;
+      <div>Top Process: ${data.top_process ?? '—'}</div>`;
     } catch (e) {
       console.error('Failed to load system stats:', e);
       const el = document.getElementById("systemStats");
-      if (el) el.innerHTML = `<div class="text-red-300">Failed to load system stats</div>`;
+      if (el) el.innerHTML = `<div class=\"text-red-300\">Failed to load system stats</div>`;
     }
   }
 
   async function showAssemblyViewer() {
     try {
       const res = await fetch('/api/viewer_gltf_batch', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { ...authHeader, 'Content-Type': 'application/json' },
+        method: 'POST', credentials: 'include', headers: { ...authHeader, 'Content-Type': 'application/json' },
         body: JSON.stringify({ team_number: teamNumber, robot: robotName, system: systemName })
       });
-
       if (!res.ok) {
         console.error("GLTF export failed:", await res.text());
         document.getElementById('viewerLoading')?.classList.add('hidden');
         return;
       }
-
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       showGLTFViewer(url, 'systemViewer', false, false);
@@ -160,8 +137,7 @@
   async function pollForFinishedParts() {
     try {
       const res = await fetch(`/api/dashboard/recent_completions?team_number=${teamNumber}&robot_name=${robotName}&system_name=${systemName}`, {
-        credentials: 'include',
-        headers: { ...authHeader }
+        credentials: 'include', headers: { ...authHeader }
       });
       if (!res.ok) return;
 
@@ -169,29 +145,21 @@
       const parts = Array.isArray(data.parts) ? data.parts : [];
       if (!parts.length) return;
 
-      // Pick the most recent
       parts.sort((a, b) => new Date(b.ts) - new Date(a.ts));
       const part = parts[0];
 
-      // Update ticker
       appendNowMaking(`${part.part_id} just finished`);
 
-      // Load its GLTF
       document.getElementById('confettiLoading')?.classList.remove('hidden');
       const gltfRes = await fetch('/api/viewer_gltf', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { ...authHeader, 'Content-Type': 'application/json' },
+        method: 'POST', credentials: 'include', headers: { ...authHeader, 'Content-Type': 'application/json' },
         body: JSON.stringify({ team_number: teamNumber, robot: robotName, system: systemName, id: part.part_id })
       });
       if (!gltfRes.ok) return;
-
       const blob = await gltfRes.blob();
       const url = URL.createObjectURL(blob);
-
       const modal = document.getElementById('confettiModal');
       modal.classList.remove('hidden');
-      // Use rotating + confetti
       showGLTFViewer(url, 'confettiViewer', true, true);
     } catch (e) {
       console.error('pollForFinishedParts error:', e);
@@ -200,11 +168,11 @@
     }
   }
 
-  // --- Init ---
+  // Init
   document.addEventListener('DOMContentLoaded', () => {
     loadSystemStats();
     showAssemblyViewer();
-    setInterval(loadSystemStats, 15000); // keep stats fresh
+    setInterval(loadSystemStats, 15000);
     setInterval(pollForFinishedParts, 8000);
   });
 </script>

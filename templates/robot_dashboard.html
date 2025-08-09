@@ -2,32 +2,55 @@
 {% block title %}Robot Dashboard - {{ robot_name }}{% endblock %}
 {% block content %}
 <div class="mb-6">
-    <a href="{{ url_for('team_admin_robot', team_number=team_number, robot_name=robot_name) }}"
-       class="text-sm text-blue-300 hover:underline block mb-2">
-        &larr; Back to Robot Details
-    </a>
+    <a href="{{ url_for('team_admin_dashboard', team_number=team_number) }}" class="text-sm text-blue-300 hover:underline block mb-2">&larr; Back to Robot List</a>
     <h1 class="text-3xl font-bold text-white">🤖 Robot Dashboard: {{ robot_name }}</h1>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-    <div>
-        <canvas id="robotViewer" class="w-full h-96 rounded-lg border border-gray-600 shadow-lg bg-black"></canvas>
-    </div>
-    <div class="text-white space-y-4">
-        <div class="text-xl font-semibold">📊 Progress Overview</div>
-        <div id="robotStats" class="text-gray-300 space-y-2">
-            <!-- Stats populated via JS -->
+    <div class="rounded-xl bg-gray-800/60 backdrop-blur border border-gray-700 shadow-xl p-4">
+        <div class="flex items-center justify-between mb-2">
+            <div class="text-white font-semibold">Assembly Viewer</div>
+            <div id="currentSystem" class="text-xs text-gray-400">—</div>
         </div>
+        <div class="relative">
+            <div id="viewerLoading" class="absolute inset-0 flex items-center justify-center bg-black/40 rounded-lg z-10">
+                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-white"></div>
+            </div>
+            <canvas id="robotViewer" class="w-full h-96 rounded-lg border border-gray-600 shadow-lg bg-black"></canvas>
+        </div>
+    </div>
+
+    <div class="rounded-xl bg-gray-800/60 backdrop-blur border border-gray-700 shadow-xl p-6 text-white space-y-6">
+        <div class="flex items-center gap-4">
+            <div class="text-xl font-semibold">📊 Robot Progress</div>
+            <span class="text-xs text-gray-400">(auto-refreshes)</span>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <div class="relative w-20 h-20">
+                <svg viewBox="0 0 36 36" class="w-20 h-20">
+                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-700"></path>
+                    <path id="pctRing" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="text-blue-400" stroke-dasharray="0,100"></path>
+                </svg>
+                <div id="pctLabel" class="absolute inset-0 flex items-center justify-center text-white font-bold">0%</div>
+            </div>
+            <div class="text-sm text-gray-300">Overall completion</div>
+        </div>
+
+        <div id="robotStats" class="text-gray-300 space-y-2 text-sm"><div class="opacity-60">Loading stats…</div></div>
     </div>
 </div>
 
 <div id="confettiModal" class="fixed inset-0 bg-black bg-opacity-80 z-50 hidden items-center justify-center">
     <div class="bg-white rounded-lg p-6 max-w-3xl w-full relative">
-        <button onclick="document.getElementById('confettiModal').classList.add('hidden')"
-                class="absolute top-2 right-3 text-xl text-gray-500 hover:text-black">&times;
-        </button>
+        <button onclick="document.getElementById('confettiModal').classList.add('hidden')" class="absolute top-2 right-3 text-xl text-gray-500 hover:text-black" aria-label="Close">&times;</button>
         <h2 class="text-2xl font-bold mb-4 text-center text-green-600">🎉 Finished Part!</h2>
-        <canvas id="confettiViewer" class="w-full h-96 rounded border border-gray-300"></canvas>
+        <div class="relative">
+            <div id="confettiLoading" class="absolute inset-0 flex items-center justify-center bg-black/10 rounded z-10">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-700"></div>
+            </div>
+            <canvas id="confettiViewer" class="w-full h-96 rounded border border-gray-300"></canvas>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -42,87 +65,155 @@
     }
 </script>
 <script type="module">
-    document.addEventListener("DOMContentLoaded", () => {
-        if (!token) {
-            window.location.href = "/";
-            return;
-        }
-        loadRobotStats();
-        showAssemblyViewer();
-        setInterval(pollForFinishedParts, 8000);
-    });
-    import {showGLTFViewer} from "/static/js/gltf_viewer.js";
+    import { showGLTFViewer } from "/static/js/gltf_viewer.js";
 
     const teamNumber = "{{ team_number }}";
     const robotName = "{{ robot_name }}";
     const token = localStorage.getItem("jwt_token");
+    const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
 
-    async function loadRobotStats() {
-        const res = await fetch(`/api/dashboard/robot_stats?team_number=${teamNumber}&robot_name=${robotName}`, {
-            credentials: "include",
-            headers: token ? { Authorization: `Bearer ${token}` } : {}
+    let systems = [];
+    let idx = 0;
+    let cache = new Map(); // systemName -> { status: 'ready'|'loading', url }
+    let rotateTimer = null;
+
+    function updateRing(percent){
+        const pct = Math.max(0, Math.min(100, Number(percent || 0)));
+        const ring = document.getElementById('pctRing');
+        const lbl = document.getElementById('pctLabel');
+        if (ring) ring.setAttribute('stroke-dasharray', `${pct},100`);
+        if (lbl) lbl.textContent = `${pct}%`;
+    }
+
+    async function loadRobotStats(){
+        try {
+            const res = await fetch(`/api/dashboard/robot_stats?team_number=${teamNumber}&robot_name=${robotName}`, {
+                credentials: 'include', headers: { ...authHeader }
+            });
+            if (!res.ok) throw new Error(await res.text());
+            const data = await res.json();
+            updateRing(data.percent_complete);
+            const el = document.getElementById('robotStats');
+            el.innerHTML = `
+      <div>Total Parts: <strong class="text-white">${data.total_parts ?? 0}</strong></div>
+      <div>Completed: <strong class="text-green-400">${data.completed_parts ?? 0}</strong> (${data.percent_complete ?? 0}%)</div>
+      <div>COTS: ${data.cots_parts ?? 0}, In-House: ${data.inhouse_parts ?? 0}</div>
+      <div>Top Material: ${data.top_material ?? '—'}</div>`;
+        } catch(e){
+            console.error('robot_stats failed', e);
+        }
+    }
+
+    async function fetchSystems(){
+        const res = await fetch(`/api/robot_systems?team_number=${teamNumber}&robot_name=${robotName}`, {
+            credentials: 'include', headers: { ...authHeader }
         });
+        if (!res.ok){
+            systems = [];
+            return;
+        }
         const data = await res.json();
-        if (!res.ok) return alert("Failed to load robot stats");
-
-        const el = document.getElementById("robotStats");
-        el.innerHTML = `
-    <div>Total Parts: <strong>${data.total_parts}</strong></div>
-    <div>Completed: <strong>${data.completed_parts}</strong> (${data.percent_complete}%)</div>
-    <div>COTS: ${data.cots_parts}, In-House: ${data.inhouse_parts}</div>
-    <div>Most Used Material: ${data.top_material}</div>
-  `;
+        systems = Array.isArray(data.systems) && data.systems.length ? data.systems : [];
     }
 
-    async function showAssemblyViewer() {
-        const blob = await fetch("/api/viewer_gltf_batch", {
-            method: "POST",
-            credentials: "include",
-            headers: {
-                ...(token ? {Authorization: `Bearer ${token}`} : {}),
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                team_number: teamNumber,
-                robot: robotName,
-                system: "Main",
-                part_ids: []
-            })
-        }).then(r => r.blob());
-
-        const url = URL.createObjectURL(blob);
-        showGLTFViewer(url, "robotViewer", false, false);
+    async function prefetch(system){
+        if (!system || cache.has(system)) return;
+        cache.set(system, { status: 'loading', url: null });
+        try {
+            const res = await fetch('/api/viewer_gltf_batch', {
+                method: 'POST', credentials: 'include', headers: { ...authHeader, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ team_number: teamNumber, robot: robotName, system })
+            });
+            if (!res.ok) throw new Error(await res.text());
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            cache.set(system, { status: 'ready', url });
+        } catch (e){
+            console.error('prefetch failed for', system, e);
+            cache.delete(system);
+        }
     }
 
-    async function pollForFinishedParts() {
-        const res = await fetch(`/api/dashboard/recent_completions?team_number=${teamNumber}&robot_name=${robotName}&system_name=${systemName}`, {
-            credentials: "include",
-            headers: token ? { Authorization: `Bearer ${token}` } : {}
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        const parts = Array.isArray(data.parts) ? data.parts : [];
-        if (!parts.length) return;
+    function nextIndex(i){ return (i + 1) % (systems.length || 1); }
 
-        parts.sort((a, b) => new Date(b.ts) - new Date(a.ts));
-        const part = parts[0];
+    async function showCurrent(){
+        if (!systems.length) return;
+        const system = systems[idx];
+        document.getElementById('currentSystem').textContent = system || '—';
 
-        const gltfRes = await fetch("/api/viewer_gltf", {
-            method: "POST",
-            credentials: "include",
-            headers: {
-                ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ team_number: teamNumber, robot: robotName, system: systemName, id: part.part_id })
-        });
-        if (!gltfRes.ok) return;
+        // ensure current is prefetched
+        if (!cache.has(system)) await prefetch(system);
 
-        const blob = await gltfRes.blob();
-        const url = URL.createObjectURL(blob);
-        document.getElementById("confettiModal").classList.remove("hidden");
-        showGLTFViewer(url, "confettiViewer", true, true);
+        const entry = cache.get(system);
+        if (entry && entry.status === 'ready'){
+            showGLTFViewer(entry.url, 'robotViewer', false, false);
+            document.getElementById('viewerLoading')?.classList.add('hidden');
+        } else {
+            // still loading — keep the spinner visible
+            document.getElementById('viewerLoading')?.classList.remove('hidden');
+        }
+
+        // prefetch next
+        const next = systems[nextIndex(idx)];
+        prefetch(next);
     }
+
+    function startRotation(){
+        if (rotateTimer) clearInterval(rotateTimer);
+        showCurrent();
+        rotateTimer = setInterval(() => {
+            if (!systems.length) return;
+            idx = nextIndex(idx);
+            showCurrent();
+        }, 12000); // 12s per system
+    }
+
+    async function pollForFinishedParts(){
+        try {
+            const res = await fetch(`/api/dashboard/recent_completions?team_number=${teamNumber}&robot_name=${robotName}`, {
+                credentials: 'include', headers: { ...authHeader }
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+            const parts = Array.isArray(data.parts) ? data.parts : [];
+            if (!parts.length) return;
+
+            parts.sort((a,b)=> new Date(b.ts)-new Date(a.ts));
+            const part = parts[0];
+
+            document.getElementById('confettiLoading')?.classList.remove('hidden');
+            const gltfRes = await fetch('/api/viewer_gltf', {
+                method: 'POST', credentials: 'include', headers: { ...authHeader, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ team_number: teamNumber, robot: robotName, system: part.system || 'Main', id: part.part_id })
+            });
+            if (!gltfRes.ok) return;
+            const blob = await gltfRes.blob();
+            const url = URL.createObjectURL(blob);
+
+            const modal = document.getElementById('confettiModal');
+            modal.classList.remove('hidden');
+            showGLTFViewer(url, 'confettiViewer', true, true);
+        } catch(e){
+            console.error('recent completions (robot) failed', e);
+        } finally {
+            document.getElementById('confettiLoading')?.classList.add('hidden');
+        }
+    }
+
+    // Init
+    document.addEventListener('DOMContentLoaded', async () => {
+        await fetchSystems();
+        if (!systems.length){
+            document.getElementById('viewerLoading')?.classList.add('hidden');
+        } else {
+            // warm up first two
+            await prefetch(systems[0]);
+            if (systems[1]) prefetch(systems[1]);
+            startRotation();
+        }
+        loadRobotStats();
+        setInterval(loadRobotStats, 15000);
+        setInterval(pollForFinishedParts, 8000);
+    });
 </script>
-
 {% endblock %}

@@ -8,6 +8,7 @@ from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity
     set_access_cookies
 from flask_migrate import Migrate
 from flask_socketio import SocketIO, emit
+from onshape_client import OnshapeElement
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import io
@@ -24,7 +25,7 @@ if db_uri and db_uri.startswith("postgres://"):
 app.config['SQLALCHEMY_DATABASE_URI'] = db_uri or 'sqlite:///teams.db'
 app.secret_key = os.getenv('SECRET_KEY', 'super-secret-session-key')
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'super-secure-jwt-key')
-app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'statiDec', 'uploads')
+app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=30)  # ⏳ Set token to last 30 days
 app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
 app.config["JWT_COOKIE_SECURE"] = False  # Set True in production (HTTPS)
@@ -1199,15 +1200,10 @@ def download_bom_dict():
 @app.route("/api/viewer_gltf_batch", methods=["POST"])
 @jwt_required()
 def viewer_gltf_batch():
-    import requests, time, io, zipfile
-    from flask import Response, jsonify
-    from onshape_client.onshape_url import OnshapeElement
-
-    data = request.get_json()
+    data = request.get_json() or {}
     team_number = data.get("team_number")
     robot_name = data.get("robot")
     system_name = data.get("system")
-    part_ids = data.get("part_ids", [])
 
     team = Team.query.filter_by(team_number=team_number).first()
     if not team:
@@ -1221,24 +1217,28 @@ def viewer_gltf_batch():
     if not system:
         return jsonify({"error": "System not found"}), 404
 
+    if not system.assembly_url:
+        return jsonify({"error": "System has no assembly_url"}), 400
+
     auth = (system.access_key, system.secret_key)
     raw_url = system.assembly_url
-    url = raw_url.decode() if isinstance(raw_url, bytes) else str(raw_url)
+    url = raw_url.decode() if isinstance(raw_url, (bytes, bytearray)) else str(raw_url)
 
-    # Ensure parsed_vals is created from str, not bytes
-    if isinstance(url, bytes):
-        url = url.decode()
-    print("🔍 GLTF Batch URL:", repr(url))
-    element = OnshapeElement(url)
+    try:
+        element = OnshapeElement(url)
+    except Exception as e:
+        return jsonify({"error": "Invalid assembly_url", "details": str(e)}), 400
+
     did, wvm, wvmid, eid = element.did, element.wvm, element.wvmid, element.eid
 
-    # Step 1: Start translation
+    # Start translation (assembly export -> zipped glTF + assets)
     start_url = f"https://cad.onshape.com/api/v12/assemblies/d/{did}/{wvm}/{wvmid}/e/{eid}/export/gltf"
     payload = {
         "formatName": "GLTF",
         "destinationName": "FRCAssembly",
         "storeInDocument": False,
         "importWithinDocument": False,
+        # tolerances – reasonably tight for robotics
         "angularTolerance": 0.01,
         "distanceTolerance": 0.01,
         "maximumChordLength": 0.01,
@@ -1254,73 +1254,71 @@ def viewer_gltf_batch():
     if not translation_id:
         return jsonify({"error": "Missing translation job ID"}), 500
 
-    # Step 2: Poll until job is DONE
+    # Poll until DONE
     poll_url = f"https://cad.onshape.com/api/v12/translations/{translation_id}"
     while True:
         poll_res = requests.get(poll_url, auth=auth)
         if poll_res.status_code != 200:
             return jsonify({"error": "Polling failed", "details": poll_res.text}), poll_res.status_code
-
         poll_data = poll_res.json()
-        if poll_data.get("requestState") == "DONE":
+        state = poll_data.get("requestState")
+        if state == "DONE":
             break
-        elif poll_data.get("requestState") == "FAILED":
+        if state == "FAILED":
             return jsonify({"error": "GLTF export failed"}), 500
         time.sleep(1)
 
-    # Step 3: Get resultExternalDataIds and fetch GLTF
     data_ids = poll_data.get("resultExternalDataIds")
     if not data_ids:
         return jsonify({"error": "No exported data available"}), 500
 
     download_url = f"https://cad.onshape.com/api/documents/d/{did}/externaldata/{data_ids[0]}"
     file_res = requests.get(download_url, auth=auth, stream=True)
-    if file_res.status_code == 200:
-        import json, base64
-        zip_bytes = io.BytesIO(file_res.content)
-        with zipfile.ZipFile(zip_bytes) as zip_file:
-            # Pick main scene glTF (prefer 'scene.gltf' or largest .gltf)
-            best_name, best_size = None, -1
-            for name in zip_file.namelist():
-                if name.lower().endswith(".gltf"):
-                    if "scene" in name.lower() or "assembly" in name.lower():
-                        best_name = name
-                        break
-                    size = zip_file.getinfo(name).file_size
-                    if size > best_size:
-                        best_name, best_size = name, size
-            if not best_name:
-                return jsonify({"error": "GLTF not found in ZIP"}), 500
-    
-            gltf_text = zip_file.read(best_name).decode("utf-8")
-            data = json.loads(gltf_text)
-    
-            # Inline buffers
-            for buf in data.get("buffers", []):
-                uri = buf.get("uri")
-                if uri and not uri.startswith("data:"):
-                    try:
-                        b = zip_file.read(uri)
-                        buf["uri"] = "data:application/octet-stream;base64," + base64.b64encode(b).decode("ascii")
-                    except KeyError:
-                        pass
-                    
-            # Inline images
-            for img in data.get("images", []):
-                uri = img.get("uri")
-                if uri and not uri.startswith("data:"):
-                    try:
-                        ib = zip_file.read(uri)
-                        # crude mime guess
-                        mt = "image/png" if uri.lower().endswith(".png") else "image/jpeg"
-                        img["uri"] = f"data:{mt};base64," + base64.b64encode(ib).decode("ascii")
-                    except KeyError:
-                        pass
-                    
-            out = json.dumps(data).encode("utf-8")
-            return Response(out, content_type="model/gltf+json")
-    
-    return jsonify({"error": "GLTF download failed", "details": file_res.text}), file_res.status_code
+    if file_res.status_code != 200:
+        return jsonify({"error": "GLTF download failed", "details": file_res.text}), file_res.status_code
+
+    # Inline all buffers/images so the client can treat it as a single .gltf
+    zip_bytes = io.BytesIO(file_res.content)
+    with zipfile.ZipFile(zip_bytes) as zf:
+        # pick main scene (prefer scene.gltf else largest .gltf)
+        best_name, best_size = None, -1
+        for name in zf.namelist():
+            if name.lower().endswith(".gltf"):
+                if "scene" in name.lower() or "assembly" in name.lower():
+                    best_name = name
+                    break
+                size = zf.getinfo(name).file_size
+                if size > best_size:
+                    best_name, best_size = name, size
+        if not best_name:
+            return jsonify({"error": "GLTF not found in ZIP"}), 500
+
+        gltf_text = zf.read(best_name).decode("utf-8")
+        data = json.loads(gltf_text)
+
+        # inline buffers
+        for buf in data.get("buffers", []):
+            uri = buf.get("uri")
+            if uri and not str(uri).startswith("data:"):
+                try:
+                    b = zf.read(uri)
+                    buf["uri"] = "data:application/octet-stream;base64," + base64.b64encode(b).decode("ascii")
+                except KeyError:
+                    pass
+
+        # inline images
+        for img in data.get("images", []):
+            uri = img.get("uri")
+            if uri and not str(uri).startswith("data:"):
+                try:
+                    ib = zf.read(uri)
+                    mt = "image/png" if str(uri).lower().endswith(".png") else "image/jpeg"
+                    img["uri"] = f"data:{mt};base64," + base64.b64encode(ib).decode("ascii")
+                except KeyError:
+                    pass
+
+        out = json.dumps(data).encode("utf-8")
+        return Response(out, content_type="model/gltf+json;charset=UTF-8")
 
 
 @app.route("/api/download_cad", methods=["POST"])
@@ -1551,23 +1549,88 @@ def get_part_stats(bom_data):
     top_proc = max(process_counter.items(), key=lambda x: x[1])[0] if process_counter else "N/A"
     return total_parts, completed, cots, inhouse, percent, top_proc
 
+
+def _pget(d, *keys, default=0):
+    """Get first existing key (case-insensitive) as int."""
+    for k in keys:
+        if k in d and d[k] not in (None, ""):
+            try:
+                return int(d[k])
+            except Exception:
+                try:
+                    return int(float(d[k]))
+                except Exception:
+                    pass
+    # try case-insensitive
+    lower = {str(k).lower(): v for k, v in d.items()}
+    for k in keys:
+        lk = str(k).lower()
+        if lk in lower and lower[lk] not in (None, ""):
+            try:
+                return int(lower[lk])
+            except Exception:
+                try:
+                    return int(float(lower[lk]))
+                except Exception:
+                    pass
+    return default
+
+
+def get_part_stats(bom_data):
+    total_parts = len(bom_data or [])
+    completed = 0
+    cots = 0
+    inhouse = 0
+    process_counter = {}
+
+    for part in bom_data or []:
+        qty = _pget(part, "Quantity", default=0)
+        pre = _pget(part, "done_preprocess", "Done Pre-Process", "Done Pre Process", default=0)
+        p1 = _pget(part, "done_process1", "Done Process 1", default=0)
+        p2 = _pget(part, "done_process2", "Done Process 2", default=0)
+
+        pre_name = part.get("Pre Process") or part.get("Pre-Process") or part.get("Pre process")
+        p1_name = part.get("Process 1")
+        p2_name = part.get("Process 2")
+
+        is_cots = not pre_name and not p1_name and not p2_name
+        if is_cots:
+            cots += 1
+            avail = _pget(part, "available_qty", "Available Qty", default=0)
+            if avail >= qty and qty > 0:
+                completed += 1
+        else:
+            inhouse += 1
+            if qty > 0 and pre >= qty and p1 >= qty and p2 >= qty:
+                completed += 1
+            for proc_name in (pre_name, p1_name, p2_name):
+                if proc_name:
+                    process_counter[proc_name] = process_counter.get(proc_name, 0) + 1
+
+    percent = round((completed / total_parts) * 100) if total_parts else 0
+    top_proc = max(process_counter.items(), key=lambda x: x[1])[0] if process_counter else "N/A"
+    return total_parts, completed, cots, inhouse, percent, top_proc
+
+
+# ---------- Stats endpoints ----------
+
 @app.route("/api/dashboard/robot_stats")
 @jwt_required()
 def robot_stats():
     team_number = request.args.get("team_number")
     robot_name = request.args.get("robot_name")
-    team = Team.query.filter_by(team_number=team_number).first()
-    if not team: return jsonify(error="Team not found"), 404
-    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
-    if not robot: return jsonify(error="Robot not found"), 404
 
-    total_parts = 0
-    completed = 0
-    cots = 0
-    inhouse = 0
+    team = Team.query.filter_by(team_number=team_number).first()
+    if not team:
+        return jsonify(error="Team not found"), 404
+    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
+    if not robot:
+        return jsonify(error="Robot not found"), 404
+
+    total_parts = completed = cots = inhouse = 0
     material_count = {}
 
-    for system in robot.systems:
+    for system in robot.systems or []:
         bom = system.bom_data or []
         t, c, cots_, inhouse_, _, _ = get_part_stats(bom)
         total_parts += t
@@ -1589,9 +1652,7 @@ def robot_stats():
         "cots_parts": cots,
         "inhouse_parts": inhouse,
         "top_material": top_material
-    })
-
-@app.route("/api/dashboard/system_stats")
+    })@app.route("/api/dashboard/system_stats")
 @jwt_required()
 def system_stats():
     team_number = request.args.get("team_number")
@@ -1599,11 +1660,14 @@ def system_stats():
     system_name = request.args.get("system_name")
 
     team = Team.query.filter_by(team_number=team_number).first()
-    if not team: return jsonify(error="Team not found"), 404
+    if not team:
+        return jsonify(error="Team not found"), 404
     robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
-    if not robot: return jsonify(error="Robot not found"), 404
+    if not robot:
+        return jsonify(error="Robot not found"), 404
     system = System.query.filter_by(robot_id=robot.id, name=system_name).first()
-    if not system: return jsonify(error="System not found"), 404
+    if not system:
+        return jsonify(error="System not found"), 404
 
     bom = system.bom_data or []
     total, completed, cots, inhouse, percent, top_proc = get_part_stats(bom)
@@ -1617,13 +1681,13 @@ def system_stats():
         "top_process": top_proc
     })
 
+
 @app.route("/api/dashboard/recent_completions")
 @jwt_required()
 def recent_completions():
-    from datetime import datetime, timedelta
     team_number = request.args.get("team_number")
     robot_name = request.args.get("robot_name")
-    system_name = request.args.get("system_name", None)  # Optional
+    system_name = request.args.get("system_name", None)  # Optional filter
 
     team = Team.query.filter_by(team_number=team_number).first()
     if not team:
@@ -1631,23 +1695,23 @@ def recent_completions():
 
     robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
     if not robot or not robot.recent_completion:
-        return jsonify({})
+        return jsonify({"parts": []})
 
     now = datetime.utcnow()
     system_key = system_name if system_name else "Main"
-    entries = robot.recent_completion.get(system_key, [])
+    entries = (robot.recent_completion or {}).get(system_key, [])
 
-    # Filter expired entries
+    # widen window to 45s for reliability
     valid = []
     for entry in entries:
         try:
             ts = datetime.fromisoformat(entry.get("ts"))
-            if now - ts < timedelta(seconds=15):
+            if now - ts < timedelta(seconds=45):
                 valid.append(entry)
-        except:
+        except Exception:
             continue
 
-    # Update DB with cleaned list (remove expired)
+    # persist cleaned list
     rc_map = dict(robot.recent_completion or {})
     rc_map[system_key] = valid
     robot.recent_completion = rc_map
@@ -1655,7 +1719,23 @@ def recent_completions():
 
     return jsonify({"parts": valid})
 
+@app.route("/api/robot_systems")
+@jwt_required()
+def robot_systems():
+    team_number = request.args.get("team_number")
+    robot_name = request.args.get("robot_name")
 
+    team = Team.query.filter_by(team_number=team_number).first()
+    if not team:
+        return jsonify({"error": "Team not found"}), 404
+    robot = Robot.query.filter_by(team_id=team.id, name=robot_name).first()
+    if not robot:
+        return jsonify({"error": "Robot not found"}), 404
+
+    systems = [s.name for s in (robot.systems or []) if s.assembly_url]
+    # ensure deterministic order
+    systems.sort()
+    return jsonify({"systems": systems})
 
 @app.route('/api/admin/download_settings_dict', methods=['GET'])
 @jwt_required()

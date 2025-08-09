@@ -165,7 +165,7 @@
             if (!systems.length) return;
             idx = nextIndex(idx);
             showCurrent();
-        }, 12000); // 12s per system
+        }, 30000); // 12s per system
     }
 
     async function pollForFinishedParts(){
@@ -203,6 +203,7 @@
     // Init
     document.addEventListener('DOMContentLoaded', async () => {
         await fetchSystems();
+        loadRobotStats();
         if (!systems.length){
             document.getElementById('viewerLoading')?.classList.add('hidden');
         } else {
@@ -211,7 +212,7 @@
             if (systems[1]) prefetch(systems[1]);
             startRotation();
         }
-        loadRobotStats();
+
         setInterval(loadRobotStats, 15000);
         setInterval(pollForFinishedParts, 8000);
     });

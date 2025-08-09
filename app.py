@@ -1198,16 +1198,30 @@ def download_bom_dict():
         bom_data_dict[team.team_number] = team_dict
     return jsonify({"bom_data_dict": bom_data_dict}), 200
 
-
+def find_team(team_number: str):
+    """
+    Looks up a team in the database by its number.
+    Returns the Team object or None if not found.
+    """
+    try:
+        # Ensure we compare as string to match stored format
+        return Team.query.filter_by(team_number=str(team_number)).first()
+    except Exception as e:
+        app.logger.error(f"❌ Error in find_team({team_number}): {e}")
+        return None
 @app.route("/api/viewer_gltf_batch", methods=["POST"])
 @jwt_required()
 def viewer_gltf_batch():
+    import requests, time, io, zipfile, json, base64
+    from flask import Response, jsonify
+    from onshape_client.onshape_url import OnshapeElement
+
     data = request.get_json() or {}
     team_number = data.get("team_number")
     robot_name = data.get("robot")
     system_name = data.get("system")
 
-    team = Team.query.filter_by(team_number=team_number).first()
+    team = find_team(team_number)
     if not team:
         return jsonify({"error": "Team not found"}), 404
 
@@ -1218,7 +1232,6 @@ def viewer_gltf_batch():
     system = System.query.filter_by(robot_id=robot.id, name=system_name).first()
     if not system:
         return jsonify({"error": "System not found"}), 404
-
     if not system.assembly_url:
         return jsonify({"error": "System has no assembly_url"}), 400
 
@@ -1233,20 +1246,18 @@ def viewer_gltf_batch():
 
     did, wvm, wvmid, eid = element.did, element.wvm, element.wvmid, element.eid
 
-    # Start translation (assembly export -> zipped glTF + assets)
+    # Start export
     start_url = f"https://cad.onshape.com/api/v12/assemblies/d/{did}/{wvm}/{wvmid}/e/{eid}/export/gltf"
     payload = {
         "formatName": "GLTF",
         "destinationName": "FRCAssembly",
         "storeInDocument": False,
         "importWithinDocument": False,
-        # tolerances – reasonably tight for robotics
         "angularTolerance": 0.01,
         "distanceTolerance": 0.01,
         "maximumChordLength": 0.01,
         "allowFaultyParts": False
     }
-
     start_res = requests.post(start_url, json=payload, auth=auth, headers={"Accept": "application/json"})
     if start_res.status_code != 200:
         return jsonify({"error": "GLTF export failed to start", "details": start_res.text}), start_res.status_code
@@ -1256,7 +1267,7 @@ def viewer_gltf_batch():
     if not translation_id:
         return jsonify({"error": "Missing translation job ID"}), 500
 
-    # Poll until DONE
+    # Poll
     poll_url = f"https://cad.onshape.com/api/v12/translations/{translation_id}"
     while True:
         poll_res = requests.get(poll_url, auth=auth)
@@ -1279,23 +1290,49 @@ def viewer_gltf_batch():
     if file_res.status_code != 200:
         return jsonify({"error": "GLTF download failed", "details": file_res.text}), file_res.status_code
 
-    # Inline all buffers/images so the client can treat it as a single .gltf
+    # Inline buffers/images and pick the TRUE root scene
     zip_bytes = io.BytesIO(file_res.content)
     with zipfile.ZipFile(zip_bytes) as zf:
-        # pick main scene (prefer scene.gltf else largest .gltf)
-        best_name, best_size = None, -1
-        for name in zf.namelist():
-            if name.lower().endswith(".gltf"):
-                if "scene" in name.lower() or "assembly" in name.lower():
-                    best_name = name
-                    break
-                size = zf.getinfo(name).file_size
-                if size > best_size:
-                    best_name, best_size = name, size
-        if not best_name:
+        # 1) Try manifest-driven root
+        root_name = None
+        for candidate in ("manifest.json", "translation.json"):
+            if candidate in zf.namelist():
+                try:
+                    manifest = json.loads(zf.read(candidate).decode("utf-8"))
+                    # Onshape often stores a direct path to the root glTF
+                    for key in ("root", "rootFile", "rootGltf", "rootGltfFile", "scene", "sceneGltf"):
+                        if isinstance(manifest.get(key), str) and manifest[key].lower().endswith(".gltf"):
+                            root_name = manifest[key]
+                            break
+                    if root_name:
+                        break
+                except Exception:
+                    pass
+
+        # 2) Fallbacks: prefer typical scene names, then assembly*, then largest
+        if not root_name:
+            candidates = [n for n in zf.namelist() if n.lower().endswith(".gltf")]
+            preferred = [n for n in candidates if "scene" in n.lower()]
+            if not preferred:
+                preferred = [n for n in candidates if "assembly" in n.lower()]
+            if preferred:
+                root_name = preferred[0]
+            else:
+                # largest file heuristic
+                best_name, best_size = None, -1
+                for n in candidates:
+                    try:
+                        s = zf.getinfo(n).file_size
+                    except KeyError:
+                        s = -1
+                    if s > best_size:
+                        best_name, best_size = n, s
+                root_name = best_name
+
+        if not root_name:
             return jsonify({"error": "GLTF not found in ZIP"}), 500
 
-        gltf_text = zf.read(best_name).decode("utf-8")
+        gltf_text = zf.read(root_name).decode("utf-8")
         data = json.loads(gltf_text)
 
         # inline buffers
@@ -1521,6 +1558,33 @@ def view_gltf():
     return jsonify({"error": f"Part '{part_id}' not found in any partstudio"}), 404
 
 def get_part_stats(bom_data):
+    """Compute totals; count a part complete if all of its EXISTING processes hit qty.
+    COTS: complete if available_qty >= qty.
+    """
+    def _pget(d, *keys, default=0):
+        for k in keys:
+            if k in d and d[k] not in (None, ""):
+                try:
+                    return int(d[k])
+                except Exception:
+                    try:
+                        return int(float(d[k]))
+                    except Exception:
+                        pass
+        # case-insensitive pass
+        lower = {str(k).lower(): v for k, v in d.items()}
+        for k in keys:
+            lk = str(k).lower()
+            if lk in lower and lower[lk] not in (None, ""):
+                try:
+                    return int(lower[lk])
+                except Exception:
+                    try:
+                        return int(float(lower[lk]))
+                    except Exception:
+                        pass
+        return default
+
     total_parts = len(bom_data or [])
     completed = 0
     cots = 0
@@ -1529,57 +1593,46 @@ def get_part_stats(bom_data):
 
     for part in bom_data or []:
         qty = _pget(part, "Quantity", default=0)
-        pre = _pget(part, "done_preprocess", "Done Pre-Process", "Done Pre Process", default=0)
-        p1 = _pget(part, "done_process1", "Done Process 1", default=0)
-        p2 = _pget(part, "done_process2", "Done Process 2", default=0)
 
+        # names present in BOM (truthy string means process exists)
         pre_name = part.get("Pre Process") or part.get("Pre-Process") or part.get("Pre process")
-        p1_name = part.get("Process 1")
-        p2_name = part.get("Process 2")
+        p1_name  = part.get("Process 1")
+        p2_name  = part.get("Process 2")
 
+        # progress fields (numbers done so far)
+        pre_done = _pget(part, "done_preprocess", "Done Pre-Process", "Done Pre Process", default=0)
+        p1_done  = _pget(part, "done_process1", "Done Process 1", default=0)
+        p2_done  = _pget(part, "done_process2", "Done Process 2", default=0)
+
+        # COTS = no processes at all
         is_cots = not pre_name and not p1_name and not p2_name
+
         if is_cots:
             cots += 1
             avail = _pget(part, "available_qty", "Available Qty", default=0)
-            if avail >= qty and qty > 0:
+            if qty > 0 and avail >= qty:
                 completed += 1
         else:
             inhouse += 1
-            if qty > 0 and pre >= qty and p1 >= qty and p2 >= qty:
+
+            # only require processes that actually exist
+            ok = True
+            if qty <= 0:
+                ok = False
+            if ok and pre_name and pre_done < qty: ok = False
+            if ok and p1_name  and p1_done  < qty: ok = False
+            if ok and p2_name  and p2_done  < qty: ok = False
+            if ok:
                 completed += 1
-            for proc_name in (pre_name, p1_name, p2_name):
-                if proc_name:
-                    process_counter[proc_name] = process_counter.get(proc_name, 0) + 1
+
+            # count processes for "top process" stat
+            for nm in (pre_name, p1_name, p2_name):
+                if nm:
+                    process_counter[nm] = process_counter.get(nm, 0) + 1
 
     percent = round((completed / total_parts) * 100) if total_parts else 0
     top_proc = max(process_counter.items(), key=lambda x: x[1])[0] if process_counter else "N/A"
     return total_parts, completed, cots, inhouse, percent, top_proc
-
-
-def _pget(d, *keys, default=0):
-    """Get first existing key (case-insensitive) as int."""
-    for k in keys:
-        if k in d and d[k] not in (None, ""):
-            try:
-                return int(d[k])
-            except Exception:
-                try:
-                    return int(float(d[k]))
-                except Exception:
-                    pass
-    # try case-insensitive
-    lower = {str(k).lower(): v for k, v in d.items()}
-    for k in keys:
-        lk = str(k).lower()
-        if lk in lower and lower[lk] not in (None, ""):
-            try:
-                return int(lower[lk])
-            except Exception:
-                try:
-                    return int(float(lower[lk]))
-                except Exception:
-                    pass
-    return default
 
 
 

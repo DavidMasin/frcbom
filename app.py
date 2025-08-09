@@ -1521,64 +1521,6 @@ def view_gltf():
     return jsonify({"error": f"Part '{part_id}' not found in any partstudio"}), 404
 
 def get_part_stats(bom_data):
-    total_parts = len(bom_data)
-    completed = 0
-    cots = 0
-    inhouse = 0
-    process_counter = {}
-
-    for part in bom_data:
-        qty = int(part.get("Quantity", 0))
-        pre = int(part.get("done_preprocess", 0))
-        p1 = int(part.get("done_process1", 0))
-        p2 = int(part.get("done_process2", 0))
-
-        is_cots = not part.get("Pre Process") and not part.get("Process 1") and not part.get("Process 2")
-        if is_cots:
-            cots += 1
-            if int(part.get("available_qty", 0)) >= qty:
-                completed += 1
-        else:
-            inhouse += 1
-            if pre >= qty and p1 >= qty and p2 >= qty:
-                completed += 1
-            for p in ["Pre Process", "Process 1", "Process 2"]:
-                proc = part.get(p)
-                if proc:
-                    process_counter[proc] = process_counter.get(proc, 0) + 1
-
-    percent = round((completed / total_parts) * 100) if total_parts else 0
-    top_proc = max(process_counter.items(), key=lambda x: x[1])[0] if process_counter else "N/A"
-    return total_parts, completed, cots, inhouse, percent, top_proc
-
-
-def _pget(d, *keys, default=0):
-    """Get first existing key (case-insensitive) as int."""
-    for k in keys:
-        if k in d and d[k] not in (None, ""):
-            try:
-                return int(d[k])
-            except Exception:
-                try:
-                    return int(float(d[k]))
-                except Exception:
-                    pass
-    # try case-insensitive
-    lower = {str(k).lower(): v for k, v in d.items()}
-    for k in keys:
-        lk = str(k).lower()
-        if lk in lower and lower[lk] not in (None, ""):
-            try:
-                return int(lower[lk])
-            except Exception:
-                try:
-                    return int(float(lower[lk]))
-                except Exception:
-                    pass
-    return default
-
-
-def get_part_stats(bom_data):
     total_parts = len(bom_data or [])
     completed = 0
     cots = 0
@@ -1612,6 +1554,34 @@ def get_part_stats(bom_data):
     percent = round((completed / total_parts) * 100) if total_parts else 0
     top_proc = max(process_counter.items(), key=lambda x: x[1])[0] if process_counter else "N/A"
     return total_parts, completed, cots, inhouse, percent, top_proc
+
+
+def _pget(d, *keys, default=0):
+    """Get first existing key (case-insensitive) as int."""
+    for k in keys:
+        if k in d and d[k] not in (None, ""):
+            try:
+                return int(d[k])
+            except Exception:
+                try:
+                    return int(float(d[k]))
+                except Exception:
+                    pass
+    # try case-insensitive
+    lower = {str(k).lower(): v for k, v in d.items()}
+    for k in keys:
+        lk = str(k).lower()
+        if lk in lower and lower[lk] not in (None, ""):
+            try:
+                return int(lower[lk])
+            except Exception:
+                try:
+                    return int(float(lower[lk]))
+                except Exception:
+                    pass
+    return default
+
+
 
 
 # ---------- Stats endpoints ----------

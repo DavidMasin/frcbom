@@ -10,23 +10,61 @@
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-  <div>
-    <canvas id="systemViewer" class="w-full h-96 rounded-lg border border-gray-600 shadow-lg bg-black"></canvas>
+  <!-- Viewer card -->
+  <div class="rounded-xl bg-gray-800/60 backdrop-blur border border-gray-700 hover:border-blue-500/50 shadow-xl hover:shadow-blue-500/20 transition p-4">
+    <div class="relative">
+      <div id="viewerLoading" class="absolute inset-0 flex items-center justify-center bg-black/40 rounded-lg z-10">
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-white"></div>
+      </div>
+      <canvas id="systemViewer" class="w-full h-96 rounded-lg border border-gray-600 shadow-lg bg-black"></canvas>
+    </div>
+    <div id="nowMaking" class="mt-4 text-xs text-gray-300 border-t border-gray-700 pt-3">
+      <div class="text-gray-400 mb-1">Now manufacturing</div>
+      <ul id="nowMakingList" class="space-y-1"></ul>
+    </div>
   </div>
-  <div class="text-white space-y-4">
-    <div class="text-xl font-semibold">📊 Process Progress</div>
-    <div id="systemStats" class="text-gray-300 space-y-2">
+
+  <!-- Stats card -->
+  <div class="rounded-xl bg-gray-800/60 backdrop-blur border border-gray-700 hover:border-blue-500/50 shadow-xl hover:shadow-blue-500/20 transition p-6 text-white space-y-6">
+    <div class="flex items-center gap-4">
+      <div class="text-xl font-semibold">📊 Process Progress</div>
+      <span class="text-xs text-gray-400">(auto-refreshes)</span>
+    </div>
+
+    <!-- Progress ring -->
+    <div class="flex items-center gap-4">
+      <div class="relative w-20 h-20">
+        <svg viewBox="0 0 36 36" class="w-20 h-20">
+          <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                fill="none" stroke="currentColor" stroke-width="2" class="text-gray-700"></path>
+          <path id="pctRing" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                class="text-blue-400" stroke-dasharray="0,100"></path>
+        </svg>
+        <div id="pctLabel" class="absolute inset-0 flex items-center justify-center text-white font-bold">0%</div>
+      </div>
+      <div class="text-sm text-gray-300">Overall completion</div>
+    </div>
+
+    <div id="systemStats" class="text-gray-300 space-y-2 text-sm">
       <!-- Stats populated via JS -->
+      <div class="opacity-60">Loading stats…</div>
     </div>
   </div>
 </div>
 
+<!-- Confetti modal -->
 <div id="confettiModal" class="fixed inset-0 bg-black bg-opacity-80 z-50 hidden items-center justify-center">
   <div class="bg-white rounded-lg p-6 max-w-3xl w-full relative">
     <button onclick="document.getElementById('confettiModal').classList.add('hidden')"
-            class="absolute top-2 right-3 text-xl text-gray-500 hover:text-black">&times;</button>
+            class="absolute top-2 right-3 text-xl text-gray-500 hover:text-black" aria-label="Close">&times;</button>
     <h2 class="text-2xl font-bold mb-4 text-center text-green-600">🎉 Finished Part!</h2>
-    <canvas id="confettiViewer" class="w-full h-96 rounded border border-gray-300"></canvas>
+    <div class="relative">
+      <div id="confettiLoading" class="absolute inset-0 flex items-center justify-center bg-black/10 rounded z-10">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-700"></div>
+      </div>
+      <canvas id="confettiViewer" class="w-full h-96 rounded border border-gray-300"></canvas>
+    </div>
   </div>
 </div>
 {% endblock %}
@@ -41,93 +79,133 @@
   }
 </script>
 <script type="module">
-import { showGLTFViewer } from "/static/js/gltf_viewer.js";
+  import { showGLTFViewer } from "/static/js/gltf_viewer.js";
 
-const teamNumber = "{{ team_number }}";
-const robotName = "{{ robot_name }}";
-const systemName = "{{ system_name }}";
-const token = localStorage.getItem("jwt_token");
+  const teamNumber = "{{ team_number }}";
+  const robotName = "{{ robot_name }}";
+  const systemName = "{{ system_name }}";
+  const token = localStorage.getItem("jwt_token");
 
-async function loadSystemStats() {
-  const res = await fetch(`/api/dashboard/system_stats?team_number=${teamNumber}&robot_name=${robotName}&system_name=${systemName}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  const data = await res.json();
-  if (!res.ok) return alert("Failed to load system stats");
+  // --- Utilities ---
+  const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
 
-  const el = document.getElementById("systemStats");
-  el.innerHTML = `
-    <div>Total Parts: <strong>${data.total_parts}</strong></div>
-    <div>Completed: <strong>${data.completed_parts}</strong> (${data.percent_complete}%)</div>
-    <div>COTS: ${data.cots_parts}, In-House: ${data.inhouse_parts}</div>
-    <div>Top Process: ${data.top_process}</div>
-  `;
-}
-
-async function showAssemblyViewer() {
-  // 1. Fetch the GLTF for the system
-  const res = await fetch('/api/viewer_gltf_batch', {
-    method: 'POST',
-    headers: {
-      "Authorization": `Bearer ${token}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      team_number: teamNumber,
-      robot: robotName,
-      system: systemName
-    })
-  });
-
-  const blob = await res.blob();
-
-// 2. Sanity check (not HTML error page)
-  const text = await blob.text();
-  if (text.startsWith("<") || text.includes("DOCTYPE") || text.includes("Error")) {
-    console.error("❌ GLTF response is HTML or error:", text);
-    return;
+  function updateProgressRing(percent) {
+    const pct = Math.max(0, Math.min(100, Number(percent || 0)));
+    const ring = document.getElementById('pctRing');
+    const lbl = document.getElementById('pctLabel');
+    if (ring) ring.setAttribute('stroke-dasharray', `${pct},100`);
+    if (lbl) lbl.textContent = `${pct}%`;
   }
 
-  const fixedBlob = new Blob([text], { type: "model/gltf+json" });
-  const url = URL.createObjectURL(fixedBlob);
+  function appendNowMaking(line) {
+    const list = document.getElementById("nowMakingList");
+    if (!list) return;
+    const li = document.createElement("li");
+    li.innerHTML = `✅ <span class="text-white">${line}</span>`;
+    list.prepend(li);
+    while (list.children.length > 5) list.removeChild(list.lastChild);
+  }
 
-// 3. Load it into the dashboard canvas
-  showGLTFViewer(url, "systemViewer", false, false);
+  // --- Data loads ---
+  async function loadSystemStats() {
+    try {
+      const res = await fetch(`/api/dashboard/system_stats?team_number=${teamNumber}&robot_name=${robotName}&system_name=${systemName}`, {
+        credentials: 'include',
+        headers: { ...authHeader }
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
 
-}
+      updateProgressRing(data.percent_complete);
 
-async function pollForFinishedParts() {
-  const res = await fetch(`/api/dashboard/recent_completions?team_number=${teamNumber}&robot_name=${robotName}&system_name=${systemName}`, {
-    headers: { Authorization: `Bearer ${token}` }
+      const el = document.getElementById("systemStats");
+      el.innerHTML = `
+      <div>Total Parts: <strong class="text-white">${data.total_parts ?? 0}</strong></div>
+      <div>Completed: <strong class="text-green-400">${data.completed_parts ?? 0}</strong> (${data.percent_complete ?? 0}%)</div>
+      <div>COTS: ${data.cots_parts ?? 0}, In-House: ${data.inhouse_parts ?? 0}</div>
+      <div>Top Process: ${data.top_process ?? '—'}</div>
+    `;
+    } catch (e) {
+      console.error('Failed to load system stats:', e);
+      const el = document.getElementById("systemStats");
+      if (el) el.innerHTML = `<div class="text-red-300">Failed to load system stats</div>`;
+    }
+  }
+
+  async function showAssemblyViewer() {
+    try {
+      const res = await fetch('/api/viewer_gltf_batch', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { ...authHeader, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ team_number: teamNumber, robot: robotName, system: systemName })
+      });
+
+      if (!res.ok) {
+        console.error("GLTF export failed:", await res.text());
+        document.getElementById('viewerLoading')?.classList.add('hidden');
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      showGLTFViewer(url, 'systemViewer', false, false);
+    } catch (e) {
+      console.error('Viewer error:', e);
+    } finally {
+      document.getElementById('viewerLoading')?.classList.add('hidden');
+    }
+  }
+
+  async function pollForFinishedParts() {
+    try {
+      const res = await fetch(`/api/dashboard/recent_completions?team_number=${teamNumber}&robot_name=${robotName}&system_name=${systemName}`, {
+        credentials: 'include',
+        headers: { ...authHeader }
+      });
+      if (!res.ok) return;
+
+      const data = await res.json();
+      const parts = Array.isArray(data.parts) ? data.parts : [];
+      if (!parts.length) return;
+
+      // Pick the most recent
+      parts.sort((a, b) => new Date(b.ts) - new Date(a.ts));
+      const part = parts[0];
+
+      // Update ticker
+      appendNowMaking(`${part.part_id} just finished`);
+
+      // Load its GLTF
+      document.getElementById('confettiLoading')?.classList.remove('hidden');
+      const gltfRes = await fetch('/api/viewer_gltf', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { ...authHeader, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ team_number: teamNumber, robot: robotName, system: systemName, id: part.part_id })
+      });
+      if (!gltfRes.ok) return;
+
+      const blob = await gltfRes.blob();
+      const url = URL.createObjectURL(blob);
+
+      const modal = document.getElementById('confettiModal');
+      modal.classList.remove('hidden');
+      // Use rotating + confetti
+      showGLTFViewer(url, 'confettiViewer', true, true);
+    } catch (e) {
+      console.error('pollForFinishedParts error:', e);
+    } finally {
+      document.getElementById('confettiLoading')?.classList.add('hidden');
+    }
+  }
+
+  // --- Init ---
+  document.addEventListener('DOMContentLoaded', () => {
+    loadSystemStats();
+    showAssemblyViewer();
+    setInterval(loadSystemStats, 15000); // keep stats fresh
+    setInterval(pollForFinishedParts, 8000);
   });
-  if (!res.ok) return;
-  const data = await res.json();
-  const parts = Array.isArray(data.parts) ? data.parts : [];
-  if (!parts.length) return;
-
-  parts.sort((a, b) => new Date(b.ts) - new Date(a.ts));
-  const part = parts[0];
-
-  const gltfRes = await fetch("/api/viewer_gltf", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ team_number: teamNumber, robot: robotName, system: systemName, id: part.part_id })
-  });
-  if (!gltfRes.ok) return;
-  const blob = await gltfRes.blob();
-  const url = URL.createObjectURL(blob);
-
-  document.getElementById("confettiModal").classList.remove("hidden");
-  showGLTFViewer(url, "confettiViewer", true, true);
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  // optional: redirect if not logged in
-  // if (!token) { window.location.href = "/"; return; }
-
-  loadSystemStats();
-  showAssemblyViewer();
-  setInterval(pollForFinishedParts, 8000);
-});
 </script>
 {% endblock %}
